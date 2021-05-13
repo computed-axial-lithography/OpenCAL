@@ -1,1 +1,5 @@
-# OpenCAL
+OpenCAL
+=======
+
+Introduction
+------------
