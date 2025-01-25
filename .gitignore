@@ -1,8 +1,8 @@
 ~*.sldasm
 
 # Ignore Python virtual environment
-venv/
+.venv/
 .env/
 
 #Ignore video files
-*.mp4
+development\camera_integration\LVUDMA_robo_rebinned_54degps_intensity2xarray1final.mp4
