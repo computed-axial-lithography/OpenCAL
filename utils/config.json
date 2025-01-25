@@ -1,0 +1,14 @@
+{
+    "stepper_motor": {
+      "port": "/dev/serial0",          // UART port for communication
+      "baudrate": 9600,                // Baud rate for UART communication
+      "default_speed": 120,            // Default speed in RPM
+      "max_speed": 300,                // Maximum speed in RPM
+      "steps_per_rev": 200,            // Number of steps per full revolution
+      "enable_logging": true,          // Whether to log movements
+      "log_file": "stepper_motor_log.txt"  // Log file path for stepper motor
+    },
+    "asdf": {
+
+    }
+}
