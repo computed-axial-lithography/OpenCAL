@@ -1,5 +1,6 @@
+from rpi_ws281x import PixelStrip, Color
 import board
-import neopixel
+#mport neopixel
 import json
 import time
 
@@ -15,7 +16,9 @@ class LEDArray:
         self.ring_indices = config['led_array'].get("ring_indices", {})
 
         #Initialize communication
-        self.pixels = neopixel.NeoPixel(self.led_pin, self.num_led, brightness=0.5, auto_write=False)
+        self.strip = PixelStrip(self.num_led, self.led_pin, brightness=0.5)
+        self.strip.begin()
+        # self.pixels = neopixel.NeoPixel(self.led_pin, self.num_led, brightness=0.5, auto_write=False)
 
     def set_led(self, color_rgb, ring_num):
         """
@@ -32,17 +35,19 @@ class LEDArray:
         for r in range(1, ring_num + 1):
             indices = self.ring_indices.get(str(r), [])
             for idx in indices:
-                self.pixels[idx] = color_rgb
+                self.strip.setPixelColor(idx,color_rgb)
+      
+          
 
         # Write the changes to the LEDs
-        self.pixels.show()
+        self.strip.show()
 
     def clear_leds(self):
         """
         Turns off all LEDs in the array.
         """
-        self.pixels.fill((0, 0, 0))
-        self.pixels.show()
+        self.strip.fill((0,0,0))
+        self.strip.show()
 
 
 if __name__ == "__main__":
