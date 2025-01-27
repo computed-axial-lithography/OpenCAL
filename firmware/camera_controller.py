@@ -1,23 +1,48 @@
 import cv2
 
 class CameraController:
-    def __init__(self, camera_index=0, resolution=(640,480), fps = 30):
+    def __init__(self, camera_index=0):
         self.camera_index = camera_index
-        self.resolution = resolution
-        self.fps = fps
+
         
     def start_camera(self):
-        self.cap = cv2.VideoCapture(self.camera_index)
-        if not self.cap.isOpened():
-            raise ValueError("help me im dying")
+        self.capture = cv2.VideoCapture(self.camera_index)
+        if not self.capture.isOpened():
+            raise IOError(f"Error: could not open camera {self.camera_index}")
         
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.resolution[0])
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.resolution[1])
-        self.cap.set(cv2.CAP_PROP_FPS, self.fps)
 
-
+    def read_frame(self):
+        ret, frame = self.capture.read()
+        if not ret:
+            raise IOError("Error: could not read frame from camera")
+        return frame
+    
     def stop_camera(self):
         """Release the camera resource."""
-        if self.cap is not None:
-            self.cap.release()
+        if self.capture is not None:
+            self.capture.release()
             print("Camera released.")
+
+if __name__ == "__main__":
+    camera = CameraController(camera_index=0)
+    try:
+        # Start the camera
+        camera.start_camera()
+        print("Press 'q' to quit.")
+
+        # Stream video
+        while True:
+            frame = camera.read_frame()  # Capture a frame
+            cv2.imshow("Camera Feed", frame)  # Display the frame
+            
+            # Break the loop when 'q' is pressed
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+    except Exception as e:
+        print(e)
+
+    finally:
+        # Stop the camera and close windows
+        camera.stop_camera()
+        cv2.destroyAllWindows()
