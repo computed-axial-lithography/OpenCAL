@@ -1,24 +1,22 @@
-from rpi_ws281x import PixelStrip, Color
 import board
-#mport neopixel
+import neopixel
 import json
 import time
 
-
 class LEDArray:
-    def __init__(self, config_file="utils\config.json"):
-        #Load config from json
+    def __init__(self, config_file="utils\\config.json"):
+        # Load config from json
         with open(config_file, 'r') as f:
             config = json.load(f)
         
         self.num_led = config['led_array'].get("num_led")
+        
+        # Retrieve the pin value from config, and set it for neopixel
         self.led_pin = getattr(board, config['led_array'].get("led_pin"))
         self.ring_indices = config['led_array'].get("ring_indices", {})
 
-        #Initialize communication
-        self.strip = PixelStrip(self.num_led, self.led_pin, brightness=0.5)
-        self.strip.begin()
-        # self.pixels = neopixel.NeoPixel(self.led_pin, self.num_led, brightness=0.5, auto_write=False)
+        # Initialize communication with neopixel library
+        self.pixels = neopixel.NeoPixel(self.led_pin, self.num_led, brightness=0.5, auto_write=False)
 
     def set_led(self, color_rgb, ring_num):
         """
@@ -35,20 +33,17 @@ class LEDArray:
         for r in range(1, ring_num + 1):
             indices = self.ring_indices.get(str(r), [])
             for idx in indices:
-                self.strip.setPixelColor(idx,color_rgb)
-      
-          
-
-        # Write the changes to the LEDs
-        self.strip.show()
+                self.pixels[idx] = color_rgb
+        
+        # Update the LEDs by writing the changes
+        self.pixels.show()
 
     def clear_leds(self):
         """
         Turns off all LEDs in the array.
         """
-        self.strip.fill((0,0,0))
-        self.strip.show()
-
+        self.pixels.fill((0, 0, 0))
+        self.pixels.show()
 
 if __name__ == "__main__":
     led_array = LEDArray()
@@ -71,4 +66,3 @@ if __name__ == "__main__":
 
     except Exception as e:
         print(f"An error occurred during the test: {e}")
-
