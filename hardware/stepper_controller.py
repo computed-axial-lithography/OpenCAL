@@ -3,7 +3,7 @@ import time
 import json
 
 class StepperMotor:
-    def __init__(self, config_file="config.json"):
+    def __init__(self, config_file="utils\config.json"):
         """Initialize UART communication with the stepper motor driver."""
         # Load config from the JSON file
         with open(config_file, 'r') as f:

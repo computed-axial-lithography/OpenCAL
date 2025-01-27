@@ -8,7 +8,17 @@
       "enable_logging": true,          
       "log_file": "stepper_motor_log.txt"  
     },
-    "asdf": {
+    "camera": {
+      "index": 0
 
+    },
+    "led_array": {
+      "num_led": 241,
+      "led_pin": "D18",
+      "ring_indices": {
+        "1": [0],        
+        "2": [1, 2, 3, 4, 5, 6, 7, 8],  
+        "3": [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+      }
     }
 }

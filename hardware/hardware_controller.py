@@ -1,8 +1,10 @@
-from camera_controller import CameraController
+from .camera_controller import CameraController
+from .stepper_controller import StepperMotor
 
 class HardwareController:
     def __init__(self):
-        self.camera = CameraController(camera_index=0)
+        self.camera = CameraController()
+        self.stepper = StepperMotor()
 
     def start_all(self):
         """Start all hardware components."""

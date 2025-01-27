@@ -1,8 +1,13 @@
 import cv2
+import json
 
 class CameraController:
-    def __init__(self, camera_index=0):
-        self.camera_index = camera_index
+    def __init__(self, config_file="utils\config.json" ):
+ 
+        with open(config_file, 'r') as f:
+            config = json.load(f)
+        
+        self.camera_index = config['camera'].get("index", 0)
 
         
     def start_camera(self):
@@ -23,6 +28,8 @@ class CameraController:
             self.capture.release()
             print("Camera released.")
 
+
+#Test to open webcam and stream image
 if __name__ == "__main__":
     camera = CameraController(camera_index=0)
     try:
