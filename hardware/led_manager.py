@@ -1,7 +1,6 @@
-import board
 import json
 import time
-from pi5neo import Pi5Neo
+from pi5neo import Pi5Neo # type: ignore
 
 class LEDArray:
     def __init__(self, config_file="utils/config.json"):
