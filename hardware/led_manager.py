@@ -1,10 +1,11 @@
 import board
-import neopixel
+#import neopixel
 import json
 import time
+from pi5neo import Pi5Neo
 
 class LEDArray:
-    def __init__(self, config_file="utils\\config.json"):
+    def __init__(self, config_file="utils/config.json"):
         # Load config from json
         with open(config_file, 'r') as f:
             config = json.load(f)
@@ -12,11 +13,12 @@ class LEDArray:
         self.num_led = config['led_array'].get("num_led")
         
         # Retrieve the pin value from config, and set it for neopixel
-        self.led_pin = getattr(board, config['led_array'].get("led_pin"))
+        #self.led_pin = getattr(board, config['led_array'].get("led_pin"))
         self.ring_indices = config['led_array'].get("ring_indices", {})
 
         # Initialize communication with neopixel library
-        self.pixels = neopixel.NeoPixel(self.led_pin, self.num_led, brightness=0.5, auto_write=False)
+        #self.pixels = neopixel.NeoPixel(self.led_pin, self.num_led, brightness=0.5, auto_write=False)
+        self.neo = Pi5Neo('/dev/spidev0.0', 21, 800)
 
     def set_led(self, color_rgb, ring_num):
         """
@@ -33,17 +35,20 @@ class LEDArray:
         for r in range(1, ring_num + 1):
             indices = self.ring_indices.get(str(r), [])
             for idx in indices:
-                self.pixels[idx] = color_rgb
+                #self.pixels[idx] = color_rgb
+                self.neo.set_led_color(idx, 255, 0, 0)
+                #self.neo.update_strip()
         
         # Update the LEDs by writing the changes
-        self.pixels.show()
+        #self.pixels.show()
+        self.neo.update_strip()
 
     def clear_leds(self):
         """
         Turns off all LEDs in the array.
         """
-        self.pixels.fill((0, 0, 0))
-        self.pixels.show()
+        self.neo.clear_strip()
+        self.neo.update_strip()
 
 if __name__ == "__main__":
     led_array = LEDArray()
@@ -55,7 +60,7 @@ if __name__ == "__main__":
 
         # Set rings 1-3 to red
         print("Turning on rings 1-3 with red color...")
-        led_array.set_led((255, 0, 0), 3)  # Ring 3 will include rings 1 and 2
+        led_array.set_led((255, 0, 0), 2)  # Ring 3 will include rings 1 and 2
 
         # Keep the LEDs on for a while for observation
         time.sleep(5)
