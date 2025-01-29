@@ -1,5 +1,4 @@
 import board
-#import neopixel
 import json
 import time
 from pi5neo import Pi5Neo
@@ -13,34 +12,34 @@ class LEDArray:
         self.num_led = config['led_array'].get("num_led")
         
         # Retrieve the pin value from config, and set it for neopixel
-        #self.led_pin = getattr(board, config['led_array'].get("led_pin"))
         self.ring_indices = config['led_array'].get("ring_indices", {})
 
-        # Initialize communication with neopixel library
-        #self.pixels = neopixel.NeoPixel(self.led_pin, self.num_led, brightness=0.5, auto_write=False)
-        self.neo = Pi5Neo('/dev/spidev0.0', 21, 800)
+        # Initialize communication with pi5neo library
+        self.neo = Pi5Neo('/dev/spidev0.0', self.num_led, 800)
 
-    def set_led(self, color_rgb, ring_num):
+    def set_led(self, color_rgb, led_index = [], by_ring = True):
         """
         Turns on all LEDs in the specified ring and preceding rings.
         Args:
             color_rgb (tuple): RGB values as (R, G, B).
             ring_num (int): The ring number to turn on (1-indexed).
         """
-        if ring_num < 1 or ring_num > len(self.ring_indices):
-            print(f"Invalid ring number: {ring_num}. Must be between 1 and {len(self.ring_indices)}.")
+        if led_index < 0 or led_index > self.num_leds:
+            print(f"Invalid led index number: {led_index}")
             return
 
         # Turn on LEDs for the specified ring and all preceding rings
-        for r in range(1, ring_num + 1):
-            indices = self.ring_indices.get(str(r), [])
-            for idx in indices:
-                #self.pixels[idx] = color_rgb
-                self.neo.set_led_color(idx, 255, 0, 0)
-                #self.neo.update_strip()
+        if by_ring:
+            for r in range(1, led_index + 1):
+                indices = self.ring_indices.get(str(r), [])
+                for idx in indices:
+                    self.neo.set_led_color(idx, color_rgb)
+        else:
+            for idx in led_index:
+                self.neo.set_led_color(idx, color_rgb)
+            
         
         # Update the LEDs by writing the changes
-        #self.pixels.show()
         self.neo.update_strip()
 
     def clear_leds(self):
@@ -58,9 +57,18 @@ if __name__ == "__main__":
         print("Clearing all LEDs...")
         led_array.clear_leds()
 
-        # Set rings 1-3 to red
-        print("Turning on rings 1-3 with red color...")
-        led_array.set_led((255, 0, 0), 2)  # Ring 3 will include rings 1 and 2
+        # Turn on each led to blue
+        for i in range(led_array.num_led):
+            print(f"turning on led {i}")
+            led_array.set_led((0, 0, 255), [i], by_ring = False)
+            time.sleep(0.1)
+            led_array.clear_leds()
+
+        # Set rings 1-9 to red
+        for i in range(9):
+            print(f"turning on ring {i}")
+            led_array.set_led((255, 0, 0), [i], by_ring = True)
+            time.sleep(1)
 
         # Keep the LEDs on for a while for observation
         time.sleep(5)
