@@ -23,19 +23,19 @@ class LEDArray:
             color_rgb (tuple): RGB values as (R, G, B).
             ring_num (int): The ring number to turn on (1-indexed).
         """
-        if led_index < 0 or led_index > self.num_leds:
+        if led_index[0] < 0 or len(led_index) > self.num_led:
             print(f"Invalid led index number: {led_index}")
             return
 
         # Turn on LEDs for the specified ring and all preceding rings
         if by_ring:
-            for r in range(1, led_index + 1):
+            for r in range(1, led_index[0] + 1):
                 indices = self.ring_indices.get(str(r), [])
                 for idx in indices:
-                    self.neo.set_led_color(idx, color_rgb)
+                    self.neo.set_led_color(idx, *color_rgb)
         else:
             for idx in led_index:
-                self.neo.set_led_color(idx, color_rgb)
+                self.neo.set_led_color(idx, *color_rgb)
             
         
         # Update the LEDs by writing the changes
@@ -60,11 +60,11 @@ if __name__ == "__main__":
         for i in range(led_array.num_led):
             print(f"turning on led {i}")
             led_array.set_led((0, 0, 255), [i], by_ring = False)
-            time.sleep(0.1)
+            time.sleep(0.01)
             led_array.clear_leds()
 
         # Set rings 1-9 to red
-        for i in range(9):
+        for i in range(1,8):
             print(f"turning on ring {i}")
             led_array.set_led((255, 0, 0), [i], by_ring = True)
             time.sleep(1)
