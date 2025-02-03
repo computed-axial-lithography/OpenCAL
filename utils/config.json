@@ -1,13 +1,12 @@
 {
-    "stepper_motor": {
-      "port": "/dev/serial0",    
-      "baudrate": 9600,               
-      "default_speed": 120,       
-      "max_speed": 300,                
-      "steps_per_rev": 200,            
-      "enable_logging": true,          
-      "log_file": "stepper_motor_log.txt"  
-    },
+  "stepper_motor": {
+    "step_pin": 18,
+    "dir_pin": 23,
+    "enable_pin": null,  
+    "default_speed": 120,
+    "default_direction": "CW",
+    "default_steps": 200
+  },
     "camera": {
       "index": 0
     },
