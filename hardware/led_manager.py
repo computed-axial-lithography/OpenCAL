@@ -57,14 +57,14 @@ if __name__ == "__main__":
         led_array.clear_leds()
 
         # Turn on each led to blue
-        for i in range(led_array.num_led):
-            print(f"turning on led {i}")
-            led_array.set_led((0, 0, 255), [i], by_ring = False)
-            time.sleep(0.01)
-            led_array.clear_leds()
+        # for i in range(led_array.num_led):
+        #     print(f"turning on led {i}")
+        #     led_array.set_led((0, 0, 255), [i], by_ring = False)
+        #     time.sleep(0.01)
+        #     led_array.clear_leds()
 
-        # Set rings 1-9 to red
-        for i in range(1,8):
+        # Set rings 1-7 to red
+        for i in range(8):
             print(f"turning on ring {i}")
             led_array.set_led((255, 0, 0), [i], by_ring = True)
             time.sleep(1)

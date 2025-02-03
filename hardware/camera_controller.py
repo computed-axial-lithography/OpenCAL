@@ -2,7 +2,7 @@ import cv2
 import json
 
 class CameraController:
-    def __init__(self, config_file="utils\config.json" ):
+    def __init__(self, config_file="utils/config.json" ):
  
         with open(config_file, 'r') as f:
             config = json.load(f)

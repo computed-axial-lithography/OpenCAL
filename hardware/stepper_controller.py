@@ -3,7 +3,7 @@ import time
 import json
 
 class StepperMotor:
-    def __init__(self, config_file="utils\config.json"):
+    def __init__(self, config_file="utils/config.json"):
         """Initialize UART communication with the stepper motor driver."""
         # Load config from the JSON file
         with open(config_file, 'r') as f:
@@ -32,7 +32,7 @@ class StepperMotor:
         self.serial.write(command.encode())
         print(f"Sent: {command.strip()}")
 
-    def rotate(self, steps=None, direction=None):
+    def rotate_steps(self, steps=None, direction=None):
         """
         Rotate the stepper motor.
         - steps: Number of steps to move.
@@ -43,6 +43,17 @@ class StepperMotor:
         command = f"MOVE:{steps},{direction}\n"
         self.serial.write(command.encode())
         print(f"Sent: {command.strip()}")
+
+    def start_rotation(self, direction=None):
+        """
+        Start rotating the stepper motor continuously at the set speed.
+        - direction: "CW" for clockwise, "CCW" for counterclockwise.
+        """
+        direction = direction or self.default_direction
+        command = f"START:{direction}\n"
+        self.serial.write(command.encode())
+        print(f"Sent: {command.strip()}")
+
 
     def stop(self):
         """Stop the stepper motor."""
@@ -59,7 +70,7 @@ class StepperMotor:
 if __name__ == "__main__":
     motor = StepperMotor()
     motor.set_speed()  # Default speed from config (120 RPM)
-    motor.rotate()  # Default 200 steps, CW from config
+    motor.rotate_steps()  # Default 200 steps, CW from config
     time.sleep(2)  # Wait 2 seconds
     motor.stop()
     motor.close()
