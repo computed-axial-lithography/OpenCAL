@@ -1,5 +1,5 @@
-import RPi.GPIO as GPIO
-import time
+from gpiozero import OutputDevice
+from time import sleep
 import json
 
 class StepperMotor:
@@ -8,19 +8,18 @@ class StepperMotor:
         # Load config from the JSON file
         with open(config_file, 'r') as f:
             config = json.load(f)
-        
+
         self.step_pin = config['stepper_motor'].get("step_pin", 18)  # Set default to GPIO18
         self.dir_pin = config['stepper_motor'].get("dir_pin", 23)   # Set default to GPIO23
         self.enable_pin = config['stepper_motor'].get("enable_pin", None)  # Optional
-        
-        # Setup GPIO
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(self.step_pin, GPIO.OUT)
-        GPIO.setup(self.dir_pin, GPIO.OUT)
+
+        # Setup GPIO with gpiozero OutputDevice (using default pin factory)
+        self.step = OutputDevice(self.step_pin)
+        self.direction = OutputDevice(self.dir_pin)
 
         if self.enable_pin:
-            GPIO.setup(self.enable_pin, GPIO.OUT)
-            GPIO.output(self.enable_pin, GPIO.HIGH)  # Enable the driver by default
+            self.enable = OutputDevice(self.enable_pin)
+            self.enable.on()  # Enable the driver by default
 
         # Default parameters
         self.default_speed = config['stepper_motor'].get("default_speed", 120)
@@ -46,16 +45,16 @@ class StepperMotor:
 
         # Set direction
         if direction == "CW":
-            GPIO.output(self.dir_pin, GPIO.HIGH)  # Clockwise
+            self.direction.on()  # Clockwise
         else:
-            GPIO.output(self.dir_pin, GPIO.LOW)   # Counterclockwise
+            self.direction.off()  # Counterclockwise
 
         # Generate step pulses
         for _ in range(steps):
-            GPIO.output(self.step_pin, GPIO.HIGH)
-            time.sleep(self.step_delay / 2)  # Pulse duration
-            GPIO.output(self.step_pin, GPIO.LOW)
-            time.sleep(self.step_delay / 2)
+            self.step.on()
+            sleep(self.step_delay / 2)  # Pulse duration
+            self.step.off()
+            sleep(self.step_delay / 2)
 
     def start_rotation(self, direction=None):
         """
@@ -67,17 +66,17 @@ class StepperMotor:
 
         # Set direction
         if direction == "CW":
-            GPIO.output(self.dir_pin, GPIO.HIGH)  # Clockwise
+            self.direction.on()  # Clockwise
         else:
-            GPIO.output(self.dir_pin, GPIO.LOW)   # Counterclockwise
+            self.direction.off()  # Counterclockwise
 
         # Generate continuous step pulses
         try:
             while True:
-                GPIO.output(self.step_pin, GPIO.HIGH)
-                time.sleep(self.step_delay / 2)  # Pulse duration
-                GPIO.output(self.step_pin, GPIO.LOW)
-                time.sleep(self.step_delay / 2)
+                self.step.on()
+                sleep(self.step_delay / 2)  # Pulse duration
+                self.step.off()
+                sleep(self.step_delay / 2)
         except KeyboardInterrupt:
             print("Continuous rotation stopped.")
             self.stop()
@@ -87,18 +86,18 @@ class StepperMotor:
         print("Stopping motor.")
         # Optional: Disable the driver if an enable pin is connected
         if self.enable_pin:
-            GPIO.output(self.enable_pin, GPIO.LOW)  # Disable motor
+            self.enable.off()  # Disable motor
 
     def close(self):
-        """Cleanup GPIO and close the communication."""
-        GPIO.cleanup()
-        print("GPIO cleanup done. Connection closed.")
+        """Cleanup GPIO."""
+        print("Closing motor connection.")
+        # gpiozero handles cleanup automatically, no need to explicitly call GPIO.cleanup()
 
 # Example usage (remove or modify during integration)
 if __name__ == "__main__":
     motor = StepperMotor()
-    motor.set_speed()  # Default speed from config (120 RPM)
-    motor.rotate_steps()  # Default 200 steps, CW from config
-    time.sleep(2)  # Wait 2 seconds
+    motor.set_speed(200)  # Default speed from config (120 RPM)
+    motor.start_rotation()  # Default 200 steps, CW from config
+    sleep(2)  # Wait 2 seconds
     motor.stop()
     motor.close()
