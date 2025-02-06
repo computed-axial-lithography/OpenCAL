@@ -31,7 +31,7 @@ class CameraController:
 
 #Test to open webcam and stream image
 if __name__ == "__main__":
-    camera = CameraController(camera_index=0)
+    camera = CameraController()
     try:
         # Start the camera
         camera.start_camera()

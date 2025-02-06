@@ -19,12 +19,18 @@ class StepperMotor:
 
         if self.enable_pin:
             self.enable = OutputDevice(self.enable_pin)
-            self.enable.on()  # Enable the driver by default
+            #self.enable.on()  # Enable the driver by default
 
         # Default parameters
         self.default_speed = config['stepper_motor'].get("default_speed", 120)
         self.default_direction = config['stepper_motor'].get("default_direction", "CW")
         self.default_steps = config['stepper_motor'].get("default_steps", 200)
+
+    def enable(self, enable_on=True):
+        if enable_on:
+            self.enable.on()
+        else:
+            self.enable.off()
 
     def set_speed(self, rpm=None):
         """Set the stepper motor speed in RPM (frequency of step pulses)."""

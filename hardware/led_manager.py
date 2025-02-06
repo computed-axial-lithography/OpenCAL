@@ -1,6 +1,9 @@
 import json
 import time
-from pi5neo import Pi5Neo # type: ignore
+try:
+    from pi5neo import Pi5Neo # type: ignore
+except ImportError as e:
+    print(e)
 
 class LEDArray:
     def __init__(self, config_file="utils/config.json"):
@@ -12,6 +15,8 @@ class LEDArray:
         
         # Retrieve the pin value from config, and set it for neopixel
         self.ring_indices = config['led_array'].get("ring_indices", {})
+
+        self.default_color = config['led_array'].get("ring_indices", [])
 
         # Initialize communication with pi5neo library
         self.neo = Pi5Neo('/dev/spidev0.0', self.num_led, 800)

@@ -1,30 +1,21 @@
-from hardware import HardwareController
-import cv2
+from hardware.hardware_controller import HardwareController
+from gui.gui_handler import GUIHandler
 
-def main():
+def startup_sequence(): 
+    """Run system checks before enabling the GUI."""
+    print("System Starting Up...")
     hardware = HardwareController()
 
-    try:
-        # Start hardware
-        hardware.start_all()
-        print("Press 'q' to quit.")
+    hardware.communication_check()  # Verify hardware comms
+    return hardware
 
-        # Stream video
-        while True:
-            frame = hardware.capture_frame()
-            cv2.imshow("Camera Feed", frame)
-
-            # Break the loop when 'q' is pressed
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-    except Exception as e:
-        print(f"Error: {e}")
-
-    finally:
-        # Stop hardware
-        hardware.stop_all()
-        cv2.destroyAllWindows()
+def main():
+    """Main execution loop handling hardware & GUI interactions."""
+    hardware = startup_sequence()  # Run startup checks
+    
+    gui = GUIHandler(hardware)  # Pass hardware to GUI
+    gui.run()  # Start GUI loop
 
 if __name__ == "__main__":
     main()
+
