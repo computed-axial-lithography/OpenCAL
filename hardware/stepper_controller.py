@@ -26,6 +26,8 @@ class StepperMotor:
         self.default_direction = config['stepper_motor'].get("default_direction", "CW")
         self.default_steps = config['stepper_motor'].get("default_steps", 200)
 
+        self.step_delay = 60 / (self.default_speed * self.default_steps)
+
     def enable(self, enable_on=True):
         if enable_on:
             self.enable.on()
