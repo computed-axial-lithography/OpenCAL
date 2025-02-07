@@ -1,5 +1,5 @@
 from hardware.hardware_controller import HardwareController
-from gui.gui_handler import GUIHandler
+from gui.gui_handler_test import GUIHandler
 
 def startup_sequence(): 
     """Run system checks before enabling the GUI."""

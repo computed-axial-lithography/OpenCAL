@@ -1,90 +1,81 @@
-import serial
+try:
+    import smbus2
+except ImportError:
+    smbus2 = None
+
 import time
-import json
 
 class LCDDisplay:
-    def __init__(self, config_file="utils/config.json"): 
-        """
-        Initialize the LCDController with UART communication.
-        :param port: UART port for communication (e.g., '/dev/serial0' for RPi).
-        :param baudrate: Communication speed.
-        :param timeout: Timeout for UART reads.
-        """
-        with open(config_file, 'r') as f:
-            config = json.load(f)
+    I2C_ADDR = 0x27  # Change if your LCD uses a different I2C address
+    BACKLIGHT = 0x08
+    ENABLE = 0b00000100
+    LINE_ADDRESSES = [0x80, 0xC0, 0x94, 0xD4]  # DDRAM addresses for 20x4 LCD lines
 
-        self.port = config['lcd_display'].get('port')
-        self.baudrate = config['lcd_display'].get('baudrate')
-        self.timeout = config['lcd_display'].get('timeout')
-        self.serial_conn = None
-
-    def start_uart(self):
-        """Initialize the UART communication."""
+    def __init__(self, bus_num=1):
         try:
-            self.serial_conn = serial.Serial(
-                port=self.port,
-                baudrate=self.baudrate,
-                timeout=self.timeout
-            )
-            if self.serial_conn.isOpen():
-                print("UART connection established.")
+            self.bus = smbus2.SMBus(bus_num)
+            self.initialize()
+            self.healthy = True
         except Exception as e:
-            raise IOError(f"Failed to initialize UART: {e}")
+            print(f"LCD Initialization Error: {e}")
+            self.healthy = False
 
-    def send_command(self, command):
-        """
-        Send a raw command to the LCD.
-        :param command: A byte string containing the command.
-        """
-        if self.serial_conn and self.serial_conn.isOpen():
-            self.serial_conn.write(command)
-            print(f"Sent: {command}")
-        else:
-            raise IOError("UART connection is not open.")
+    def send_command(self, cmd):
+        """Send command to LCD."""
+        try:
+            self.bus.write_byte(self.I2C_ADDR, cmd | self.BACKLIGHT)
+            time.sleep(0.0005)
+        except Exception as e:
+            print(f"LCD Command Error: {e}")
 
-    def clear_screen(self):
-        """Clear the LCD screen."""
-        # Assuming 0x01 is the 'clear screen' command for your LCD.
-        self.send_command(b'\x01')
-        time.sleep(0.1)  # Allow the screen to clear.
+    def initialize(self):
+        """Initialize LCD in 4-bit mode (for 20x4 display)."""
+        time.sleep(0.05)  # Allow LCD to power up
+        self.send_command(0x03)
+        self.send_command(0x03)
+        self.send_command(0x03)
+        self.send_command(0x02)  # Set to 4-bit mode
 
-    def display_image(self, image_data):
-        """
-        Display an image on the LCD screen.
-        :param image_data: A byte string representing the image.
-        """
-        # For demonstration purposes, we're sending raw image data.
-        # Actual implementation depends on your LCD's command set.
-        self.send_command(image_data)
+        # Function Set: 4-bit mode, 2-line mode (also supports 20x4)
+        self.send_command(0x28)
+        # Display ON, Cursor OFF, Blink OFF
+        self.send_command(0x0C)
+        # Clear Display
+        self.send_command(0x01)
+        time.sleep(0.002)
 
-    def display_text(self, text):
-        """
-        Display text on the LCD screen.
-        :param text: The text to display.
-        """
-        # Assuming ASCII text can be sent directly.
-        self.send_command(text.encode())
+    def clear(self):
+        """Clear the display."""
+        self.send_command(0x01)
+        time.sleep(0.002)
 
-    def stop_uart(self):
-        """Close the UART connection."""
-        if self.serial_conn and self.serial_conn.isOpen():
-            self.serial_conn.close()
-            print("UART connection closed.")
+    def set_cursor(self, row, col):
+        """Set cursor position (row: 0-3, col: 0-19)."""
+        if 0 <= row < 4 and 0 <= col < 20:
+            self.send_command(self.LINE_ADDRESSES[row] + col)
 
-    def startup_sequence(self):
-        """Run a startup sequence with an image or message."""
-        self.clear_screen()
-        self.display_text("Starting Up...")
-        time.sleep(2)
-        # Display a simple startup logo (replace with your image data).
-        self.display_image(b'\x00\x00\xFF\xFF\x00\x00')
+    def display_text(self, text, row=0):
+        """Write text to a specific row on the LCD."""
+        if not self.healthy:
+            print("LCD not initialized properly.")
+            return
 
-if __name__ == "__main__":
+        self.set_cursor(row, 0)  # Move to start of row
+
+        for char in text[:20]:  # Limit to 20 characters per line
+            self.bus.write_byte(self.I2C_ADDR, ord(char) | self.BACKLIGHT)
+            time.sleep(0.0005)
+
+    def close(self):
+        """Cleanup and close SMBus."""
+        self.bus.close()
+if __name__=="__main__":
     lcd = LCDDisplay()
     try:
-        lcd.start_uart()
-        lcd.startup_sequence()
-    except Exception as e:
-        print(f"Error: {e}")
+        lcd.display_text("Hello, World!", 0)
+        time.sleep(2)
+        lcd.clear()
+        lcd.display_text("3D Printer Ready", 1)
+        time.sleep(2)
     finally:
-        lcd.stop_uart()
+        lcd.close()

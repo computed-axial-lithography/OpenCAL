@@ -1,6 +1,9 @@
 from .camera_controller import CameraController
 from .stepper_controller import StepperMotor
 from .led_manager import LEDArray
+from .lcd_display import LCDDisplay
+from .rotary_controller import RotaryEncoder
+
 import time
 import cv2
 
@@ -10,6 +13,9 @@ class HardwareController:
         self.camera = None
         self.stepper = None
         self.led_array = None
+        self.lcd = None
+        self.rotary = None
+
         self.errors = []
         self.healthy = True
 
@@ -29,6 +35,18 @@ class HardwareController:
             self.led_array = LEDArray()
         except Exception as e:
             self.errors.append(f"LEDArray failed: {e}")
+            self.healthy = False
+
+        try:
+            self.lcd = LCDDisplay()
+        except Exception as e:
+            self.errors.append(f"LCDDisplay failed: {e}")
+            self.healthy = False
+
+        try:
+            self.rotary = RotaryEncoder()   
+        except Exception as e:
+            self.errors.append(f"RotaryEncoder failed: {e}")
             self.healthy = False
 
         # More components can be added here
