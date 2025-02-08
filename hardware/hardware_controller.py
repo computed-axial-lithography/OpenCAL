@@ -49,23 +49,18 @@ class HardwareController:
             self.errors.append(f"RotaryEncoder failed: {e}")
             self.healthy = False
 
-        # More components can be added here
-        # try:
-        #     self.projector = ProjectorController()
-        # except Exception as e:
-        #     self.errors.append(f"ProjectorController failed: {e}")
 
     def communication_check(self):
-        print("\n🔍 Running hardware communication check...")
+        print("\nRunning hardware communication check...")
 
         if self.errors:
-            print("⚠️ Errors detected:")
+            print("Errors detected:")
             for error in self.errors:
                 print(f"  - {error}")
-            print("⛔ Hardware check failed. Fix issues before proceeding.")
+            print("Hardware check failed. Fix issues before proceeding.")
             self.healthy = False
         else:
-            print("✅ All hardware components are detected and responsive.")
+            print("All hardware components are detected and responsive.")
             self.healthy = True
 
     def actuation_test(self):

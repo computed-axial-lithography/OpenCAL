@@ -5,7 +5,7 @@
     "enable_pin": null,  
     "default_speed": 120,
     "default_direction": "CW",
-    "default_steps": 200
+    "default_steps": 1600
   },
     "camera": {
       "index": 0

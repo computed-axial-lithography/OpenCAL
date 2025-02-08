@@ -22,7 +22,7 @@ class GUIHandler:
             self.error_label.pack()
 
         # Stepper Control Button (Enable if stepper is OK)
-        self.stepper_button = tk.Button(self.root, text="Move Stepper", command=self.move_stepper)
+        self.stepper_button = tk.Button(self.root, text="Move Stepper", command=self.hardware.stepper.rotate_steps)
         self.stepper_button.pack()
         if any("Stepper" in error for error in self.hardware.errors):
             self.stepper_button.config(state=tk.DISABLED)
@@ -35,11 +35,6 @@ class GUIHandler:
 
         # Track LED state
         self.led_on = False
-
-    def move_stepper(self):
-        """Move stepper motor if hardware is functional"""
-        self.status_label.config(text="Stepper Moving...")
-        Thread(target=self.hardware.stepper.rotate_steps).start()
 
     def toggle_leds(self):
         """Toggle LEDs on/off"""
