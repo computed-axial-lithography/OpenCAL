@@ -68,8 +68,8 @@ if __name__ == "__main__":
         #     time.sleep(0.01)
         #     led_array.clear_leds()
 
-        # Set rings 1-7 to red
-        for i in range(8):
+        # Set rings 0-3 to red
+        for i in range(4):
             print(f"turning on ring {i}")
             led_array.set_led((255, 0, 0), [i], by_ring = True)
             time.sleep(1)
