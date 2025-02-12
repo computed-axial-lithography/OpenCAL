@@ -1,8 +1,7 @@
 import time
 from threading import Thread
-import RPi.GPIO as GPIO
+from gpiozero import Button, RotaryEncoder
 from lcd_driver import LCD
-from rotary_encoder import RotaryEncoder
 
 class LCDGUI:
     def __init__(self, lcd, encoder):
@@ -17,8 +16,8 @@ class LCDGUI:
         self.menu_stack = [list(self.menu.keys())]
         self.selected_index = 0
         
-        self.encoder.set_callback(self.handle_encoder)
-        self.encoder.set_select_callback(self.handle_select)
+        self.encoder.when_rotated = self.handle_encoder
+        self.encoder.button.when_pressed = self.handle_select
         
         self.running = True
         Thread(target=self.update_display, daemon=True).start()
@@ -29,8 +28,8 @@ class LCDGUI:
             self.lcd.write(menu_items[self.selected_index], 1)
             time.sleep(0.1)
     
-    def handle_encoder(self, direction):
-        if direction == "CW":
+    def handle_encoder(self):
+        if self.encoder.steps > 0:
             self.selected_index = (self.selected_index + 1) % len(self.menu_stack[-1])
         else:
             self.selected_index = (self.selected_index - 1) % len(self.menu_stack[-1])
@@ -51,11 +50,12 @@ class LCDGUI:
     
     def cleanup(self):
         self.running = False
-        self.encoder.cleanup()
+        self.encoder.close()
 
 if __name__ == "__main__":
     lcd = LCD()
-    encoder = RotaryEncoder()
+    encoder = RotaryEncoder(17, 18)
+    encoder.button = Button(27)
     gui = LCDGUI(lcd, encoder)
     try:
         while True:
