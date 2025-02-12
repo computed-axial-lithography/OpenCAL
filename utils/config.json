@@ -33,6 +33,11 @@
       "clk_pin": 5,
       "dt_pin": 6,
       "btn_pin": 13
+    },
+    "projector": {
+      "framebuffer_path": "/dev/fb0",
+      "screen_width": 4320,
+      "screen_height": 2840
     }
 
 }
