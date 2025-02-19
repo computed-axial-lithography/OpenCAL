@@ -9,9 +9,9 @@ class StepperMotor:
         with open(config_file, 'r') as f:
             config = json.load(f)
 
-        self.step_pin = config['stepper_motor'].get("step_pin", 18)  # Set default to GPIO18
+        self.step_pin = config['stepper_motor'].get("step_pin", 22)  # Set default to GPIO18
         self.dir_pin = config['stepper_motor'].get("dir_pin", 23)   # Set default to GPIO23
-        self.enable_pin = config['stepper_motor'].get("enable_pin", None)  # Optional
+        self.enable_pin = config['stepper_motor'].get("enable_pin", 27)  # Optional
 
         # Setup GPIO with gpiozero OutputDevice (using default pin factory)
         self.step = OutputDevice(self.step_pin)
@@ -22,7 +22,7 @@ class StepperMotor:
             #self.enable.on()  # Enable the driver by default
 
         # Default parameters
-        self.default_speed = config['stepper_motor'].get("default_speed", 120)
+        self.default_speed = config['stepper_motor'].get("default_speed", 20)
         self.default_direction = config['stepper_motor'].get("default_direction", "CW")
         self.default_steps = config['stepper_motor'].get("default_steps", 1600)
 

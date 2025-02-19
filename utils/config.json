@@ -1,9 +1,9 @@
 {
   "stepper_motor": {
-    "step_pin": 18,
+    "step_pin": 22,
     "dir_pin": 23,
-    "enable_pin": null,  
-    "default_speed": 120,
+    "enable_pin": 27,  
+    "default_speed": 20,
     "default_direction": "CW",
     "default_steps": 1600
   },
@@ -12,7 +12,6 @@
     },
     "led_array": {
       "num_led": 37,
-      "led_pin": "18",
       "default_color":[255,0,0],
       "ring_indices": {
         "0": [36],

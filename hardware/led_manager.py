@@ -19,32 +19,26 @@ class LEDArray:
         self.default_color = config['led_array'].get("ring_indices", [])
 
         # Initialize communication with pi5neo library
-        self.neo = Pi5Neo('/dev/spidev0.0', self.num_led, 800)
+        self.neo = Pi5Neo('/dev/spidev0.0', self.num_led, 800) #using pin 19, GPIO 10
 
-    def set_led(self, color_rgb, led_index = [], by_ring = True):
+    def set_led(self, color_rgb, led_index = [], set_all = True):
         """
-        Turns on all LEDs in the specified ring and preceding rings.
+        Turns on LEDs at the specified index, or all LEDs if set_all is True.
         Args:
             color_rgb (tuple): RGB values as (R, G, B).
-            ring_num (int): The ring number to turn on (1-indexed).
+            led_index (list): List of LED indices to turn on.
+            set_all (bool): If True, turn on all LEDs.
         """
-        if led_index[0] < 0 or len(led_index) > self.num_led:
-            print(f"Invalid led index number: {led_index}")
-            return
-
-        # Turn on LEDs for the specified ring and all preceding rings
-        if by_ring:
-            for r in range(1, led_index[0] + 1):
-                indices = self.ring_indices.get(str(r), [])
-                for idx in indices:
-                    self.neo.set_led_color(idx, *color_rgb)
+        if set_all:
+            print("Turning on all LEDs...")
+            self.neo.set_all_leds(*color_rgb)
         else:
+            print(f"Turning on LEDs at indices: {led_index}")   
             for idx in led_index:
-                self.neo.set_led_color(idx, *color_rgb)
-            
-        
-        # Update the LEDs by writing the changes
+                self.neo.set_led_color(idx, *color_rgb) 
         self.neo.update_strip()
+        print("LEDs updated.")
+
 
     def clear_leds(self):
         """
@@ -61,23 +55,10 @@ if __name__ == "__main__":
         print("Clearing all LEDs...")
         led_array.clear_leds()
 
-        # Turn on each led to blue
-        # for i in range(led_array.num_led):
-        #     print(f"turning on led {i}")
-        #     led_array.set_led((0, 0, 255), [i], by_ring = False)
-        #     time.sleep(0.01)
-        #     led_array.clear_leds()
+        print("Turning on all LEDs to red for 10 seconds...")
+        led_array.set_led((255, 0, 0), set_all = True)   
+        time.sleep(10)
 
-        # Set rings 0-3 to red
-        for i in range(4):
-            print(f"turning on ring {i}")
-            led_array.set_led((255, 0, 0), [i], by_ring = True)
-            time.sleep(1)
-
-        # Keep the LEDs on for a while for observation
-        time.sleep(5)
-
-        # Clear LEDs after the test
         print("Clearing LEDs...")
         led_array.clear_leds()
 
