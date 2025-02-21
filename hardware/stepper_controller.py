@@ -104,7 +104,7 @@ class StepperMotor:
 # Example usage (remove or modify during integration)
 if __name__ == "__main__":
     motor = StepperMotor()
-    motor.set_speed(200)  # Default speed from config (120 RPM)
+    motor.set_speed(10) # Default speed from config (120 RPM)
     motor.start_rotation()  # Default 200 steps, CW from config
     sleep(2)  # Wait 2 seconds
     motor.stop()
