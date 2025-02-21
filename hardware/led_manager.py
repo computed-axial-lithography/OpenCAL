@@ -31,7 +31,9 @@ class LEDArray:
         """
         if set_all:
             print("Turning on all LEDs...")
-            self.neo.set_all_leds(*color_rgb)
+            for idx in range(self.num_led):
+                self.neo.set_led_color(idx, *color_rgb)
+            
         else:
             print(f"Turning on LEDs at indices: {led_index}")   
             for idx in led_index:
