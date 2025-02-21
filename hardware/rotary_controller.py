@@ -45,7 +45,7 @@ class RotaryEncoderHandler:
 
 if __name__ == "__main__":
     # Example usage
-    encoder = RotaryEncoderHandler(clk_pin=17, dt_pin=27, btn_pin=22)
+    encoder = RotaryEncoderHandler()
     try:
         print("Rotary Encoder Test. Press Ctrl+C to exit.")
         while True:

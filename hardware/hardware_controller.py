@@ -2,7 +2,7 @@ from .camera_controller import CameraController
 from .stepper_controller import StepperMotor
 from .led_manager import LEDArray
 from .lcd_display import LCDDisplay
-from .rotary_controller import RotaryEncoder
+from .rotary_controller import RotaryEncoderHandler
 
 import time
 import cv2
@@ -44,7 +44,7 @@ class HardwareController:
             self.healthy = False
 
         try:
-            self.rotary = RotaryEncoder()   
+            self.rotary = RotaryEncoderHandler()   
         except Exception as e:
             self.errors.append(f"RotaryEncoder failed: {e}")
             self.healthy = False
