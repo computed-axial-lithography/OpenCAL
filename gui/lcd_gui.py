@@ -17,7 +17,7 @@ class LCDGui:
             "Move Stepper": ['back', 'Rotate CW', 'Rotate CCW'],
             "Settings": ['back', ' set opt 1', 'set opt 2'],
         }
-        self.callbacks = {
+        self.menu_callbacks = {
             'Turn on LEDs': lambda: self.hardware.led_array.set_led((255, 0, 0), set_all=True),
             'Turn off LEDs': self.hardware.led_array.clear_leds,
             'Rotate CW': lambda: self.hardware.stepper.rotate_steps(100),
@@ -33,8 +33,10 @@ class LCDGui:
     def show_startup_screen(self):
         """Display the startup screen with 'Hello User!'."""
         self.hardware.lcd.clear()
-        self.hardware.lcd.write_message("Hello", 1, 7)
-        self.hardware.lcd.write_message("User!", 2, 7)
+        # self.hardware.lcd.write_message("Hello", 1, 7)
+        # self.hardware.lcd.write_message("User!", 2, 7)
+        self.hardware.lcd.write_message("For", 2, 8)
+        self.hardware.lcd.write_message("The Community", 2, 3)
         time.sleep(5)  # Display for 2 seconds
 
     def show_menu(self, menu):
@@ -86,8 +88,8 @@ class LCDGui:
         if option in self.menu_dict:  # If it's a submenu
             self.menu_stack.append(self.current_menu)
             self.show_menu(option)
-        elif option in self.callbacks:
-            self.callbacks[option]() 
+        elif option in self.menu_callbacks:
+            self.menu_callbacks[option]() 
 
 
     def run(self):
