@@ -15,7 +15,7 @@ class LCDGui:
             "Print from USB": ['back', 'idk yet'],
             "Manual Control": ['back','Turn on LEDs', 'Turn off LEDs', 'Move Stepper'],
             "Move Stepper": ['back', 'Rotate CW', 'Rotate CCW'],
-            "Settings": ['back', ' set opt 1', 'set opt 2'],
+            "Settings": ['back', 'set opt 1', 'set opt 2'],
         }
         self.menu_callbacks = {
             'Turn on LEDs': lambda: self.hardware.led_array.set_led((255, 0, 0), set_all=True),
@@ -29,23 +29,26 @@ class LCDGui:
         self.view_start = 0  # Tracks the start of the visible menu slice
         self.view_size = 4  # Number of menu items visible at once
         self.last_rotary_position = self.hardware.rotary.get_position()
+        self.last_button_press_time = 0  # For button debouncing
 
     def show_startup_screen(self):
         """Display the startup screen with 'Hello User!'."""
         self.hardware.lcd.clear()
-        # self.hardware.lcd.write_message("Hello", 1, 7)
-        # self.hardware.lcd.write_message("User!", 2, 7)
-        self.hardware.lcd.write_message("For", 2, 8)
+        self.hardware.lcd.write_message("For", 1, 8)
         self.hardware.lcd.write_message("The Community", 2, 3)
-        time.sleep(5)  # Display for 2 seconds
+        time.sleep(2)  # Display for 5 seconds
 
     def show_menu(self, menu):
         """Display a given menu on the LCD."""
-        self.current_menu = menu
-        self.hardware.lcd.clear()  # Clear the display before showing a new menu
-        menu_list = self.menu_dict.get(menu,[])
-        for idx in range(len(menu_list)):
-            self.hardware.lcd.write_message(menu_list[idx],idx,1)
+        if menu != self.current_menu:
+            self.current_index = 0
+            self.current_menu = menu
+            
+            self.hardware.lcd.clear()  # Clear the display before showing a new menu
+            menu_list = self.menu_dict.get(menu, [])
+            for idx in range(len(menu_list)):
+                self.hardware.lcd.write_message(menu_list[idx], idx, 1)
+            time.sleep(0.1)
 
     def navigate(self):
         """Handle menu navigation based on rotary encoder movement with scrolling."""
@@ -68,13 +71,11 @@ class LCDGui:
             self.view_start = self.current_index - self.view_size + 1
 
         # Display visible menu items
-        self.hardware.lcd.clear()
         for i in range(self.view_size):
             menu_idx = self.view_start + i
             if menu_idx < menu_length:
                 prefix = ">" if menu_idx == self.current_index else " "
-                self.hardware.lcd.write_message(f"{prefix}{menu_list[menu_idx]}", i, 1)
-
+                self.hardware.lcd.write_message(f"{prefix}{menu_list[menu_idx]}", i, 0)
 
     def select_option(self):
         """Handle menu selection."""
@@ -83,26 +84,41 @@ class LCDGui:
         if option == "back":
             if self.menu_stack:
                 self.show_menu(self.menu_stack.pop())
-            return
         
-        if option in self.menu_dict:  # If it's a submenu
+        elif option in self.menu_dict:  # If it's a submenu
             self.menu_stack.append(self.current_menu)
             self.show_menu(option)
+
         elif option in self.menu_callbacks:
             self.menu_callbacks[option]() 
 
+        self.navigate()
+        time.sleep(0.5)
+
+    def button_press_handler(self):
+        """Handles button press and debouncing."""
+        current_time = time.time()
+        # Only process the button press if enough time has passed since the last press (debouncing)
+        if current_time - self.last_button_press_time > 1:  # seconds debounce time
+            self.select_option()
+            self.last_button_press_time = current_time
 
     def run(self):
         """Main method to run the GUI."""
         self.show_startup_screen()
         
         self.show_menu('main')
+        self.navigate()
 
         while True:
-            self.navigate()
-            time.sleep(0.1)
-            self.hardware.rotary.button.when_pressed = self.select_option
-            time.sleep(0.1)
+            self.hardware.rotary.encoder.when_rotated = self.navigate
+            #self.navigate()  # Update the screen based on rotary input
+            time.sleep(0.1)  # Allow time for screen updates
+            
+            # Button press handler, explicitly called to manage debouncing
+            self.hardware.rotary.button.when_pressed = self.button_press_handler
+
+            time.sleep(0.1)  # Prevent excessive CPU usage
 
 if __name__ == "__main__":
     gui = LCDGui()
