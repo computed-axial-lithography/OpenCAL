@@ -1,5 +1,5 @@
 from hardware.hardware_controller import HardwareController
-from gui.gui_handler_test import GUIHandler
+from gui.lcd_gui import LCDGui
 
 def startup_sequence(): 
     """Run system checks before enabling the GUI."""
@@ -13,7 +13,7 @@ def main():
     """Main execution loop handling hardware & GUI interactions."""
     hardware = startup_sequence()  # Run startup checks
     
-    gui = GUIHandler(hardware)  # Pass hardware to GUI
+    gui = LCDGui(hardware)  # Pass hardware to GUI
     gui.run()  # Start GUI loop
 
 if __name__ == "__main__":

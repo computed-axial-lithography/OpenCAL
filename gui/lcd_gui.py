@@ -13,12 +13,15 @@ class LCDGui:
         self.menu_dict = {
             "main": ['Print from USB', 'Manual Control', 'Settings'],
             "Print from USB": ['back', 'idk yet'],
-            "Manual Control": ['back','Turn on LEDs', 'Turn off LEDs'],
-            "Settings": ['back', ' set opt 1', 'set opt 2']
+            "Manual Control": ['back','Turn on LEDs', 'Turn off LEDs', 'Move Stepper'],
+            "Move Stepper": ['back', 'Rotate CW', 'Rotate CCW'],
+            "Settings": ['back', ' set opt 1', 'set opt 2'],
         }
         self.callbacks = {
             'Turn on LEDs': lambda: self.hardware.led_array.set_led((255, 0, 0), set_all=True),
-            'Turn off LEDs': self.hardware.led_array.clear_leds
+            'Turn off LEDs': self.hardware.led_array.clear_leds,
+            'Rotate CW': lambda: self.hardware.stepper.rotate_steps(100),
+            'Rotate CCW': lambda: self.hardware.stepper.rotate_steps(-100),
         }
         self.menu_stack = []  # Stack to keep track of menu navigation
         self.current_menu = 'main'  # Currently displayed menu
