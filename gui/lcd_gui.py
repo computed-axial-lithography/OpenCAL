@@ -1,91 +1,103 @@
 import sys
 import os
+import time
 
 # Add the parent directory of 'gui' to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-
 from hardware.hardware_controller import HardwareController
-import time
 
 class LCDGui:
-    def __init__(self):
-        self.hardware = HardwareController()
-        self.row = 0
+    def __init__(self, hardware=HardwareController()):
+        self.hardware = hardware
+        self.menu_dict = {
+            "main": ['Print from USB', 'Manual Control', 'Settings'],
+            "Print from USB": ['back', 'idk yet'],
+            "Manual Control": ['back','Turn on LEDs', 'Turn off LEDs'],
+            "Settings": ['back', ' set opt 1', 'set opt 2']
+        }
+        self.callbacks = {
+            'Turn on LEDs': lambda: self.hardware.led_array.set_led((255, 0, 0), set_all=True),
+            'Turn off LEDs': self.hardware.led_array.clear_leds
+        }
+        self.menu_stack = []  # Stack to keep track of menu navigation
+        self.current_menu = 'main'  # Currently displayed menu
+        self.current_index = 0  # Index of selected menu item
+        self.view_start = 0  # Tracks the start of the visible menu slice
+        self.view_size = 4  # Number of menu items visible at once
+        self.last_rotary_position = self.hardware.rotary.get_position()
 
     def show_startup_screen(self):
         """Display the startup screen with 'Hello User!'."""
         self.hardware.lcd.clear()
-        self.hardware.lcd.write_message("Hello User!", 0, 0)
-        time.sleep(2)  # Display for 2 seconds
+        self.hardware.lcd.write_message("Hello", 1, 7)
+        self.hardware.lcd.write_message("User!", 2, 7)
+        time.sleep(5)  # Display for 2 seconds
 
-    def show_main_menu(self):
-        """Display the main menu with 'Manual Control' option."""
-        self.hardware.lcd.clear()
-        self.hardware.lcd.write_message("Manual Control", 0, 1)
+    def show_menu(self, menu):
+        """Display a given menu on the LCD."""
+        self.current_menu = menu
+        self.hardware.lcd.clear()  # Clear the display before showing a new menu
+        menu_list = self.menu_dict.get(menu,[])
+        for idx in range(len(menu_list)):
+            self.hardware.lcd.write_message(menu_list[idx],idx,1)
 
-    def show_manual_control(self):
-        """Display the manual control menu."""
-        self.hardware.lcd.clear()
-        self.hardware.lcd.write_message("Turn on LEDs", 0, 1)
-
-    def handle_menu_navigation(self):
-        """Navigate through the menu using the rotary encoder."""
-        # Get the current position of the rotary encoder
+    def navigate(self):
+        """Handle menu navigation based on rotary encoder movement with scrolling."""
         position = self.hardware.rotary.get_position()
+        menu_list = self.menu_dict[self.current_menu]
+        menu_length = len(menu_list)
+
+        # Determine movement direction
+        if position > self.last_rotary_position and self.current_index < menu_length - 1:
+            self.current_index += 1
+        elif position < self.last_rotary_position and self.current_index > 0:
+            self.current_index -= 1
+
+        self.last_rotary_position = position  # Update last position
+
+        # Handle scrolling logic
+        if self.current_index < self.view_start:  # Scroll up
+            self.view_start = self.current_index
+        elif self.current_index >= self.view_start + self.view_size:  # Scroll down
+            self.view_start = self.current_index - self.view_size + 1
+
+        # Display visible menu items
+        self.hardware.lcd.clear()
+        for i in range(self.view_size):
+            menu_idx = self.view_start + i
+            if menu_idx < menu_length:
+                prefix = ">" if menu_idx == self.current_index else " "
+                self.hardware.lcd.write_message(f"{prefix}{menu_list[menu_idx]}", i, 1)
+
+
+    def select_option(self):
+        """Handle menu selection."""
+        option = self.menu_dict.get(self.current_menu, [])[self.current_index]
+
+        if option == "back":
+            if self.menu_stack:
+                self.show_menu(self.menu_stack.pop())
+            return
         
-        # Update the LCD display with the current selection
-        # self.hardware.lcd.clear()
-        if 0<=position<=3:
-            for idx in range(4):
-                if idx == position:
-
-                    self.hardware.lcd.write_message(">",idx,0)  # Highlight the current selection
-                else:
-
-                    self.hardware.lcd.write_message(" ",idx,0)  # Highlight the current selection
-
-
-
+        if option in self.menu_dict:  # If it's a submenu
+            self.menu_stack.append(self.current_menu)
+            self.show_menu(option)
+        elif option in self.callbacks:
+            self.callbacks[option]() 
 
 
     def run(self):
         """Main method to run the GUI."""
-        # Show startup screen
         self.show_startup_screen()
+        
+        self.show_menu('main')
 
-        # Show the main menu
-        self.show_main_menu()
-
-        # Navigate and handle button press for selection
         while True:
-            self.handle_menu_navigation()
-            #print(self.hardware.rotary.get_position())
-
-            # Simulate rotary rotary interaction
-            time.sleep(0.1)  # Sleep for a bit to simulate rotary read cycle
-
-            if self.hardware.rotary.was_button_pressed():  # If button is pressed
-                if self.hardware.rotary.get_position() == 0: 
-                    while self.hardware.rotary.was_button_pressed():  # Wait for button release
-                        time.sleep(0.01) # If "Manual Control" is selected
-                    self.show_manual_control()
-                    
-                    if self.hardware.rotary.was_button_pressed():
-                        if self.hardware.rotary.get_position() == 0:
-                            self.hardware.led_array.set_led((255, 0, 0), set_all = True)
-                    #time.sleep(2)  # Pause for 2 seconds before next interaction
-
-                    # Now let's simulate the LED control option (you will handle this part)
-                    # Pseudocode for turning on the LEDs
-                    # turn_on_leds()
-
-                    
-
-            # Rotate to simulate user interaction
-            #self.hardware.rotary.rotate(1)  # Rotate clockwise
-            # If you want to reverse, rotate(-1) for counter-clockwise navigation
-            
+            self.navigate()
+            time.sleep(0.1)
+            self.hardware.rotary.button.when_pressed = self.select_option
+            time.sleep(0.1)
 
 if __name__ == "__main__":
     gui = LCDGui()
