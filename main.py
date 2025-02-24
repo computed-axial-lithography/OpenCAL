@@ -6,14 +6,14 @@ def startup_sequence():
     print("System Starting Up...")
     hardware = HardwareController()
 
-    hardware.communication_check()  # Verify hardware comms
+    #hardware.communication_check()  # Verify hardware comms
     return hardware
 
 def main():
     """Main execution loop handling hardware & GUI interactions."""
     hardware = startup_sequence()  # Run startup checks
     
-    gui = LCDGui(hardware)  # Pass hardware to GUI
+    gui = LCDGui()  # Pass hardware to GUI
     gui.run()  # Start GUI loop
 
 if __name__ == "__main__":

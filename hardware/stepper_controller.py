@@ -1,15 +1,16 @@
 from gpiozero import OutputDevice
 from time import sleep
 import json
+import threading
 
 class StepperMotor:
-    def __init__(self, config_file="utils/config.json"):
+    def __init__(self, config_file="OpenCAL/utils/config.json"):
         """Initialize GPIO communication with the stepper motor driver (Step/Dir mode)."""
         # Load config from the JSON file
         with open(config_file, 'r') as f:
             config = json.load(f)
 
-        self.step_pin = config['stepper_motor'].get("step_pin", 22)  # Set default to GPIO18
+        self.step_pin = config['stepper_motor'].get("step_pin", 18)  # Set default to GPIO18
         self.dir_pin = config['stepper_motor'].get("dir_pin", 23)   # Set default to GPIO23
         self.enable_pin = config['stepper_motor'].get("enable_pin", 27)  # Optional
 
@@ -19,7 +20,7 @@ class StepperMotor:
 
         if self.enable_pin:
             self.enable = OutputDevice(self.enable_pin)
-            #self.enable.on()  # Enable the driver by default
+            self.enable.on()  # Enable the driver by default
 
         # Default parameters
         self.default_speed = config['stepper_motor'].get("default_speed", 20)
@@ -27,6 +28,8 @@ class StepperMotor:
         self.default_steps = config['stepper_motor'].get("default_steps", 1600)
 
         self.step_delay = 60 / (self.default_speed * self.default_steps)
+        self._rotation_thread = None  # Reference to the rotation thread
+        self._running = False  # Flag to control whether the motor is running
 
     def enable(self, enable_on=True):
         if enable_on:
@@ -79,20 +82,32 @@ class StepperMotor:
             self.direction.off()  # Counterclockwise
 
         # Generate continuous step pulses
+        if not self._running:
+            self._running = True
+            self._rotation_thread = threading.Thread(target=self._rotate_motor)
+            self._rotation_thread.daemon = True  # Ensure the thread terminates with the program
+            self._rotation_thread.start()
+
+    def _rotate_motor(self):
+        """Rotate the motor continuously in a separate thread."""
         try:
-            while True:
+            while self._running:
                 self.step.on()
                 sleep(self.step_delay / 2)  # Pulse duration
                 self.step.off()
                 sleep(self.step_delay / 2)
         except KeyboardInterrupt:
-            print("Continuous rotation stopped.")
+            print("Continuous rotation interrupted.")
             self.stop()
 
     def stop(self):
-        """Stop the stepper motor."""
-        print("Stopping motor.")
-        # Optional: Disable the driver if an enable pin is connected
+        """Stop the rotation."""
+        print("Stopping the motor.")
+        self._running = False  # Set the flag to stop the rotation
+        if self._rotation_thread is not None:
+            self._rotation_thread.join()  # Wait for the thread to finish cleanly
+        self.step.off()
+        #self.direction.off()
         if self.enable_pin:
             self.enable.off()  # Disable motor
 
@@ -104,7 +119,7 @@ class StepperMotor:
 # Example usage (remove or modify during integration)
 if __name__ == "__main__":
     motor = StepperMotor()
-    motor.set_speed(10) # Default speed from config (120 RPM)
+    motor.set_speed(20) # Default speed from config (120 RPM)
     motor.start_rotation()  # Default 200 steps, CW from config
     sleep(2)  # Wait 2 seconds
     motor.stop()

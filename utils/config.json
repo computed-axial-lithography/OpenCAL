@@ -1,6 +1,6 @@
 {
   "stepper_motor": {
-    "step_pin": 22,
+    "step_pin": 18,
     "dir_pin": 23,
     "enable_pin": 27,  
     "default_speed": 20,
