@@ -3,25 +3,21 @@ import numpy as np
 import json
 
 class ProjectorController:
-    def __init__(self, config_file="utils/config.json"):
-                 
+    def __init__(self, config_file="OpenCAL/utils/config.json"):
         with open(config_file, 'r') as f:
             config = json.load(f)
-        self.screen_width = config['projector'].get("screen_width")
-        self.screen_height = config['projector'].get("screen_height")
         self.framebuffer_path = config['projector'].get('framebuffer_path')
 
     def display_image(self, image_path):
-        """Loads an image, resizes it to match screen resolution, and writes it to the framebuffer."""
+        """Loads an image and writes it to the framebuffer without resizing or manipulation."""
         try:
-            # Load and resize the image
+            # Load the image (no resizing)
             img = Image.open(image_path).convert("RGB")
-            img = img.resize((self.screen_width, self.screen_height))
             
-            # Convert to raw bytes
-            img_array = np.array(img, dtype=np.uint16)
+            # Convert the image to raw bytes (8-bit per channel, 24-bit color)
+            img_array = np.array(img, dtype=np.uint8)  # uint8 for 24-bit color (RGB)
             
-            # Write to framebuffer
+            # Write the image data to the framebuffer
             with open(self.framebuffer_path, "wb") as f:
                 f.write(img_array.tobytes())
             
@@ -32,4 +28,4 @@ class ProjectorController:
 # Example usage
 if __name__ == "__main__":
     projector = ProjectorController()
-    projector.display_image("utils/water-lily-2840_4320.jpg")
+    projector.display_image("/home/opencal/opencal/OpenCAL/hardware/water-lily-2840_4320.jpg")

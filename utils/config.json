@@ -31,7 +31,7 @@
       "btn_pin": 19
     },
     "projector": {
-      "framebuffer_path": "/dev/fb0",
+      "framebuffer_path": "/dev/fb1",
       "screen_width": 4320,
       "screen_height": 2840
     }

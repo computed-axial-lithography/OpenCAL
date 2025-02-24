@@ -34,9 +34,12 @@ class LCDGui:
     def show_startup_screen(self):
         """Display the startup screen with 'Hello User!'."""
         self.hardware.lcd.clear()
-        self.hardware.lcd.write_message("For", 1, 8)
-        self.hardware.lcd.write_message("The Community", 2, 3)
+        self.hardware.lcd.write_message("Open   ".center(20), 1, 0)
+        time.sleep(2)
+        self.hardware.lcd.write_message("OpenCAL".center(20), 1, 0)
         time.sleep(2)  # Display for 2 seconds
+        self.hardware.lcd.write_message("FOR THE COMMUNITY".center(20), 2, 0)
+        time.sleep(1)
 
     def show_menu(self, menu):
         """Display a given menu on the LCD."""
