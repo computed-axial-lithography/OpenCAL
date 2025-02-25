@@ -30,22 +30,34 @@
 #     projector = ProjectorController()
 #     projector.display_image("/home/opencal/opencal/OpenCAL/hardware/water-lily-2840_4320.jpg")
 
-
 import os
 import pygame
 
-os.environ["SDL_VIDEO_FULLSCREEN_HEAD"] = "1"  # Use display 1 (HDMI)
 pygame.init()
 
+# Get number of displays and select the second one if available
+num_displays = pygame.display.get_num_displays()
+print('num_displays', num_displays)
+if num_displays > 1:
+    os.environ["SDL_VIDEO_FULLSCREEN_DISPLAY"] = "1"  # Use second display
+else:
+    os.environ["SDL_VIDEO_FULLSCREEN_DISPLAY"] = "0"  # Default to first display
+
+# Open a fullscreen window on the chosen display
 screen = pygame.display.set_mode((800, 480), pygame.FULLSCREEN)
+pygame.display.set_caption("Auto Detect Monitor")
+
 image = pygame.image.load("your_image.jpg")
 
 running = True
 while running:
     screen.blit(image, (0, 0))
     pygame.display.flip()
+    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            running = False  # Exit on ESC key
 
 pygame.quit()
