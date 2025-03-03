@@ -8,9 +8,7 @@ class Projector:
         self.frame = cv2.imread(image_path)
     
     def display(self):
-
-
-# Check if the image was successfully loaded
+        # Check if the image was successfully loaded
         if self.frame is None:
             print("Error: Unable to load image.")
         else:
