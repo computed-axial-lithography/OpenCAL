@@ -20,7 +20,7 @@ class Projector:
         return True
 
 if __name__ == "__main__":
-    video_path = "/home/opencal/opencal/OpenCAL/hardware/sample_video.mp4"
+    video_path = "/home/opencal/opencal/OpenCAL/development/simulations/PEGDA700_starship_rebinned_36degps_intensity11x.mp4"
     cap = cv2.VideoCapture(video_path)
 
     if not cap.isOpened():
