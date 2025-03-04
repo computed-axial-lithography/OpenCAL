@@ -4,7 +4,7 @@ import json
 import threading
 
 class StepperMotor:
-    def __init__(self, config_file="OpenCAL/utils/config.json"):
+    def __init__(self, config_file="/home/opencal/opencal/OpenCAL/utils/config.json"):
         """Initialize GPIO communication with the stepper motor driver (Step/Dir mode)."""
         # Load config from the JSON file
         with open(config_file, 'r') as f:

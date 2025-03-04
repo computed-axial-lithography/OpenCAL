@@ -6,7 +6,7 @@ except ImportError as e:
     print(e)
 
 class LEDArray:
-    def __init__(self, config_file="OpenCAL/utils/config.json"):
+    def __init__(self, config_file="/home/opencal/opencal/OpenCAL/utils/config.json"):
         # Load config from json
         with open(config_file, 'r') as f:
             config = json.load(f)

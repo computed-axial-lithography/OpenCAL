@@ -2,7 +2,7 @@ import cv2
 
 # Load an image (replace with your actual image file path)
 class Projector:
-    def __init__(self, image_path = 'OpenCAL/hardware/water-lily-2840_4320.jpg'):
+    def __init__(self, image_path = '/home/opencal/opencal/OpenCAL/hardware/water-lily-2840_4320.jpg'):
         self.image_path = image_path
 
         self.frame = cv2.imread(image_path)

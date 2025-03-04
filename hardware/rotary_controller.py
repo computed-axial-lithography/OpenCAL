@@ -6,7 +6,7 @@ except ImportError:
     pass
 
 class RotaryEncoderHandler:
-    def __init__(self, config_file="OpenCAL/utils/config.json"):
+    def __init__(self, config_file="/home/opencal/opencal/OpenCAL/utils/config.json"):
         """
         Rotary Encoder Driver using GPIOZero
         :param clk_pin: GPIO pin for the encoder CLK signal

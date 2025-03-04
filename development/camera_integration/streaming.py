@@ -70,9 +70,6 @@ class DifferenceImage:
         # masked_difference = np.zeros_like(difference)
         # masked_difference[mask] = difference[mask]
 
-        return difference
-
-
 def main():
     video_path = 'camera_integration\LVUDMA_robo_rebinned_54degps_intensity2xarray1final.mp4'
     try:
