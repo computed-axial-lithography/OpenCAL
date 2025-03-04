@@ -21,9 +21,10 @@
       }
     },
     "lcd_display": {
-      "port": "/dev/serial0",
-      "baudrate": 9600,
-      "timeout": 1
+      "port": "PCF8574",
+      "address": "0x27",
+      "cols": 20, 
+      "rows": 4
     },
     "rotary_encoder": {
       "clk_pin": 5,

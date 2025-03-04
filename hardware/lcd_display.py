@@ -8,14 +8,11 @@ import time
 from RPLCD import *
 from time import sleep
 from RPLCD.i2c import CharLCD
-# lcd = CharLCD('PCF8574', 0x27)
-# for i in range(4):
+import json
 
-#     lcd.cursor_pos = (i, 0)
-#     lcd.write_string('Hello World')
 
 class LCDDisplay:
-    def __init__(self, address=0x27, port='PCF8574', cols=20, rows=4):
+    def __init__(self, config_file="OpenCAL/utils/config.json"):
         """Initialize the LCD display.
         
         Args:
@@ -24,7 +21,17 @@ class LCDDisplay:
             cols (int): Number of columns on the LCD.
             rows (int): Number of rows on the LCD.
         """
-        self.lcd = CharLCD(port, address, cols=cols, rows=rows)
+        # Load config from the JSON file
+        with open(config_file, 'r') as f:
+            config = json.load(f)
+        # Retrieve the address and port from config, or use defaults
+        self.address = int(config['lcd_display'].get("address", '0x27'),16)
+        self.port = config['lcd_display'].get("port", 'PCF8574')
+        self.cols = config['lcd_display'].get("cols", 20)
+        self.rows = config['lcd_display'].get("rows", 4)
+
+        # Initialize the LCD display
+        self.lcd = CharLCD(self.port, self.address, self.cols, self.rows)
 
     def clear(self):
         """Clear the display."""

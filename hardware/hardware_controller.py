@@ -3,6 +3,7 @@ from .stepper_controller import StepperMotor
 from .led_manager import LEDArray
 from .lcd_display import LCDDisplay
 from .rotary_controller import RotaryEncoderHandler
+from .projector_controller import Projector
 
 import time
 import cv2
@@ -15,6 +16,7 @@ class HardwareController:
         self.led_array = None
         self.lcd = None
         self.rotary = None
+        self.projector = None
 
         self.errors = []
         self.healthy = True
@@ -48,6 +50,11 @@ class HardwareController:
         except Exception as e:
             self.errors.append(f"RotaryEncoder failed: {e}")
             self.healthy = False
+        
+        try:
+            self.projector = Projector() 
+        except Exception as e:
+            self.errors.append(f"Projector failed: {e}")     
 
 
     def communication_check(self):
@@ -62,6 +69,7 @@ class HardwareController:
         else:
             print("All hardware components are detected and responsive.")
             self.healthy = True
+
 
     def actuation_test(self):
         print(f"Beginning hardware actuation test...")

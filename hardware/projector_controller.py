@@ -20,6 +20,7 @@ class Projector:
 
             # Move the window to the specified position (1920, 0)
             cv2.moveWindow(window_name, 1920, 0)
+        
 
             # Wait for any key to close the window
             cv2.waitKey(0)
