@@ -12,7 +12,7 @@ import json
 
 
 class LCDDisplay:
-    def __init__(self, config_file="OpenCAL/utils/config.json"):
+    def __init__(self, config_file="/home/opencal/opencal/OpenCAL/utils/config.json"):
         """Initialize the LCD display.
         
         Args:
@@ -31,7 +31,7 @@ class LCDDisplay:
         self.rows = config['lcd_display'].get("rows", 4)
 
         # Initialize the LCD display
-        self.lcd = CharLCD(self.port, self.address, self.cols, self.rows)
+        self.lcd = CharLCD(self.port, self.address)
 
     def clear(self):
         """Clear the display."""
@@ -50,7 +50,7 @@ class LCDDisplay:
 
 # Test section
 if __name__ == "__main__":
-    lcd_display = LCDDisplay(address=0x27, port='PCF8574')
+    lcd_display = LCDDisplay()
     lcd_display.clear()  # Clear the display before starting the test
     for i in range(4):
             lcd_display.lcd.cursor_pos = (i, 0)

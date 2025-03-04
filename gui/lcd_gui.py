@@ -23,7 +23,7 @@ class LCDGui:
             'start rotation': lambda: self.hardware.stepper.start_rotation(),
             'stop rotation': lambda: self.hardware.stepper.stop(),
             'Display Test Image': lambda: self.hardware.projector.display(),
-            'Kill GUI': lambda: sys.exit(0),
+            'Kill GUI': lambda: self.kill_gui(),
         }
         self.menu_stack = []  # Stack to keep track of menu navigation
         self.current_menu = 'main'  # Currently displayed menu
@@ -32,6 +32,7 @@ class LCDGui:
         self.view_size = 4  # Number of menu items visible at once
         self.last_rotary_position = self.hardware.rotary.get_position()
         self.last_button_press_time = 0  # For button debouncing
+        self.running = True  # Flag to control the execution of the main loop
 
     def show_startup_screen(self):
         """Display the startup screen with 'Hello User!'."""
@@ -109,6 +110,10 @@ class LCDGui:
             self.select_option()
             self.last_button_press_time = current_time
 
+    def kill_gui(self):
+        """Handles the kill GUI action."""
+        self.running = False  # Set running to False to stop the loop
+
     def run(self):
         """Main method to run the GUI."""
         self.show_startup_screen()
@@ -116,15 +121,23 @@ class LCDGui:
         self.show_menu('main')
         self.navigate()
 
-        while True:
+        while self.running:  # Main loop will continue until self.running is False
             self.hardware.rotary.encoder.when_rotated = self.navigate
-            #self.navigate()  # Update the screen based on rotary input
+            # self.navigate()  # Update the screen based on rotary input
             time.sleep(0.05)  # Allow time for screen updates
             
             # Button press handler, explicitly called to manage debouncing
             self.hardware.rotary.button.when_pressed = self.button_press_handler
 
             time.sleep(0.05)  # Prevent excessive CPU usage
+
+        # Clean up code when exiting
+        time.sleep(0.5)
+        self.hardware.lcd.clear()
+        time.sleep(0.5)
+        self.hardware.lcd.write_message("Goodbye!".center(20), 1, 0)
+        time.sleep(2)  # Show "Goodbye!" for 2 seconds before exiting
+        self.hardware.lcd.clear()
 
 if __name__ == "__main__":
     gui = LCDGui()
