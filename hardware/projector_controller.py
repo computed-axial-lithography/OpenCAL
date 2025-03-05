@@ -1,22 +1,31 @@
 import cv2
-import time
 
 class Projector:
     def __init__(self):
         self.window_name = "ImageWindow"
-        cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
-        cv2.moveWindow(self.window_name, 1920, 0)
+        cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)  # Allow manual resize
+        cv2.moveWindow(self.window_name, 1920, 0)  # Move to secondary display
 
     def display(self, frame):
         if frame is None:
             print("Error: Received empty frame.")
             return
         
+        # Set your LCD's full resolution here
+        screen_width = 2840  # Change to match your external LCD width
+        screen_height = 4320  # Change to match your external LCD height
+
+        # Resize frame to match LCD
+        frame = cv2.resize(frame, (screen_width, screen_height), interpolation=cv2.INTER_LINEAR)
+
+        # Resize window to match screen (simulating fullscreen)
+        cv2.setWindowProperty(self.window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_NORMAL)
+        cv2.resizeWindow(self.window_name, screen_width, screen_height)
+
         cv2.imshow(self.window_name, frame)
 
-        # Wait briefly to simulate frame rate (e.g., 30 FPS -> ~33ms delay)
         if cv2.waitKey(33) & 0xFF == ord('q'):
-            return False  # Signal to exit
+            return False  # Exit on 'q'
         return True
 
 if __name__ == "__main__":
