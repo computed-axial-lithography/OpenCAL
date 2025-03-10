@@ -22,7 +22,7 @@ class LCDGui:
             'Turn off LEDs': self.hardware.led_array.clear_leds,
             'start rotation': lambda: self.hardware.stepper.start_rotation(),
             'stop rotation': lambda: self.hardware.stepper.stop(),
-            'Display Test Image': lambda: self.hardware.projector.display(),
+            #'Display Test Image': lambda: self.hardware.projector.display(),
             'Kill GUI': lambda: self.kill_gui(),
         }
         self.menu_stack = []  # Stack to keep track of menu navigation

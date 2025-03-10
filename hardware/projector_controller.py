@@ -5,26 +5,18 @@ class Projector:
     def __init__(self):
         self.window_name = "ImageWindow"
         cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)  # Allow manual resize
-        cv2.moveWindow(self.window_name, 1920, 0)  # Move to secondary display
+        cv2.moveWindow(self.window_name, 0, 0)  # Move to secondary display
+        
+        # Set window to fullscreen without resizing frame
+        cv2.setWindowProperty(self.window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)                                                                                                                                                                                                                                             
 
     def display(self, frame, rotation_angle=-90):
         if frame is None:
             print("Error: Received empty frame.")
             return
         
-        # Set your LCD's full resolution here
-        screen_width = 2840  # Change to match your external LCD width
-        screen_height = 4320  # Change to match your external LCD height
-
-        # Rotate frame before resizing
-        frame = self.rotate_frame(frame, rotation_angle)
-
-        # Resize frame to match LCD
-        frame = cv2.resize(frame, (screen_width, screen_height), interpolation=cv2.INTER_LINEAR)
-
-        # Resize window to match screen (simulating fullscreen)
-        cv2.setWindowProperty(self.window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_NORMAL)
-        cv2.resizeWindow(self.window_name, screen_width, screen_height)
+        # Rotate frame before displaying
+        #frame = self.rotate_frame(frame, rotation_angle)
 
         cv2.imshow(self.window_name, frame)
 
@@ -56,8 +48,7 @@ if __name__ == "__main__":
 
     projector = Projector()
 
-    # Set the desired rotation angle (e.g., 90, 180, 270, etc.)
-    rotation_angle = 90
+    rotation_angle = 0
 
     while cap.isOpened():
         ret, frame = cap.read()
