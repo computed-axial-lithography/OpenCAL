@@ -2,6 +2,7 @@ import sys
 import os
 import time
 
+
 # Add the parent directory of 'gui' to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -12,18 +13,20 @@ class LCDGui:
         self.hardware = hardware
         self.menu_dict = {
             "main": ['Print from USB', 'Manual Control', 'Settings'],
-            "Print from USB": ['back', 'idk yet'],
+            "Print from USB": ['back'] + self.hardware.usb_device.get_file_names(),
             "Manual Control": ['back','Turn on LEDs', 'Turn off LEDs', 'Move Stepper', 'Display Test Image', 'Kill GUI'],
             "Move Stepper": ['back', 'start rotation', 'stop rotation'],
-            "Settings": ['back', 'set opt 1', 'set opt 2'],
+            "Settings": ['back', 'Set Step RPM', 'Set Some Variable'],  # Added new option for a generic variable
+
         }
         self.menu_callbacks = {
             'Turn on LEDs': lambda: self.hardware.led_array.set_led((255, 0, 0), set_all=True),
             'Turn off LEDs': self.hardware.led_array.clear_leds,
             'start rotation': lambda: self.hardware.stepper.start_rotation(),
             'stop rotation': lambda: self.hardware.stepper.stop(),
-            #'Display Test Image': lambda: self.hardware.projector.display(),
             'Kill GUI': lambda: self.kill_gui(),
+            'Set Step RPM': lambda: self.enter_variable_adjustment("RPM", self.hardware.stepper.speed_rpm),  # RPM adjustment
+            'Set Some Variable': lambda: self.enter_variable_adjustment("SomeVariable", self.some_variable_getter),  # Example generic variable
         }
         self.menu_stack = []  # Stack to keep track of menu navigation
         self.current_menu = 'main'  # Currently displayed menu
@@ -33,6 +36,10 @@ class LCDGui:
         self.last_rotary_position = self.hardware.rotary.get_position()
         self.last_button_press_time = 0  # For button debouncing
         self.running = True  # Flag to control the execution of the main loop
+        
+        self.adjusting_variable = False  # Flag to track if a variable is being adjusted
+        self.current_variable = 0  # The current value of the variable being adjusted
+        self.variable_name = ""  # Name of the variable being adjusted
 
     def show_startup_screen(self):
         """Display the startup screen with 'Hello User!'."""
@@ -102,13 +109,60 @@ class LCDGui:
         self.navigate()
         time.sleep(0.05)
 
+    def enter_variable_adjustment(self, variable_name, getter_value):
+        """Enter variable adjustment mode and allow the user to adjust any variable."""
+        self.variable_name = variable_name
+        self.current_variable = getter_value  # Use the getter function to get the current value
+        self.hardware.lcd.clear()
+        self.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_variable}", 0, 0)
+        self.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
+        self.hardware.lcd.write_message("Click to set", 2, 0)
+        
+        self.adjusting_variable = True  # Set a flag indicating we're in variable adjustment mode
+
+    def adjust_variable(self):
+        """Adjust the variable using the rotary encoder."""
+        if self.adjusting_variable:
+            position = self.hardware.rotary.get_position()
+
+            # Increase or decrease the value based on rotary movement
+            if position > self.last_rotary_position:
+                self.current_variable += 1  # Increase the value
+            elif position < self.last_rotary_position:
+                self.current_variable -= 1  # Decrease the value
+
+            # Update the displayed value on the LCD
+            self.hardware.lcd.clear()
+            self.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_variable}", 0, 0)
+            self.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
+            self.hardware.lcd.write_message("Click to set", 2, 0)
+
+            self.last_rotary_position = position
+
     def button_press_handler(self):
         """Handles button press and debouncing."""
         current_time = time.time()
         # Only process the button press if enough time has passed since the last press (debouncing)
         if current_time - self.last_button_press_time > 0.75:  # seconds debounce time
-            self.select_option()
+            if self.adjusting_variable:
+                # Set the variable and exit adjustment mode
+                if self.variable_name == "RPM":
+                    self.hardware.stepper.set_speed(self.current_variable)  # Set the RPM using the function you already have
+                elif self.variable_name == "SomeVariable":
+                    self.some_variable_setter(self.current_variable)  # Set the generic variable
+                self.adjusting_variable = False  # Exit adjustment mode
+                self.show_menu('Settings')  # Return to the Settings menu after setting the variable
+            else:
+                self.select_option()  # Regular button press handling for other menu options
             self.last_button_press_time = current_time
+
+    def some_variable_getter(self):
+        """Getter function for the example generic variable."""
+        return 10  # Return the current value of your variable
+
+    def some_variable_setter(self, value):
+        """Setter function for the example generic variable."""
+        print(f"Setting SomeVariable to: {value}")  # Replace with the actual setter function
 
     def kill_gui(self):
         """Handles the kill GUI action."""
@@ -122,14 +176,20 @@ class LCDGui:
         self.navigate()
 
         while self.running:  # Main loop will continue until self.running is False
-            self.hardware.rotary.encoder.when_rotated = self.navigate
-            # self.navigate()  # Update the screen based on rotary input
+            if self.adjusting_variable:
+                # self.adjust_variable()
+                self.hardware.rotary.encoder.when_rotated = self.adjust_variable  # Update the variable adjustment if in that mode
+            else:
+                self.hardware.rotary.encoder.when_rotated = self.navigate
             time.sleep(0.05)  # Allow time for screen updates
             
             # Button press handler, explicitly called to manage debouncing
             self.hardware.rotary.button.when_pressed = self.button_press_handler
 
             time.sleep(0.05)  # Prevent excessive CPU usage
+
+        #
+
 
         # Clean up code when exiting
         time.sleep(0.5)

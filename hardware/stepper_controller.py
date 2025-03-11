@@ -24,6 +24,7 @@ class StepperMotor:
 
         # Default parameters
         self.default_speed = config['stepper_motor'].get("default_speed", 20)
+        self.speed_rpm = self.default_speed
         self.default_direction = config['stepper_motor'].get("default_direction", "CW")
         self.default_steps = config['stepper_motor'].get("default_steps", 1600)
 

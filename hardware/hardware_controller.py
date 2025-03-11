@@ -4,6 +4,7 @@ from .led_manager import LEDArray
 from .lcd_display import LCDDisplay
 from .rotary_controller import RotaryEncoderHandler
 from .projector_controller import Projector
+from .usb_manager import MP4Driver
 
 import time
 import cv2
@@ -17,6 +18,7 @@ class HardwareController:
         self.lcd = None
         self.rotary = None
         self.projector = None
+        self.usb_device = None
 
         self.errors = []
         self.healthy = True
@@ -49,6 +51,12 @@ class HardwareController:
             self.rotary = RotaryEncoderHandler()   
         except Exception as e:
             self.errors.append(f"RotaryEncoder failed: {e}")
+            self.healthy = False
+        
+        try:
+            self.usb_device = MP4Driver()
+        except Exception as e:
+            self.errors.append(f"USB device failed: {e}")
             self.healthy = False
         
         # try:
