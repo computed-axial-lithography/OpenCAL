@@ -44,7 +44,7 @@ class LCDDisplay:
         self.scrolling_active = True
         self.scroll_thread = threading.Thread(target=self._scrolling_loop, daemon=True)
         self.scroll_thread.start()
-     def clear(self):
+    def clear(self):
         """Clear the LCD display and reset buffers."""
         self.lcd.clear()
         self.framebuffer = [""] * self.rows
