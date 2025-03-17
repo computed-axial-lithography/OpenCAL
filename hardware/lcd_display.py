@@ -33,6 +33,9 @@ class LCDDisplay:
         # Initialize the LCD display
         self.lcd = CharLCD(self.port, self.address)
 
+        # Framebuffer for display content
+        self.framebuffer = ["", ""]
+
     def clear(self):
         """Clear the display."""
         self.lcd.clear()
@@ -48,14 +51,38 @@ class LCDDisplay:
         self.lcd.cursor_pos = (row, col)
         self.lcd.write_string(message)
 
+    def write_to_lcd(self):
+        """Write the framebuffer out to the lcd."""
+        self.lcd.home()
+        for row in self.framebuffer:
+            self.lcd.write_string(row.ljust(self.cols)[:self.cols])
+            self.lcd.write_string('\r\n')
+    def long_text(self, text):
+        """Scroll a long text string across the second row of the LCD.
+        
+        Args:
+            text (str): The text string to display.
+        """
+        if len(text) < self.cols:
+            self.write_message(text, row=1)
+        else:
+            for i in range(len(text) - self.cols + 1):
+                self.framebuffer[1] = text[i:i + self.cols]
+                self.write_to_lcd()
+                sleep(0.2)  # Adjust scrolling speed
+
 # Test section
 if __name__ == "__main__":
     lcd_display = LCDDisplay()
     lcd_display.clear()  # Clear the display before starting the test
+
+    # Display a fixed message
     for i in range(4):
             lcd_display.lcd.cursor_pos = (i, 0)
             lcd_display.lcd.write_string('Hello World')
             sleep(1)  # Pause for 1 second between each iteration
-
-    time.sleep(5)
+    time.sleep(2)
+    lcd_display.clear()
+    lcd_display.long_text("This is a long message to test scrolling on the LCD display")
+    time.sleep(10)
     lcd_display.clear()
