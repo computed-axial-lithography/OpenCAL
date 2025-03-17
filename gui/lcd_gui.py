@@ -154,6 +154,7 @@ class LCDGui:
                 self.update_function(self.current_value)  # Set the variable using the update function
                 self.adjusting_variable = False  # Exit adjustment mode
                 self.show_menu('Settings')  # Return to the Settings menu after setting the variable
+                self.navigate()
             else:
                 self.select_option()  # Regular button press handling for other menu options
             self.last_button_press_time = current_time
