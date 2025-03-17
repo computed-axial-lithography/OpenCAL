@@ -105,8 +105,11 @@ class LCDGui:
 
         elif option in self.menu_callbacks:
             self.menu_callbacks[option]() 
-
-        self.navigate()
+        
+        if self.adjusting_variable:
+            self.adjust_variable()
+        else:
+            self.navigate()
         time.sleep(0.05)
 
     def enter_variable_adjustment(self, variable_name, current_value, update_function=None):
@@ -117,6 +120,7 @@ class LCDGui:
         self.update_function = update_function  # Store the update function for setting the variable
         self.hardware.lcd.clear()
         self.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_value}", 0, 0)
+
         self.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
         self.hardware.lcd.write_message("Click to set", 2, 0)
         
