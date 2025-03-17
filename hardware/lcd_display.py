@@ -6,7 +6,6 @@ except ImportError:
 import time
 import json
 import threading
-from RPLCD import *
 from RPLCD.i2c import CharLCD
 from time import sleep
 
@@ -74,11 +73,12 @@ class LCDDisplay:
             row (int, optional): If provided, only update this row. If None, update all rows.
         """
         if row is None:
-            self.lcd.home()
             for i in range(self.rows):
                 self.lcd.cursor_pos = (i, 0)
                 self.lcd.write_string(self.framebuffer[i].ljust(self.cols)[:self.cols])
         else:
+            self.lcd.cursor_pos = (row, 0)
+            self.lcd.write_string(" " * self.cols)  # Clear row before writing
             self.lcd.cursor_pos = (row, 0)
             self.lcd.write_string(self.framebuffer[row].ljust(self.cols)[:self.cols])
 
