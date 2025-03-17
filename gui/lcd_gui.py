@@ -111,6 +111,7 @@ class LCDGui:
 
     def enter_variable_adjustment(self, variable_name, current_value, update_function=None):
         """Enter variable adjustment mode and allow the user to adjust any variable."""
+        self.current_menu = None
         self.variable_name = variable_name
         self.current_value = current_value  # Use the getter function to get the current value
         self.update_function = update_function  # Store the update function for setting the variable
