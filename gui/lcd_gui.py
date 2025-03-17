@@ -25,8 +25,7 @@ class LCDGui:
             'start rotation': lambda: self.hardware.stepper.start_rotation(),
             'stop rotation': lambda: self.hardware.stepper.stop(),
             'Kill GUI': lambda: self.kill_gui(),
-            'Set Step RPM': lambda: self.enter_variable_adjustment("RPM", self.hardware.stepper.speed_rpm, lambda: self.hardware.stepper.set_speed),  # RPM adjustment
-            'Set Some Variable': lambda: self.enter_variable_adjustment("SomeVariable", self.some_variable_getter),  # Example generic variable
+            'Set Step RPM': lambda: self.enter_variable_adjustment("RPM", self.hardware.stepper.speed_rpm, self.hardware.stepper.set_speed),  # RPM adjustment
         }
         self.menu_stack = []  # Stack to keep track of menu navigation
         self.current_menu = 'main'  # Currently displayed menu
@@ -133,7 +132,7 @@ class LCDGui:
             self.current_value -= 1  # Decrease the value
 
         # Update the displayed value on the LCD
-        #self.hardware.lcd.clear()
+        self.hardware.lcd.clear()
         self.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_value}", 0, 0)
         self.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
         self.hardware.lcd.write_message("Click to set", 2, 0)
