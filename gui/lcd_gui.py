@@ -17,7 +17,6 @@ class LCDGui:
             "Manual Control": ['back','Turn on LEDs', 'Turn off LEDs', 'Move Stepper', 'Display Test Image', 'Kill GUI'],
             "Move Stepper": ['back', 'start rotation', 'stop rotation'],
             "Settings": ['back', 'Set Step RPM', 'Set Some Variable'],  # Added new option for a generic variable
-
         }
         self.menu_callbacks = {
             'Turn on LEDs': lambda: self.hardware.led_array.set_led((255, 0, 0), set_all=True),
