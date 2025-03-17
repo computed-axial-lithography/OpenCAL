@@ -63,19 +63,16 @@ class LCDDisplay:
         for row in self.framebuffer:
             self.lcd.write_string(row.ljust(self.cols)[:self.cols])
             self.lcd.write_string('\r\n')
-    def long_text(self, text):
-        """Scroll a long text string across the second row of the LCD.
+    def long_text(self, text, row):
+        """Scroll a long text string across a specified row on the LCD.
         Args:
             text (str): The text string to display.
+            row (int): The row to display the scrolling text.
         """
-        if len(text) < self.cols:
-            self.write_message(text, row=1)
-        else:
-            for i in range(len(text) - self.cols + 1):
-                self.framebuffer[1] = text[i:i + self.cols]
-                self.write_to_lcd()
-                sleep(0.5)  # Adjust scrolling speed
-
+        for i in range(len(text) - self.cols + 1):
+            self.framebuffer[row] = text[i:i + self.cols]
+            self.write_to_lcd()
+            sleep(0.5)  # Adjust scrolling speed
 
 # Test section
 if __name__ == "__main__":
