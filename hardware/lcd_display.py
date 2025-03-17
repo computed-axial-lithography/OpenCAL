@@ -20,7 +20,7 @@ class LCDDisplay:
         # Load config from the JSON file
         with open(config_file, 'r') as f:
             config = json.load(f)
-
+            
         # Retrieve LCD settings from config
         self.address = int(config['lcd_display'].get("address", '0x27'), 16)
         self.port = config['lcd_display'].get("port", 'PCF8574')
@@ -29,6 +29,9 @@ class LCDDisplay:
 
         # Initialize the LCD
         self.lcd = CharLCD(self.port, self.address)
+        
+        # Create a lock for synchronized LCD access
+        self.lcd_lock = threading.Lock()
 
         # Framebuffer stores messages for each row
         self.framebuffer = [""] * self.rows
@@ -43,7 +46,8 @@ class LCDDisplay:
 
     def clear(self):
         """Clear the LCD display and reset buffers."""
-        self.lcd.clear()
+        with self.lcd_lock:
+            self.lcd.clear()
         self.framebuffer = [""] * self.rows
         self.scrolling_text = {}
 
@@ -61,38 +65,39 @@ class LCDDisplay:
             # Store the long message for scrolling
             self.scrolling_text[row] = message
         else:
-            # Store and display static message
-            self.scrolling_text.pop(row, None)  # Remove old scrolling data
+            # Remove any old scrolling data for this row
+            self.scrolling_text.pop(row, None)
             self.framebuffer[row] = message
-            self._update_lcd(row)  # Only update the row that changed
+            self._update_lcd(row)  # Only update the changed row
 
     def _update_lcd(self, row=None):
         """Update the LCD display.
 
         Args:
-            row (int, optional): If provided, only update this row. If None, update all rows.
+            row (int, optional): If provided, only update this row.
+                                 If None, update all rows.
         """
-        if row is None:
-            for i in range(self.rows):
-                self.lcd.cursor_pos = (i, 0)
-                self.lcd.write_string(self.framebuffer[i].ljust(self.cols)[:self.cols])
-        else:
-            self.lcd.cursor_pos = (row, 0)
-            self.lcd.write_string(" " * self.cols)  # Clear row before writing
-            self.lcd.cursor_pos = (row, 0)
-            self.lcd.write_string(self.framebuffer[row].ljust(self.cols)[:self.cols])
+        with self.lcd_lock:
+            if row is None:
+                self.lcd.home()
+                for i in range(self.rows):
+                    self.lcd.cursor_pos = (i, 0)
+                    self.lcd.write_string(self.framebuffer[i].ljust(self.cols)[:self.cols])
+            else:
+                self.lcd.cursor_pos = (row, 0)
+                self.lcd.write_string(self.framebuffer[row].ljust(self.cols)[:self.cols])
 
     def _scrolling_loop(self):
         """Continuously scroll long text while keeping other rows fixed."""
         while self.scrolling_active:
-            # Create a copy of the scrolling dictionary to avoid modification errors
+            # Iterate over a copy of the scrolling dictionary to avoid modification errors
             scrolling_items = list(self.scrolling_text.items())
-
             for row, text in scrolling_items:
+                # Scroll the text across the row
                 for i in range(len(text) - self.cols + 1):
                     self.framebuffer[row] = text[i:i + self.cols]
                     self._update_lcd(row)  # Only update the scrolling row
-                    sleep(0.5)  # Adjust speed of scrolling
+                    sleep(0.5)  # Adjust the speed of scrolling
             sleep(0.1)  # Small delay to prevent excessive looping
 
     def stop_scrolling(self):
