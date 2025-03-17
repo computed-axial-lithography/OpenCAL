@@ -25,7 +25,7 @@ class LCDGui:
             'start rotation': lambda: self.hardware.stepper.start_rotation(),
             'stop rotation': lambda: self.hardware.stepper.stop(),
             'Kill GUI': lambda: self.kill_gui(),
-            'Set Step RPM': lambda: self.enter_variable_adjustment("RPM", self.hardware.stepper.speed_rpm),  # RPM adjustment
+            'Set Step RPM': lambda: self.enter_variable_adjustment("RPM", self.hardware.stepper.speed_rpm, lambda: self.hardware.stepper.set_speed),  # RPM adjustment
             'Set Some Variable': lambda: self.enter_variable_adjustment("SomeVariable", self.some_variable_getter),  # Example generic variable
         }
         self.menu_stack = []  # Stack to keep track of menu navigation
@@ -38,8 +38,9 @@ class LCDGui:
         self.running = True  # Flag to control the execution of the main loop
         
         self.adjusting_variable = False  # Flag to track if a variable is being adjusted
-        self.current_variable = 0  # The current value of the variable being adjusted
+        self.current_value = 0  # The current value of the variable being adjusted
         self.variable_name = ""  # Name of the variable being adjusted
+        self.update_function = None  # Function to update the variable being adjusted
 
     def show_startup_screen(self):
         """Display the startup screen with 'Hello User!'."""
@@ -109,12 +110,13 @@ class LCDGui:
         self.navigate()
         time.sleep(0.05)
 
-    def enter_variable_adjustment(self, variable_name, getter_value):
+    def enter_variable_adjustment(self, variable_name, current_value, update_function=None):
         """Enter variable adjustment mode and allow the user to adjust any variable."""
         self.variable_name = variable_name
-        self.current_variable = getter_value  # Use the getter function to get the current value
+        self.current_value = current_value  # Use the getter function to get the current value
+        self.update_function = update_function  # Store the update function for setting the variable
         self.hardware.lcd.clear()
-        self.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_variable}", 0, 0)
+        self.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_value}", 0, 0)
         self.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
         self.hardware.lcd.write_message("Click to set", 2, 0)
         
@@ -122,22 +124,21 @@ class LCDGui:
 
     def adjust_variable(self):
         """Adjust the variable using the rotary encoder."""
-        if self.adjusting_variable:
-            position = self.hardware.rotary.get_position()
+        position = self.hardware.rotary.get_position()
 
-            # Increase or decrease the value based on rotary movement
-            if position > self.last_rotary_position:
-                self.current_variable += 1  # Increase the value
-            elif position < self.last_rotary_position:
-                self.current_variable -= 1  # Decrease the value
+        # Increase or decrease the value based on rotary movement
+        if position > self.last_rotary_position:
+            self.current_value += 1  # Increase the value
+        elif position < self.last_rotary_position:
+            self.current_value -= 1  # Decrease the value
 
-            # Update the displayed value on the LCD
-            self.hardware.lcd.clear()
-            self.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_variable}", 0, 0)
-            self.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
-            self.hardware.lcd.write_message("Click to set", 2, 0)
+        # Update the displayed value on the LCD
+        #self.hardware.lcd.clear()
+        self.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_value}", 0, 0)
+        self.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
+        self.hardware.lcd.write_message("Click to set", 2, 0)
 
-            self.last_rotary_position = position
+        self.last_rotary_position = position
 
     def button_press_handler(self):
         """Handles button press and debouncing."""
@@ -146,23 +147,12 @@ class LCDGui:
         if current_time - self.last_button_press_time > 0.75:  # seconds debounce time
             if self.adjusting_variable:
                 # Set the variable and exit adjustment mode
-                if self.variable_name == "RPM":
-                    self.hardware.stepper.set_speed(self.current_variable)  # Set the RPM using the function you already have
-                elif self.variable_name == "SomeVariable":
-                    self.some_variable_setter(self.current_variable)  # Set the generic variable
+                self.update_function(self.current_value)  # Set the variable using the update function
                 self.adjusting_variable = False  # Exit adjustment mode
                 self.show_menu('Settings')  # Return to the Settings menu after setting the variable
             else:
                 self.select_option()  # Regular button press handling for other menu options
             self.last_button_press_time = current_time
-
-    def some_variable_getter(self):
-        """Getter function for the example generic variable."""
-        return 10  # Return the current value of your variable
-
-    def some_variable_setter(self, value):
-        """Setter function for the example generic variable."""
-        print(f"Setting SomeVariable to: {value}")  # Replace with the actual setter function
 
     def kill_gui(self):
         """Handles the kill GUI action."""
