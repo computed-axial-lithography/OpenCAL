@@ -1,5 +1,6 @@
 import sys
 import os
+import subprocess
 import time
 
 # Add the parent directory of 'gui' to sys.path
@@ -40,7 +41,6 @@ class LCDGui:
         self.adjusting_variable = False  # Flag to track if a variable is being adjusted
         self.current_value = 0  # The current value of the variable being adjusted
         self.variable_name = ""  # Name of the variable being adjusted
-        self.update_function = None  # Function to update the variable being adjusted
 
     def show_startup_screen(self):
         """Display the startup screen with 'Hello User!'."""
@@ -166,6 +166,9 @@ class LCDGui:
         self.hardware.lcd.write_message("Restarting...", 1, 0)
         time.sleep(2)
         os.system("sudo reboot")
+        result = subprocess.run(["sudo", "reboot"],capture_output=True)
+        if result.returncode != 0:
+            print ("fail!")
 
     def power_off_pi(self):
         """Power off the Raspberry Pi."""

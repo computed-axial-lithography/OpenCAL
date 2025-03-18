@@ -51,7 +51,7 @@ class LCDDisplay:
         self.framebuffer = [""] * self.rows
         self.scrolling_text = {}
 
-    def write_message(self, message, row=0):
+    def write_message(self, message, row=0, col=0):
         """Write a message to a specific row on the LCD.
         
         - If the message is <= 20 characters, it remains static.

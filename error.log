@@ -1,9 +1,19 @@
 bash: cannot set terminal process group (-1): Inappropriate ioctl for device
 bash: no job control in this shell
 bash: dircolors: command not found
-qt.qpa.xcb: could not connect to display 
-qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "/home/opencal/opencal/.venv/lib/python3.11/site-packages/cv2/qt/plugins" even though it was found.
-This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.
-
-Available platform plugins are: xcb.
-
+sh: 1: sudo: not found
+sh: 1: sudo: not found
+sh: 1: sudo: not found
+sh: 1: sudo: not found
+sh: 1: sudo: not found
+sh: 1: sudo: not found
+sh: 1: sudo: not found
+sh: 1: sudo: not found
+sh: 1: sudo: not found
+loop
+    ^^^^^^^^^
+  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 167, in run
+    self.show_startup_screen()
+  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 46, in show_startup_screen
+    self.hardware.lcd.write_message("Open   ".center(20), 1, 0)
+TypeError: LCDDisplay.write_message() takes from 2 to 3 positional arguments but 4 were given

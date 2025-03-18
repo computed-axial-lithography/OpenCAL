@@ -1,5 +1,11 @@
 Opened SPI device: /dev/spidev0.0
 System Starting Up...
 Opened SPI device: /dev/spidev0.0
-Turning on all LEDs...
-LEDs updated.
+Speed set to 14 RPM
+Speed set to 13 RPM
+Starting continuous rotation CW
+Stopping the motor.
+Speed set to 5 RPM
+Starting continuous rotation CW
+Stopping the motor.
+Speed set to 19 RPM

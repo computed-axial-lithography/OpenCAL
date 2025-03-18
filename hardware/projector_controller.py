@@ -5,7 +5,7 @@ class Projector:
     def __init__(self):
         self.window_name = "ImageWindow"
         cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)  # Allow manual resize
-        cv2.moveWindow(self.window_name, 0, 0)  # Move to secondary display
+        cv2.moveWindow(self.window_name, 1920, 0)  # Move to secondary display
         
         # Set window to fullscreen without resizing frame
         cv2.setWindowProperty(self.window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)                                                                                                                                                                                                                                             
