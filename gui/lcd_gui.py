@@ -2,7 +2,6 @@ import sys
 import os
 import time
 
-
 # Add the parent directory of 'gui' to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -12,11 +11,12 @@ class LCDGui:
     def __init__(self, hardware=HardwareController()):
         self.hardware = hardware
         self.menu_dict = {
-            "main": ['Print from USB', 'Manual Control', 'Settings'],
+            "main": ['Print from USB', 'Manual Control', 'Settings', 'Power Options'],
             "Print from USB": ['back'] + self.hardware.usb_device.get_file_names(),
             "Manual Control": ['back','Turn on LEDs', 'Turn off LEDs', 'Move Stepper', 'Display Test Image', 'Kill GUI'],
             "Move Stepper": ['back', 'start rotation', 'stop rotation'],
             "Settings": ['back', 'Set Step RPM', 'Set Some Variable'],  # Added new option for a generic variable
+            "Power Options": ['back', 'Restart', 'Power Off'],  # Added power options submenu
         }
         self.menu_callbacks = {
             'Turn on LEDs': lambda: self.hardware.led_array.set_led((255, 0, 0), set_all=True),
@@ -25,6 +25,8 @@ class LCDGui:
             'stop rotation': lambda: self.hardware.stepper.stop(),
             'Kill GUI': lambda: self.kill_gui(),
             'Set Step RPM': lambda: self.enter_variable_adjustment("RPM", self.hardware.stepper.speed_rpm, self.hardware.stepper.set_speed),  # RPM adjustment
+            'Restart': lambda: self.restart_pi(),
+            'Power Off': lambda: self.power_off_pi(),
         }
         self.menu_stack = []  # Stack to keep track of menu navigation
         self.current_menu = 'main'  # Currently displayed menu
@@ -59,7 +61,7 @@ class LCDGui:
             self.hardware.lcd.clear()  # Clear the display before showing a new menu
             menu_list = self.menu_dict.get(menu, [])
             for idx in range(len(menu_list)):
-                if idx <4:
+                if idx < 4:
                     self.hardware.lcd.write_message(menu_list[idx], idx, 1)
             time.sleep(0.05)
 
@@ -81,7 +83,7 @@ class LCDGui:
         if self.current_index < self.view_start:  # Scroll up
             self.view_start = self.current_index
         elif self.current_index >= self.view_start + self.view_size:  # Scroll down
-            self.view_start = self.current_index - self.view_size +1
+            self.view_start = self.current_index - self.view_size + 1
 
         # Display visible menu items
         for i in range(self.view_size):
@@ -158,6 +160,20 @@ class LCDGui:
                 self.select_option()  # Regular button press handling for other menu options
             self.last_button_press_time = current_time
 
+    def restart_pi(self):
+        """Restart the Raspberry Pi."""
+        self.hardware.lcd.clear()
+        self.hardware.lcd.write_message("Restarting...", 1, 0)
+        time.sleep(2)
+        os.system("sudo reboot")
+
+    def power_off_pi(self):
+        """Power off the Raspberry Pi."""
+        self.hardware.lcd.clear()
+        self.hardware.lcd.write_message("Powering Off...", 1, 0)
+        time.sleep(2)
+        os.system("sudo poweroff")
+
     def kill_gui(self):
         """Handles the kill GUI action."""
         self.running = False  # Set running to False to stop the loop
@@ -171,7 +187,6 @@ class LCDGui:
 
         while self.running:  # Main loop will continue until self.running is False
             if self.adjusting_variable:
-                # self.adjust_variable()
                 self.hardware.rotary.encoder.when_rotated = self.adjust_variable  # Update the variable adjustment if in that mode
             else:
                 self.hardware.rotary.encoder.when_rotated = self.navigate
@@ -181,9 +196,6 @@ class LCDGui:
             self.hardware.rotary.button.when_pressed = self.button_press_handler
 
             time.sleep(0.05)  # Prevent excessive CPU usage
-
-        #
-
 
         # Clean up code when exiting
         time.sleep(0.5)
