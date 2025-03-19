@@ -16,6 +16,8 @@ def main():
     gui = LCDGui()  # Pass hardware to GUI
     gui.run()  # Start GUI loop
 
+    
+
 if __name__ == "__main__":
     main()
 

@@ -13,6 +13,7 @@ class LCDGui:
         self.hardware = hardware
         self.menu_dict = {
             "main": ['Print from USB', 'Manual Control', 'Settings', 'Power Options'],
+            # The "Print from USB" menu now lists files from the USB device.
             "Print from USB": ['back'] + self.hardware.usb_device.get_file_names(),
             "Manual Control": ['back','Turn on LEDs', 'Turn off LEDs', 'Move Stepper', 'Display Test Image', 'Kill GUI'],
             "Move Stepper": ['back', 'start rotation', 'stop rotation'],
@@ -96,22 +97,51 @@ class LCDGui:
         """Handle menu selection."""
         option = self.menu_dict.get(self.current_menu, [])[self.current_index]
 
+        # Handle going back to the previous menu
         if option == "back":
             if self.menu_stack:
                 self.show_menu(self.menu_stack.pop())
+            else:
+                self.show_menu("main")
         
-        elif option in self.menu_dict:  # If it's a submenu
+        # If the option is a submenu, navigate into it
+        elif option in self.menu_dict:
             self.menu_stack.append(self.current_menu)
             self.show_menu(option)
 
+        # If the option has an assigned callback, call it
         elif option in self.menu_callbacks:
-            self.menu_callbacks[option]() 
+            self.menu_callbacks[option]()
+        
+        # NEW: Handle video selection from the "Print from USB" menu.
+        elif self.current_menu == "Print from USB":
+            self.send_video_to_projector(option)
         
         if self.adjusting_variable:
             self.adjust_variable()
         else:
             self.navigate()
         time.sleep(0.05)
+
+    def send_video_to_projector(self, video_filename):
+        """
+        Send the selected video file to the projector.
+        This function should call the projector code to display the video.
+        """
+        self.hardware.lcd.clear()
+        self.hardware.lcd.write_message("Sending Video...", 0, 0)
+        # Example call to the projector code.
+        # Make sure your hardware controller has a 'projector' attribute with a 'play_video' method.
+        try:
+            self.hardware.projector.play_video(video_filename)
+            self.hardware.lcd.write_message("Video Playing", 1, 0)
+        except Exception as e:
+            self.hardware.lcd.write_message("Error Playing Video", 1, 0)
+            print("Error sending video to projector:", e)
+        time.sleep(2)
+        # After playing the video, return to the main menu (or update as needed)
+        self.show_menu("main")
+        self.navigate()
 
     def enter_variable_adjustment(self, variable_name, current_value, update_function=None):
         """Enter variable adjustment mode and allow the user to adjust any variable."""
@@ -166,9 +196,9 @@ class LCDGui:
         self.hardware.lcd.write_message("Restarting...", 1, 0)
         time.sleep(2)
         os.system("sudo reboot")
-        result = subprocess.run(["sudo", "reboot"],capture_output=True)
+        result = subprocess.run(["sudo", "reboot"], capture_output=True)
         if result.returncode != 0:
-            print ("fail!")
+            print("fail!")
 
     def power_off_pi(self):
         """Power off the Raspberry Pi."""
