@@ -1,19 +1,36 @@
 bash: cannot set terminal process group (-1): Inappropriate ioctl for device
 bash: no job control in this shell
 bash: dircolors: command not found
-sh: 1: sudo: not found
-sh: 1: sudo: not found
-sh: 1: sudo: not found
-sh: 1: sudo: not found
-sh: 1: sudo: not found
-sh: 1: sudo: not found
-sh: 1: sudo: not found
-sh: 1: sudo: not found
-sh: 1: sudo: not found
-loop
-    ^^^^^^^^^
-  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 167, in run
-    self.show_startup_screen()
-  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 46, in show_startup_screen
-    self.hardware.lcd.write_message("Open   ".center(20), 1, 0)
-TypeError: LCDDisplay.write_message() takes from 2 to 3 positional arguments but 4 were given
+Traceback (most recent call last):
+  File "/home/opencal/opencal/OpenCAL/main.py", line 78, in <module>
+    main()
+  File "/home/opencal/opencal/OpenCAL/main.py", line 69, in main
+    gui = LCDGui(hardware, print_controller)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: LCDGui.__init__() takes from 1 to 2 positional arguments but 3 were given
+ro/pins/lgpio.py", line 248, in _call_when_changed
+    super()._call_when_changed(ticks / 1000000000, level)
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/pins/local.py", line 111, in _call_when_changed
+    super()._call_when_changed(
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/pins/pi.py", line 618, in _call_when_changed
+    method(ticks, state)
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/input_devices.py", line 1170, in _a_changed
+    self._change_state(ticks, edge)
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/input_devices.py", line 1201, in _change_state
+    self._fire_rotated()
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/input_devices.py", line 1304, in _fire_rotated
+    self.when_rotated()
+  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 171, in adjust_variable
+    self.hardware.lcd.write_message("Error Playing Video", 1, 0)
+^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/opencal/opencal/OpenCAL/hardware/lcd_display.py", line 50, in clear
+    self.lcd.clear()
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/RPLCD/lcd.py", line 312, in clear
+    self.command(c.LCD_CLEARDISPLAY)
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/RPLCD/lcd.py", line 382, in command
+    self._send_instruction(value)
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/RPLCD/i2c.py", line 240, in _send_instruction
+    self.bus.write_byte(self._address, (c.RS_INSTRUCTION |
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/smbus2/smbus2.py", line 416, in write_byte
+    ioctl(self.fd, I2C_SMBUS, msg)
+OSError: [Errno 121] Remote I/O error

@@ -6,18 +6,16 @@ import time
 
 # Add the parent directory of 'gui' to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from hardware.hardware_controller import HardwareController
 
 class LCDGui:
     def __init__(self, hardware=HardwareController()):
         from main import PrintController
-        pc = PrintController()
+        self.pc = PrintController()
         self.hardware = hardware
         self.print_controller = PrintController
         self.menu_dict = {
             "main": ['Print from USB', 'Manual Control', 'Settings', 'Power Options'],
-            # The "Print from USB" menu now lists files from the USB device.
             "Print from USB": ['back'] + self.hardware.usb_device.get_file_names(),
             "Manual Control": ['back', 'Turn on LEDs', 'Turn off LEDs', 'Move Stepper', 'Display Test Image', 'Kill GUI'],
             "Move Stepper": ['back', 'start rotation', 'stop rotation'],
@@ -33,6 +31,7 @@ class LCDGui:
             'Set Step RPM': lambda: self.enter_variable_adjustment("RPM", self.hardware.stepper.speed_rpm, self.hardware.stepper.set_speed),
             'Restart': lambda: self.restart_pi(),
             'Power Off': lambda: self.power_off_pi(),
+            'print': lambda arg: self.pc.print(arg)
         }
         self.menu_stack = []  # Stack to keep track of menu navigation
         self.current_menu = 'main'  # Currently displayed menu
@@ -55,7 +54,6 @@ class LCDGui:
 
         # For our two-stage process:
         self.selected_video_filename = None
-        self.adjustment_callback = None  # To call after variable adjustment
 
     def show_startup_screen(self):
         """Display the startup screen with 'Hello User!'."""
@@ -113,14 +111,6 @@ class LCDGui:
         """Handle menu selection."""
         option = self.menu_dict.get(self.current_menu, [])[self.current_index]
 
-        if self.current_menu == "Step RPM Prompt":
-            if option == "Manual Step RPM":
-                self.enter_variable_adjustment("RPM", self.hardware.stepper.speed_rpm, self.hardware.stepper.set_speed,
-                                                callback=self.send_video_after_rpm_adjustment)
-            else:  # Covers "Standard RPM"
-                self.send_video_after_rpm_adjustment()
-            return
-
         if option == "back":
             if self.menu_stack:
                 self.show_menu(self.menu_stack.pop())
@@ -133,8 +123,8 @@ class LCDGui:
             self.menu_callbacks[option]()
         elif self.current_menu == "Print from USB":
             self.selected_video_filename = option
-            self.prompt_manual_step_rpm()
-            return  # Return immediately so the prompt is shown and waits for user input.
+            self.enter_variable_adjustment("RPM", self.hardware.stepper.speed_rpm, self.hardware.stepper.set_speed)
+            #return  # Return immediately so the prompt is shown and waits for user input.
 
         if self.adjusting_variable:
             self.adjust_variable()
@@ -142,32 +132,8 @@ class LCDGui:
             self.navigate()
         time.sleep(0.05)
 
-    def prompt_manual_step_rpm(self):
-        self.menu_dict["Step RPM Prompt"] = ["Manual Step RPM", "Standard RPM"]
-        self.show_menu("Step RPM Prompt")
-        self.navigate()
-        # Wait briefly before accepting further input
-        time.sleep(1)
 
-
-
-    def send_video_after_rpm_adjustment(self):
-        """
-        Called after the user has chosen the RPM option (and finished any adjustment).
-        This method sends the video file to the projector.
-        """
-        self.hardware.lcd.clear()
-        self.hardware.lcd.write_message("Sending Video...", 0, 0)
-        try:
-            self.hardware.projector.play_video(self.selected_video_filename)
-            self.hardware.lcd.write_message("Video Playing", 1, 0)
-        except Exception as e:
-            self.hardware.lcd.write_message("Error Playing Video", 1, 0)
-            print("Error sending video to projector:", e)
-        time.sleep(2)
-        self.show_menu("main")
-
-    def enter_variable_adjustment(self, variable_name, current_value, update_function=None, callback=None):
+    def enter_variable_adjustment(self, variable_name, current_value, update_function=None):
         """Enter variable adjustment mode and allow the user to adjust any variable.
            A callback (if provided) is stored and called after the adjustment is complete.
         """
@@ -175,7 +141,6 @@ class LCDGui:
         self.variable_name = variable_name
         self.current_value = current_value
         self.update_function = update_function
-        self.adjustment_callback = callback
         self.hardware.lcd.clear()
         self.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_value}", 0, 0)
         self.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
@@ -184,10 +149,8 @@ class LCDGui:
 
     def adjust_variable(self):
         """Adjust the variable using the rotary encoder."""
-        if self.hardware.rotary is not None:
-            position = self.hardware.rotary.get_position()
-        else:
-            position = self.last_rotary_position
+
+        position = self.hardware.rotary.get_position()
 
         if position > self.last_rotary_position:
             self.current_value += 1
@@ -203,16 +166,14 @@ class LCDGui:
     def button_press_handler(self):
         """Handles button press and debouncing."""
         current_time = time.time()
-        if current_time - self.last_button_press_time > 0.75:
-            if self.adjusting_variable:
+        if current_time - self.last_button_press_time > 1:
+            if self.adjusting_variable and self.selected_video_filename == None:
                 self.update_function(self.current_value)
                 self.adjusting_variable = False
-                if self.adjustment_callback:
-                    self.adjustment_callback()
-                    self.adjustment_callback = None
-                else:
-                    self.show_menu('Settings')
-                    self.navigate()
+                self.show_menu('Settings')
+                self.navigate()
+            elif self.selected_video_filename is not None:
+                self.menu_callbacks['print'](self.selected_video_filename)
             else:
                 self.select_option()
             self.last_button_press_time = current_time
@@ -245,12 +206,11 @@ class LCDGui:
         self.navigate()
 
         while self.running:
-            if self.hardware.rotary is not None:
-                if self.adjusting_variable:
-                    self.hardware.rotary.encoder.when_rotated = self.adjust_variable
-                else:
-                    self.hardware.rotary.encoder.when_rotated = self.navigate
-                self.hardware.rotary.button.when_pressed = self.button_press_handler
+            if self.adjusting_variable:
+                self.hardware.rotary.encoder.when_rotated = self.adjust_variable
+            else:
+                self.hardware.rotary.encoder.when_rotated = self.navigate
+            self.hardware.rotary.button.when_pressed = self.button_press_handler
             time.sleep(0.05)
 
         time.sleep(0.5)
@@ -260,13 +220,9 @@ class LCDGui:
         time.sleep(2)
         self.hardware.lcd.clear()
 
-        
+
 if __name__ == "__main__":
-    try:
-        gui = LCDGui()
-        gui.run()
-    except KeyboardInterrupt:
-        print("KeyboardInterrupt caught. Exiting gracefully.")
-        gui.hardware.lcd.clear()
-        sys.exit(0)
+    gui = LCDGui()
+    gui.run()
+
 
