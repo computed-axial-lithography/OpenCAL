@@ -59,10 +59,10 @@ class HardwareController:
             self.errors.append(f"USB device failed: {e}")
             self.healthy = False
         
-        # try:
-        #     self.projector = Projector() 
-        # except Exception as e:
-        #     self.errors.append(f"Projector failed: {e}")     
+        try:
+            self.projector = Projector() 
+        except Exception as e:
+            self.errors.append(f"Projector failed: {e}")     
 
 
     def communication_check(self):
