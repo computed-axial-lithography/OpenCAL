@@ -20,8 +20,8 @@ class PrintController:
             return
 
         # Start hardware
-        self.hardware.stepper.start_rotation() # Start stepper motor
-        self.hardware.led_array.set_led((255, 0, 0), set_all=True)  # Turn on LEDs
+        # self.hardware.stepper.start_rotation() # Start stepper motor
+        # self.hardware.led_array.set_led((255, 0, 0), set_all=True)  # Turn on LEDs
 
         # Get video FPS to sync frame timing
         fps = cap.get(cv2.CAP_PROP_FPS)
@@ -44,8 +44,8 @@ class PrintController:
 
         finally:
             cap.release()
-            self.hardware.stepper.stop()
-            self.hardware.led_array.clear_leds()  # Turn off LEDs
+            # self.hardware.stepper.stop()
+            # self.hardware.led_array.clear_leds()  # Turn off LEDs
             print("Print job complete.")
 
     def stop(self):

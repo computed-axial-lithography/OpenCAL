@@ -40,6 +40,16 @@ class MP4Driver:
             print("MP4 Files found:")
             for file in mp4_files:
                 print(file)
+    def get_full_path(self, filename):
+        """
+        Given a filename (as returned by get_file_names), return the full path to the file.
+        Raises FileNotFoundError if the file is not found.
+        """
+        for full_path in self.list_mp4_files():
+            if os.path.basename(full_path) == filename:
+                return full_path
+        raise FileNotFoundError(f"File {filename} not found in {self.mount_point}")
+
 
 # Example Usage:
 if __name__ == "__main__":

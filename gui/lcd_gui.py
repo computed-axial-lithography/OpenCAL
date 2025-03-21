@@ -122,7 +122,7 @@ class LCDGui:
         elif option in self.menu_callbacks:
             self.menu_callbacks[option]()
         elif self.current_menu == "Print from USB":
-            self.selected_video_filename = option
+            self.selected_video_filename = self.hardware.usb_device.get_full_path(option)
             self.enter_variable_adjustment("RPM", self.hardware.stepper.speed_rpm, self.hardware.stepper.set_speed)
             #return  # Return immediately so the prompt is shown and waits for user input.
 
