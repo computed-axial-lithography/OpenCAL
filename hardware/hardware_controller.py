@@ -60,7 +60,7 @@ class HardwareController:
             self.healthy = False
         
         try:
-            self.projector = Projector() 
+            self.projector = Projector(1920,1080) 
         except Exception as e:
             self.errors.append(f"Projector failed: {e}")     
 
