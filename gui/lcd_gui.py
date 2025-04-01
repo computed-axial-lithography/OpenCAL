@@ -60,8 +60,6 @@ class LCDGui:
         self.hardware.lcd.clear()
         self.hardware.lcd.write_message("Open   ".center(20), 1, 0)
         time.sleep(1)
-        self.hardware.lcd.write_message("    CAL".center(20), 1, 0)
-        time.sleep(1)
         self.hardware.lcd.write_message("OpenCAL".center(20), 1, 0)
         time.sleep(2)
         self.hardware.lcd.write_message("FOR THE COMMUNITY".center(20), 2, 0)
