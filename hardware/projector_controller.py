@@ -23,7 +23,7 @@ class Projector:
             return False
         
         # Optionally rotate the frame if needed:
-        # frame = self.rotate_frame(frame, rotation_angle)
+        frame = self.rotate_frame(frame, rotation_angle)
         
         # Get frame dimensions
         frame_h, frame_w = frame.shape[:2]
@@ -46,7 +46,6 @@ class Projector:
         # Calculate offsets to center the video frame on the background
         x_offset = (self.screen_width - frame_w) // 2
         y_offset = (self.screen_height - frame_h) // 2
-        
         # Place the frame on the background
         background[y_offset:y_offset+frame_h, x_offset:x_offset+frame_w] = frame
         
@@ -67,7 +66,7 @@ class Projector:
         return rotated
 
 def main():
-    video_path = "/home/opencal/opencal/OpenCAL/development/simulations/PEGDA700_starship_rebinned_36degps_intensity11x.mp4"
+    video_path = "/media/opencal/UBOOKSTORE/PEGDA700_starship_rebinned_36degps_intensity11x.mp4"
     cap = cv2.VideoCapture(video_path)
     
     if not cap.isOpened():

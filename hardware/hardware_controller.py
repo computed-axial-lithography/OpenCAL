@@ -17,7 +17,7 @@ class HardwareController:
         self.led_array = None
         self.lcd = None
         self.rotary = None
-        self.projector = None
+        self._projector = None
         self.usb_device = None
 
         self.errors = []
@@ -59,12 +59,18 @@ class HardwareController:
             self.errors.append(f"USB device failed: {e}")
             self.healthy = False
         
-        try:
-            self.projector = Projector(1920,1080) 
-        except Exception as e:
-            self.errors.append(f"Projector failed: {e}")     
+        # try:
+        #     #self.projector = Projector(1920,1080) 
+        # except Exception as e:
+        #     self.errors.append(f"Projector failed: {e}")     
 
-
+    @property
+    def projector(self):
+        if self._projector is None:
+            # Create the projector on first access.
+            self._projector = Projector(1920, 1080)
+        return self._projector
+    
     def communication_check(self):
         print("\nRunning hardware communication check...")
 

@@ -7,13 +7,14 @@ import time
 # Add the parent directory of 'gui' to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from hardware.hardware_controller import HardwareController
+from print_controller import PrintController
 
 class LCDGui:
-    def __init__(self, hardware=HardwareController()):
-        from main import PrintController
-        self.pc = PrintController()
-        self.hardware = hardware
-        self.print_controller = PrintController
+    def __init__(self, hardware=HardwareController(),  pc = PrintController()):
+        
+        self.pc = pc
+        self.hardware = pc.hardware
+        #self.print_controller = PrintController
         self.menu_dict = {
             "main": ['Print from USB', 'Manual Control', 'Settings', 'Power Options'],
             "Print from USB": ['back'] + self.hardware.usb_device.get_file_names(),
