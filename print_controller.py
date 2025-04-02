@@ -13,8 +13,7 @@ class PrintController:
     def print(self, video_file):
         print(f"Starting print job... {video_file}")
         self.running = True
-        #self.projector = Projector(1920,1080)
-        
+      
         # Open video file
         cap = cv2.VideoCapture(video_file)
         if not cap.isOpened():
@@ -22,7 +21,7 @@ class PrintController:
             return
 
         # Start hardware
-        # self.hardware.stepper.start_rotation() # Start stepper motor
+        self.hardware.stepper.start_rotation() # Start stepper motor
         # self.hardware.led_array.set_led((255, 0, 0), set_all=True)  # Turn on LEDs
 
         # Get video FPS to sync frame timing
@@ -43,7 +42,7 @@ class PrintController:
 
         finally:
             cap.release()
-            # self.hardware.stepper.stop()
+            self.hardware.stepper.stop()
             # self.hardware.led_array.clear_leds()  # Turn off LEDs
             print("Print job complete.")
 
