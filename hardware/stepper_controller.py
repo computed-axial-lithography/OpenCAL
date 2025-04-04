@@ -1,7 +1,7 @@
-from gpiozero import OutputDevice
-from time import sleep
-import json
+import time
 import threading
+from gpiozero import OutputDevice
+import json
 
 class StepperMotor:
     def __init__(self, config_file="/home/opencal/opencal/OpenCAL/utils/config.json"):
@@ -62,11 +62,16 @@ class StepperMotor:
             self.direction.off()  # Counterclockwise
 
         # Generate step pulses
+        start_time = time.perf_counter()
         for _ in range(steps):
             self.step.on()
-            sleep(self.step_delay / 2)  # Pulse duration
+            # Use time.perf_counter() for more accurate timing
+            elapsed_time = time.perf_counter() - start_time
+            time_to_sleep = self.step_delay - elapsed_time
+            if time_to_sleep > 0:
+                time.sleep(time_to_sleep)  # Sleep for the remaining time
             self.step.off()
-            sleep(self.step_delay / 2)
+            start_time = time.perf_counter()
 
     def start_rotation(self, direction=None):
         """
@@ -92,11 +97,16 @@ class StepperMotor:
     def _rotate_motor(self):
         """Rotate the motor continuously in a separate thread."""
         try:
+            last_time = time.perf_counter()
             while self._running:
                 self.step.on()
-                sleep(self.step_delay / 2)  # Pulse duration
+                # Accurate sleep timing using time.perf_counter()
+                elapsed_time = time.perf_counter() - last_time
+                time_to_sleep = self.step_delay - elapsed_time
+                if time_to_sleep > 0:
+                    time.sleep(time_to_sleep)  # Sleep for the remaining time
                 self.step.off()
-                sleep(self.step_delay / 2)
+                last_time = time.perf_counter()
         except KeyboardInterrupt:
             print("Continuous rotation interrupted.")
             self.stop()
@@ -108,7 +118,6 @@ class StepperMotor:
         if self._rotation_thread is not None:
             self._rotation_thread.join()  # Wait for the thread to finish cleanly
         self.step.off()
-        #self.direction.off()
         if self.enable_pin:
             self.enable.off()  # Disable motor
 
@@ -116,6 +125,7 @@ class StepperMotor:
         """Cleanup GPIO."""
         print("Closing motor connection.")
         # gpiozero handles cleanup automatically, no need to explicitly call GPIO.cleanup()
+
 
 # Example usage (remove or modify during integration)
 if __name__ == "__main__":

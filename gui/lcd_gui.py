@@ -20,7 +20,7 @@ class LCDGui:
             "Move Stepper": ['back', 'start rotation', 'stop rotation'],
             "Settings": ['back', 'Set Step RPM', 'Set Some Variable'],  # Options for adjusting variables
             "Power Options": ['back', 'Restart', 'Power Off'],  # Power options submenu
-            "Print menu" : ['stop print'],
+            "Print menu" : ['back','stop print'],
         }
         self.menu_callbacks = {
             'Turn on LEDs': lambda: self.hardware.led_array.set_led((255, 0, 0), set_all=True),

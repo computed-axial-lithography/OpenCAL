@@ -1,9 +1,8 @@
 from hardware.hardware_controller import HardwareController
 import time
 import cv2
-#from hardware.projector_controller import Projector
-#import numpy as np
 import preprocess
+import os
 
 
 class PrintController:
@@ -55,4 +54,19 @@ class PrintController:
     def stop(self):
         print("Stopping print job...")
         self.running = False
+        
+        # Remove the preprocessed video file if it exists
+        video_path = "/tmp/processed_video.avi"
+        if os.path.exists(video_path):
+            try:
+                os.remove(video_path)  # Delete the video file
+                print(f"Deleted video file: {video_path}")
+            except Exception as e:
+                print(f"Error deleting video file: {e}")
+        else:
+            print("No video file to delete.")
 
+        # Optionally, ensure other hardware-related cleanup is done
+        self.hardware.stepper.stop()
+        self.hardware.led_array.clear_leds()  # Turn off LEDs
+        print("Print job stopped and cleanup complete.")
