@@ -11,59 +11,7 @@ class PrintController:
         
         self.running = False
 
-        
-def preprocess_video(input_path, output_path, screen_width, screen_height, rotation_angle=-90):
-    cap = cv2.VideoCapture(input_path)
-    if not cap.isOpened():
-        print(f"Failed to open video: {input_path}")
-        return
-
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-    # Calculate output size if rotated
-    if rotation_angle in [-90, 90, 270]:
-        out_w, out_h = height, width
-    else:
-        out_w, out_h = width, height
-
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(output_path, fourcc, fps, (screen_width, screen_height))
-
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        # Rotate
-        frame = rotate_frame(frame, rotation_angle)
-
-        # Resize only if too big
-        frame_h, frame_w = frame.shape[:2]
-        scale = min(screen_width / frame_w, screen_height / frame_h, 1.0)
-        frame = cv2.resize(frame, (int(frame_w * scale), int(frame_h * scale)), interpolation=cv2.INTER_AREA)
-
-        # Center on black background
-        background = np.zeros((screen_height, screen_width, 3), dtype=np.uint8)
-        fh, fw = frame.shape[:2]
-        x_offset = (screen_width - fw) // 2
-        y_offset = (screen_height - fh) // 2
-        background[y_offset:y_offset+fh, x_offset:x_offset+fw] = frame
-
-        out.write(background)
-
-    cap.release()
-    out.release()
-    print(f"Saved preprocessed video to: {output_path}")
-
-    def rotate_frame(frame, angle):
-        (h, w) = frame.shape[:2]
-        center = (w // 2, h // 2)
-        M = cv2.getRotationMatrix2D(center, angle, 1.0)
-        rotated = cv2.warpAffine(frame, M, (w, h))
-        return rotated
-
+            
 
     def print(self, video_file):
         print(f"Starting print job... {video_file}")
