@@ -1,8 +1,9 @@
 from hardware.hardware_controller import HardwareController
 import time
 import cv2
-from hardware.projector_controller import Projector
-import numpy as np
+#from hardware.projector_controller import Projector
+#import numpy as np
+import preprocess
 
 
 class PrintController:
@@ -12,17 +13,17 @@ class PrintController:
         self.running = False
 
             
-
     def print(self, video_file):
         print(f"Starting print job... {video_file}")
+        print("preprocessing video...")
         self.running = True
 
-        self.preprocess_video(video_file, "/tmp/processed_video.mp4", 1920, 1080)
+        preprocess.preprocess_video(video_file, "/tmp/processed_video.avi", 1920, 1080)
       
         # Open video file
-        cap = cv2.VideoCapture("/tmp/processed_video.mp4")
+        cap = cv2.VideoCapture("/tmp/processed_video.avi")
         if not cap.isOpened():
-            print(f"Failed to open video file: {video_file}")
+            print(f"Failed to open processed video file: {video_file}")
             return
 
         # Start hardware

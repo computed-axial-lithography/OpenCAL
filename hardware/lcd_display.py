@@ -61,7 +61,7 @@ class LCDDisplay:
             message (str): The message to display.
             row (int): The row on the LCD (0-indexed).
         """
-        if len(message) > self.cols:
+        if len(message) > self.cols-1:
             # Store the long message for scrolling
             self.scrolling_text[row] = message
         else:

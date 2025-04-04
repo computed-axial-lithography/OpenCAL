@@ -6,15 +6,13 @@ import time
 
 # Add the parent directory of 'gui' to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from hardware.hardware_controller import HardwareController
 from print_controller import PrintController
 
 class LCDGui:
-    def __init__(self, hardware=HardwareController(),  pc = PrintController()):
+    def __init__(self,  pc = PrintController()):
         
         self.pc = pc
         self.hardware = pc.hardware
-        #self.print_controller = PrintController
         self.menu_dict = {
             "main": ['Print from USB', 'Manual Control', 'Settings', 'Power Options'],
             "Print from USB": ['back'] + self.hardware.usb_device.get_file_names(),
@@ -22,6 +20,7 @@ class LCDGui:
             "Move Stepper": ['back', 'start rotation', 'stop rotation'],
             "Settings": ['back', 'Set Step RPM', 'Set Some Variable'],  # Options for adjusting variables
             "Power Options": ['back', 'Restart', 'Power Off'],  # Power options submenu
+            "Print menu" : ['stop print'],
         }
         self.menu_callbacks = {
             'Turn on LEDs': lambda: self.hardware.led_array.set_led((255, 0, 0), set_all=True),
@@ -32,7 +31,8 @@ class LCDGui:
             'Set Step RPM': lambda: self.enter_variable_adjustment("RPM", self.hardware.stepper.speed_rpm, self.hardware.stepper.set_speed),
             'Restart': lambda: self.restart_pi(),
             'Power Off': lambda: self.power_off_pi(),
-            'print': lambda arg: self.pc.print(arg)
+            'print': lambda arg: self.pc.print(arg),
+            'stop print': lambda: self.pc.stop(),  # Allow stopping the print job from the menu'
         }
         self.menu_stack = []  # Stack to keep track of menu navigation
         self.current_menu = 'main'  # Currently displayed menu
@@ -173,6 +173,7 @@ class LCDGui:
                 self.navigate()
             elif self.selected_video_filename is not None:
                 self.menu_callbacks['print'](self.selected_video_filename)
+                self.show_menu('Print menu')  # Switch to print menu after starting the print job
             else:
                 self.select_option()
             self.last_button_press_time = current_time
