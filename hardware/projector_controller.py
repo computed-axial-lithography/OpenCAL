@@ -25,7 +25,7 @@ class Projector:
         return True
 
 def main():
-    video_path = "/media/opencal/UBOOKSTORE/PEGDA700_starship_rebinned_36degps_intensity11x.mp4"
+    video_path = "tmp/preprocessed_output.avi"
     cap = cv2.VideoCapture(video_path)
 
     if not cap.isOpened():

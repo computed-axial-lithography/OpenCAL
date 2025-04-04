@@ -1,35 +1,35 @@
 bash: cannot set terminal process group (-1): Inappropriate ioctl for device
 bash: no job control in this shell
 bash: dircolors: command not found
-qt.qpa.xcb: could not connect to display 
-qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "/home/opencal/opencal/.venv/lib/python3.11/site-packages/cv2/qt/plugins" even though it was found.
-This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.
-
-Available platform plugins are: xcb.
-
-248, in _call_when_changed
-    super()._call_when_changed(ticks / 1000000000, level)
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/pins/local.py", line 111, in _call_when_changed
-    super()._call_when_changed(
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/pins/pi.py", line 618, in _call_when_changed
-    method(ticks, state)
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/input_devices.py", line 1170, in _a_changed
-    self._change_state(ticks, edge)
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/input_devices.py", line 1201, in _change_state
-    self._fire_rotated()
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/input_devices.py", line 1304, in _fire_rotated
-    self.when_rotated()
-  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 171, in adjust_variable
-    self.hardware.lcd.write_message("Error Playing Video", 1, 0)
-^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/OpenCAL/hardware/lcd_display.py", line 50, in clear
-    self.lcd.clear()
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/RPLCD/lcd.py", line 312, in clear
-    self.command(c.LCD_CLEARDISPLAY)
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/RPLCD/lcd.py", line 382, in command
-    self._send_instruction(value)
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/RPLCD/i2c.py", line 240, in _send_instruction
-    self.bus.write_byte(self._address, (c.RS_INSTRUCTION |
+Traceback (most recent call last):
+  File "/home/opencal/opencal/OpenCAL/main.py", line 29, in <module>
+    main()
+  File "/home/opencal/opencal/OpenCAL/main.py", line 15, in main
+    hardware = HardwareController()
+               ^^^^^^^^^^^^^^^^^^^^
+  File "/home/opencal/opencal/OpenCAL/hardware/hardware_controller.py", line 19, in __init__
+    self.rotary = RotaryEncoderHandler()   
+                  ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/opencal/opencal/OpenCAL/hardware/rotary_controller.py", line 22, in __init__
+    self.encoder = RotaryEncoder(self.clk_pin, self.dt_pin, wrap=True, max_steps=1000)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/devices.py", line 108, in __call__
+    self = super().__call__(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/input_devices.py", line 1147, in __init__
+    a=InputDevice(a, pull_up=True, pin_factory=pin_factory),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/devices.py", line 108, in __call__
+    self = super().__call__(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/input_devices.py", line 79, in __init__
+    super().__init__(pin, pin_factory=pin_factory)
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/devices.py", line 552, in __init__
+    self.pin_factory.reserve_pins(self, pin)
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/pins/__init__.py", line 88, in reserve_pins
+    raise GPIOPinInUse(
+gpiozero.exc.GPIOPinInUse: pin GPIO5 is already in use by <gpiozero.InputDevice object on pin GPIO5, pull_up=True, is_active=False>
+ |
   File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/smbus2/smbus2.py", line 416, in write_byte
     ioctl(self.fd, I2C_SMBUS, msg)
 OSError: [Errno 121] Remote I/O error

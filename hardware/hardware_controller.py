@@ -16,7 +16,7 @@ class HardwareController:
         self.stepper = None
         self.led_array = None
         self.lcd = None
-        self.rotary = None
+        self.rotary = RotaryEncoderHandler()   
         self._projector = None
         self.usb_device = None
 
@@ -47,11 +47,11 @@ class HardwareController:
             self.errors.append(f"LCDDisplay failed: {e}")
             self.healthy = False
 
-        try:
-            self.rotary = RotaryEncoderHandler()   
-        except Exception as e:
-            self.errors.append(f"RotaryEncoder failed: {e}")
-            self.healthy = False
+        # try:
+        #     self.rotary = RotaryEncoderHandler()   
+        # except Exception as e:
+        #     self.errors.append(f"RotaryEncoder failed: {e}")
+        #     self.healthy = False
         
         try:
             self.usb_device = MP4Driver()

@@ -61,7 +61,7 @@ class LCDDisplay:
             message (str): The message to display.
             row (int): The row on the LCD (0-indexed).
         """
-        if len(message) > self.cols-1:
+        if len(message) > self.cols:
             # Store the long message for scrolling
             self.scrolling_text[row] = message
         else:
@@ -88,18 +88,17 @@ class LCDDisplay:
                 self.lcd.write_string(self.framebuffer[row].ljust(self.cols)[:self.cols])
 
     def _scrolling_loop(self):
-        """Continuously scroll long text while keeping the first column (col 0) fixed."""
-        visible_width = self.cols - 1  # Since col 0 is reserved
+        """Continuously scroll long text while keeping other rows fixed."""
         while self.scrolling_active:
+            # Iterate over a copy of the scrolling dictionary to avoid modification errors
             scrolling_items = list(self.scrolling_text.items())
             for row, text in scrolling_items:
-                padded_text = text + " " * visible_width  # Add padding for smooth scrolling
-                for i in range(len(padded_text) - visible_width + 1):
-                    # Leave the first column (col 0) fixed and scroll the rest
-                    self.framebuffer[row] = f"{text[0]}{padded_text[i:i + visible_width]}"
-                    self._update_lcd(row)
-                    sleep(0.5)
-            sleep(0.1)  # Sleep briefly to avoid busy looping when no text is present
+                # Scroll the text across the row
+                for i in range(len(text) - self.cols + 1):
+                    self.framebuffer[row] = text[i:i + self.cols]
+                    self._update_lcd(row)  # Only update the scrolling row
+                    sleep(0.5)  # Adjust the speed of scrolling
+            sleep(0.1)  # Small delay to prevent excessive looping
 
     def stop_scrolling(self):
         """Stop the scrolling thread."""

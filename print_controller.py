@@ -17,7 +17,7 @@ class PrintController:
         print("preprocessing video...")
         self.running = True
 
-        preprocess.preprocess_video(video_file, "/tmp/processed_video.avi", 1920, 1080)
+        preprocess.preprocess_video_ffmpeg(video_file, "/tmp/processed_video.avi", 1920, 1080)
       
         # Open video file
         cap = cv2.VideoCapture("/tmp/processed_video.avi")

@@ -28,7 +28,7 @@ class StepperMotor:
         self.default_direction = config['stepper_motor'].get("default_direction", "CW")
         self.default_steps = config['stepper_motor'].get("default_steps", 1600)
 
-        self.step_delay = 60 / (self.default_speed * self.default_steps)
+        self.step_delay = 60.00 / (self.default_speed * self.default_steps)
         self._rotation_thread = None  # Reference to the rotation thread
         self._running = False  # Flag to control whether the motor is running
 
@@ -42,7 +42,7 @@ class StepperMotor:
         """Set the stepper motor speed in RPM (frequency of step pulses)."""
         rpm = rpm or self.default_speed  # Use default if no rpm is provided
         self.speed_rpm = rpm
-        self.step_delay = 60 / (self.speed_rpm * self.default_steps)
+        self.step_delay = 60.00 / (self.speed_rpm * self.default_steps)
         print(f"Speed set to {self.speed_rpm} RPM")
 
     def rotate_steps(self, steps=None, direction=None):
@@ -93,23 +93,21 @@ class StepperMotor:
             self._rotation_thread = threading.Thread(target=self._rotate_motor)
             self._rotation_thread.daemon = True  # Ensure the thread terminates with the program
             self._rotation_thread.start()
-
     def _rotate_motor(self):
-        """Rotate the motor continuously in a separate thread."""
-        try:
-            last_time = time.perf_counter()
-            while self._running:
-                self.step.on()
-                # Accurate sleep timing using time.perf_counter()
-                elapsed_time = time.perf_counter() - last_time
-                time_to_sleep = self.step_delay - elapsed_time
-                if time_to_sleep > 0:
-                    time.sleep(time_to_sleep)  # Sleep for the remaining time
-                self.step.off()
-                last_time = time.perf_counter()
-        except KeyboardInterrupt:
-            print("Continuous rotation interrupted.")
-            self.stop()
+        next_time = time.perf_counter()
+        while self._running:
+            self.step.on()
+            # Optionally, hold the pulse for a short, fixed time (if needed)
+            self.step.off()
+            
+            # Schedule the next step
+            next_time += self.step_delay
+            sleep_time = next_time - time.perf_counter()
+            if sleep_time > 0:
+                time.sleep(sleep_time)
+            else:
+                # If we're behind schedule, adjust the next_time
+                next_time = time.perf_counter()
 
     def stop(self):
         """Stop the rotation."""
@@ -131,7 +129,9 @@ class StepperMotor:
 if __name__ == "__main__":
     motor = StepperMotor()
     motor.set_speed(20) # Default speed from config (20 RPM)
-    motor.start_rotation()  # Default 200 steps, CW from config
-    time.sleep(2)  # Wait 2 seconds
+    motor.start_rotation()
+    time.sleep(60.00)
+    #motor.rotate_steps(15, "CCW")  
+    # time.sleep(2) # Wait 2 seconds
     motor.stop()
     motor.close()

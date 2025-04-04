@@ -7,15 +7,16 @@ import time
 # Add the parent directory of 'gui' to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from print_controller import PrintController
+from hardware import HardwareController
 
 class LCDGui:
-    def __init__(self,  pc = PrintController()):
+    def __init__(self, pc = PrintController()):
         
         self.pc = pc
-        self.hardware = pc.hardware
+        #self.hardware = pc.hardware
         self.menu_dict = {
             "main": ['Print from USB', 'Manual Control', 'Settings', 'Power Options'],
-            "Print from USB": ['back'] + self.hardware.usb_device.get_file_names(),
+            "Print from USB": ['back'] + self.pc.hardware.usb_device.get_file_names(),
             "Manual Control": ['back', 'Turn on LEDs', 'Turn off LEDs', 'Move Stepper', 'Display Test Image', 'Kill GUI'],
             "Move Stepper": ['back', 'start rotation', 'stop rotation'],
             "Settings": ['back', 'Set Step RPM', 'Set Some Variable'],  # Options for adjusting variables
@@ -23,12 +24,12 @@ class LCDGui:
             "Print menu" : ['back','stop print'],
         }
         self.menu_callbacks = {
-            'Turn on LEDs': lambda: self.hardware.led_array.set_led((255, 0, 0), set_all=True),
-            'Turn off LEDs': self.hardware.led_array.clear_leds,
-            'start rotation': lambda: self.hardware.stepper.start_rotation(),
-            'stop rotation': lambda: self.hardware.stepper.stop(),
+            'Turn on LEDs': lambda:self.pc.hardware.led_array.set_led((255, 0, 0), set_all=True),
+            'Turn off LEDs':self.pc.hardware.led_array.clear_leds,
+            'start rotation': lambda:self.pc.hardware.stepper.start_rotation(),
+            'stop rotation': lambda:self.pc.hardware.stepper.stop(),
             'Kill GUI': lambda: self.kill_gui(),
-            'Set Step RPM': lambda: self.enter_variable_adjustment("RPM", self.hardware.stepper.speed_rpm, self.hardware.stepper.set_speed),
+            'Set Step RPM': lambda: self.enter_variable_adjustment("RPM",self.pc.hardware.stepper.speed_rpm,self.pc.hardware.stepper.set_speed),
             'Restart': lambda: self.restart_pi(),
             'Power Off': lambda: self.power_off_pi(),
             'print': lambda arg: self.pc.print(arg),
@@ -41,8 +42,8 @@ class LCDGui:
         self.view_size = 4  # Number of menu items visible at once
 
         # Check if rotary exists before calling its get_position method.
-        if self.hardware.rotary is not None:
-            self.last_rotary_position = self.hardware.rotary.get_position()
+        if self.pc.hardware.rotary is not None:
+            self.last_rotary_position =self.pc.hardware.rotary.get_position()
         else:
             self.last_rotary_position = 0
 
@@ -58,12 +59,12 @@ class LCDGui:
 
     def show_startup_screen(self):
         """Display the startup screen with 'Hello User!'."""
-        self.hardware.lcd.clear()
-        self.hardware.lcd.write_message("Open   ".center(20), 1, 0)
+        self.pc.hardware.lcd.clear()
+        self.pc.hardware.lcd.write_message("Open   ".center(20), 1, 0)
         time.sleep(1)
-        self.hardware.lcd.write_message("OpenCAL".center(20), 1, 0)
+        self.pc.hardware.lcd.write_message("OpenCAL".center(20), 1, 0)
         time.sleep(2)
-        self.hardware.lcd.write_message("FOR THE COMMUNITY".center(20), 2, 0)
+        self.pc.hardware.lcd.write_message("FOR THE COMMUNITY".center(20), 2, 0)
         time.sleep(1)
 
     def show_menu(self, menu):
@@ -71,17 +72,17 @@ class LCDGui:
         if menu != self.current_menu:
             self.current_index = 0
             self.current_menu = menu
-            self.hardware.lcd.clear()  # Clear the display before showing a new menu
+            self.pc.hardware.lcd.clear()  # Clear the display before showing a new menu
             menu_list = self.menu_dict.get(menu, [])
             for idx in range(len(menu_list)):
                 if idx < 4:
-                    self.hardware.lcd.write_message(menu_list[idx], idx, 1)
+                   self.pc.hardware.lcd.write_message(menu_list[idx], idx, 1)
             time.sleep(0.05)
 
     def navigate(self):
         """Handle menu navigation based on rotary encoder movement with scrolling."""
-        if self.hardware.rotary is not None:
-            position = self.hardware.rotary.get_position()
+        if self.pc.hardware.rotary is not None:
+            position =self.pc.hardware.rotary.get_position()
         else:
             position = self.last_rotary_position
 
@@ -104,7 +105,7 @@ class LCDGui:
             menu_idx = self.view_start + i
             if menu_idx < menu_length:
                 prefix = ">" if menu_idx == self.current_index else " "
-                self.hardware.lcd.write_message(f"{prefix}{menu_list[menu_idx]}".ljust(20), i, 0)
+                self.pc.hardware.lcd.write_message(f"{prefix}{menu_list[menu_idx]}".ljust(20), i, 0)
 
     def select_option(self):
         """Handle menu selection."""
@@ -121,8 +122,8 @@ class LCDGui:
         elif option in self.menu_callbacks:
             self.menu_callbacks[option]()
         elif self.current_menu == "Print from USB":
-            self.selected_video_filename = self.hardware.usb_device.get_full_path(option)
-            self.enter_variable_adjustment("RPM", self.hardware.stepper.speed_rpm, self.hardware.stepper.set_speed)
+            self.selected_video_filename =self.pc.hardware.usb_device.get_full_path(option)
+            self.enter_variable_adjustment("RPM",self.pc.hardware.stepper.speed_rpm,self.pc.hardware.stepper.set_speed)
             #return  # Return immediately so the prompt is shown and waits for user input.
 
         if self.adjusting_variable:
@@ -140,26 +141,26 @@ class LCDGui:
         self.variable_name = variable_name
         self.current_value = current_value
         self.update_function = update_function
-        self.hardware.lcd.clear()
-        self.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_value}", 0, 0)
-        self.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
-        self.hardware.lcd.write_message("Click to set", 2, 0)
+        self.pc.hardware.lcd.clear()
+        self.pc.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_value}", 0, 0)
+        self.pc.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
+        self.pc.hardware.lcd.write_message("Click to set", 2, 0)
         self.adjusting_variable = True
 
     def adjust_variable(self):
         """Adjust the variable using the rotary encoder."""
 
-        position = self.hardware.rotary.get_position()
+        position =self.pc.hardware.rotary.get_position()
 
         if position > self.last_rotary_position:
             self.current_value += 1
         elif position < self.last_rotary_position:
             self.current_value -= 1
 
-        self.hardware.lcd.clear()
-        self.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_value}", 0, 0)
-        self.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
-        self.hardware.lcd.write_message("Click to set", 2, 0)
+        self.pc.hardware.lcd.clear()
+        self.pc.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_value}", 0, 0)
+        self.pc.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
+        self.pc.hardware.lcd.write_message("Click to set", 2, 0)
         self.last_rotary_position = position
 
     def button_press_handler(self):
@@ -180,8 +181,8 @@ class LCDGui:
 
     def restart_pi(self):
         """Restart the Raspberry Pi."""
-        self.hardware.lcd.clear()
-        self.hardware.lcd.write_message("Restarting...", 1, 0)
+        self.pc.hardware.lcd.clear()
+        self.pc.hardware.lcd.write_message("Restarting...", 1, 0)
         time.sleep(2)
         os.system("sudo reboot")
         result = subprocess.run(["sudo", "reboot"], capture_output=True)
@@ -190,8 +191,8 @@ class LCDGui:
 
     def power_off_pi(self):
         """Power off the Raspberry Pi."""
-        self.hardware.lcd.clear()
-        self.hardware.lcd.write_message("Powering Off...", 1, 0)
+        self.pc.hardware.lcd.clear()
+        self.pc.hardware.lcd.write_message("Powering Off...", 1, 0)
         time.sleep(2)
         os.system("sudo poweroff")
 
@@ -207,18 +208,18 @@ class LCDGui:
 
         while self.running:
             if self.adjusting_variable:
-                self.hardware.rotary.encoder.when_rotated = self.adjust_variable
+               self.pc.hardware.rotary.encoder.when_rotated = self.adjust_variable
             else:
-                self.hardware.rotary.encoder.when_rotated = self.navigate
-            self.hardware.rotary.button.when_pressed = self.button_press_handler
+               self.pc.hardware.rotary.encoder.when_rotated = self.navigate
+            self.pc.hardware.rotary.button.when_pressed = self.button_press_handler
             time.sleep(0.05)
 
         time.sleep(0.5)
-        self.hardware.lcd.clear()
+        self.pc.hardware.lcd.clear()
         time.sleep(0.5)
-        self.hardware.lcd.write_message("Goodbye!".center(20), 1, 0)
+        self.pc.hardware.lcd.write_message("Goodbye!".center(20), 1, 0)
         time.sleep(2)
-        self.hardware.lcd.clear()
+        self.pc.hardware.lcd.clear()
 
 
 if __name__ == "__main__":

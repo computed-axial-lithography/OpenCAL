@@ -12,9 +12,7 @@ def startup_sequence():
     return hardware
 
 def main():
-    hardware = startup_sequence()
-    
-    print_controller = PrintController(hardware)
+    print_controller = PrintController()
     
     # Pass print_controller to the GUI
     gui = LCDGui(print_controller)

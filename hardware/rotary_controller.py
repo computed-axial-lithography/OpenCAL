@@ -15,9 +15,9 @@ class RotaryEncoderHandler:
         """
         with open(config_file, 'r') as f:
             config = json.load(f)
-        self.clk_pin = config['rotary_encoder'].get("clk_pin", 17)
-        self.dt_pin = config['rotary_encoder'].get("dt_pin", 27)
-        self.btn_pin = config['rotary_encoder'].get("btn_pin", 22)
+        self.clk_pin = config['rotary_encoder'].get("clk_pin")
+        self.dt_pin = config['rotary_encoder'].get("dt_pin")
+        self.btn_pin = config['rotary_encoder'].get("btn_pin")
 
         self.encoder = RotaryEncoder(self.clk_pin, self.dt_pin, wrap=True, max_steps=1000)
         self.button = Button(self.btn_pin) 
