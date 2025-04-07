@@ -2,16 +2,16 @@ bash: cannot set terminal process group (-1): Inappropriate ioctl for device
 bash: no job control in this shell
 bash: dircolors: command not found
 Traceback (most recent call last):
-  File "/home/opencal/opencal/OpenCAL/main.py", line 29, in <module>
-    main()
-  File "/home/opencal/opencal/OpenCAL/main.py", line 15, in main
-    hardware = HardwareController()
-               ^^^^^^^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/OpenCAL/hardware/hardware_controller.py", line 19, in __init__
-    self.rotary = RotaryEncoderHandler()   
-                  ^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/OpenCAL/hardware/rotary_controller.py", line 22, in __init__
-    self.encoder = RotaryEncoder(self.clk_pin, self.dt_pin, wrap=True, max_steps=1000)
+  File "/home/opencal/opencal/OpenCAL/main.py", line 2, in <module>
+    from hardware.hardware_controller import HardwareController
+  File "/home/opencal/opencal/OpenCAL/hardware/__init__.py", line 1, in <module>
+    from .hardware_controller import HardwareController
+  File "/home/opencal/opencal/OpenCAL/hardware/hardware_controller.py", line 1, in <module>
+    from .camera_controller import CameraController
+  File "/home/opencal/opencal/OpenCAL/hardware/camera_controller.py", line 1, in <module>
+    import cv2
+ModuleNotFoundError: No module named 'cv2'
+steps=1000)
                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/devices.py", line 108, in __call__
     self = super().__call__(*args, **kwargs)
