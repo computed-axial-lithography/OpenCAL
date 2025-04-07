@@ -1,35 +1,38 @@
 bash: cannot set terminal process group (-1): Inappropriate ioctl for device
 bash: no job control in this shell
 bash: dircolors: command not found
+Exception in thread Thread-1:
 Traceback (most recent call last):
-  File "/home/opencal/opencal/OpenCAL/main.py", line 2, in <module>
-    from hardware.hardware_controller import HardwareController
-  File "/home/opencal/opencal/OpenCAL/hardware/__init__.py", line 1, in <module>
-    from .hardware_controller import HardwareController
-  File "/home/opencal/opencal/OpenCAL/hardware/hardware_controller.py", line 1, in <module>
-    from .camera_controller import CameraController
-  File "/home/opencal/opencal/OpenCAL/hardware/camera_controller.py", line 1, in <module>
-    import cv2
-ModuleNotFoundError: No module named 'cv2'
-steps=1000)
-                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/devices.py", line 108, in __call__
-    self = super().__call__(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/input_devices.py", line 1147, in __init__
-    a=InputDevice(a, pull_up=True, pin_factory=pin_factory),
-      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/devices.py", line 108, in __call__
-    self = super().__call__(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/input_devices.py", line 79, in __init__
-    super().__init__(pin, pin_factory=pin_factory)
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/devices.py", line 552, in __init__
-    self.pin_factory.reserve_pins(self, pin)
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/pins/__init__.py", line 88, in reserve_pins
-    raise GPIOPinInUse(
-gpiozero.exc.GPIOPinInUse: pin GPIO5 is already in use by <gpiozero.InputDevice object on pin GPIO5, pull_up=True, is_active=False>
- |
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/smbus2/smbus2.py", line 416, in write_byte
-    ioctl(self.fd, I2C_SMBUS, msg)
-OSError: [Errno 121] Remote I/O error
+  File "/usr/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/lgpio.py", line 554, in run
+    cb.func(chip, gpio, level, tick)
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/pins/lgpio.py", line 248, in _call_when_changed
+    super()._call_when_changed(ticks / 1000000000, level)
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/pins/local.py", line 111, in _call_when_changed
+    super()._call_when_changed(
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/pins/pi.py", line 618, in _call_when_changed
+    method(ticks, state)
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/input_devices.py", line 179, in _pin_changed
+    self._fire_events(ticks, bool(self._state_to_value(state)))
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/mixins.py", line 385, in _fire_events
+    self._fire_activated()
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/mixins.py", line 431, in _fire_activated
+    super()._fire_activated()
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/mixins.py", line 348, in _fire_activated
+    self.when_activated()
+  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 177, in button_press_handler
+    self.menu_callbacks['print'](self.selected_video_filename)
+  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 35, in <lambda>
+    'print': lambda arg: self.pc.print(arg),
+                         ^^^^^^^^^^^^^^^^^^
+  File "/home/opencal/opencal/OpenCAL/print_controller.py", line 23, in print
+    self.hardware.projector.play_video_with_mplayer(video_file)
+  File "/home/opencal/opencal/OpenCAL/hardware/projector_controller.py", line 23, in play_video_with_mplayer
+    self.process = subprocess.Popen(command)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/subprocess.py", line 1024, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/usr/lib/python3.11/subprocess.py", line 1901, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: 'cvlc'

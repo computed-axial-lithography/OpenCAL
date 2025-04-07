@@ -12,5 +12,5 @@ def preprocess_video_ffmpeg(input_path, output_path, screen_width=1920, screen_h
 if __name__ == "__main__":
     preprocess_video_ffmpeg(
         input_path="/media/opencal/UBOOKSTORE/thinker.mp4",
-        output_path="tmp/preprocessed_output.avi"
+        output_path="tmp/preprocessed_output.mp4"
     )

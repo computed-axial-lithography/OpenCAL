@@ -7,7 +7,7 @@ import time
 # Add the parent directory of 'gui' to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from print_controller import PrintController
-from hardware import HardwareController
+#from hardware import HardwareController
 
 class LCDGui:
     def __init__(self, pc = PrintController()):
@@ -121,7 +121,7 @@ class LCDGui:
             self.show_menu(option)
         elif option in self.menu_callbacks:
             self.menu_callbacks[option]()
-        elif self.current_menu == "Print from USB":
+        elif self.current_menu == "Print from USB" and self.selected_video_filename is None:
             self.selected_video_filename =self.pc.hardware.usb_device.get_full_path(option)
             self.enter_variable_adjustment("RPM",self.pc.hardware.stepper.speed_rpm,self.pc.hardware.stepper.set_speed)
             #return  # Return immediately so the prompt is shown and waits for user input.
@@ -174,7 +174,8 @@ class LCDGui:
                 self.navigate()
             elif self.selected_video_filename is not None:
                 self.menu_callbacks['print'](self.selected_video_filename)
-                self.show_menu('Print menu')  # Switch to print menu after starting the print job
+                self.show_menu('Print menu')  # Switch to print menu after starting the print job\
+                #self.navigate()
             else:
                 self.select_option()
             self.last_button_press_time = current_time

@@ -68,7 +68,7 @@ class HardwareController:
     def projector(self):
         if self._projector is None:
             # Create the projector on first access.
-            self._projector = Projector(1920, 1080)
+            self._projector = Projector()
         return self._projector
     
     def communication_check(self):
