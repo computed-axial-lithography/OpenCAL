@@ -1,11 +1,33 @@
 Opened SPI device: /dev/spidev0.0
-Opened SPI device: /dev/spidev0.0
-System Starting Up...
-Opened SPI device: /dev/spidev0.0
-3 RPM
-Starting continuous rotation CW
+Starting print job... /media/opencal/UBOOKSTORE/smoml.mp4
+Starting continuous rotation CCW
+Turning on all LEDs...
+LEDs updated.
+Stopping print job...
 Stopping the motor.
-Speed set to 5 RPM
-Starting continuous rotation CW
+No video file to delete.
+Print job stopped and cleanup complete.
+Starting print job... /media/opencal/UBOOKSTORE/smoml.mp4
+Starting continuous rotation CCW
+Turning on all LEDs...
+LEDs updated.
+Stopping print job...
 Stopping the motor.
-Speed set to 19 RPM
+No video file to delete.
+Print job stopped and cleanup complete.
+Starting print job... /media/opencal/UBOOKSTORE/smoml.mp4
+Starting continuous rotation CCW
+Turning on all LEDs...
+LEDs updated.
+Stopping print job...
+Stopping the motor.
+No video file to delete.
+Print job stopped and cleanup complete.
+Starting print job... /media/opencal/UBOOKSTORE/smoml.mp4
+Starting continuous rotation CCW
+Turning on all LEDs...
+LEDs updated.
+Stopping print job...
+Stopping the motor.
+No video file to delete.
+Print job stopped and cleanup complete.

@@ -21,7 +21,7 @@ class LCDGui:
             "Move Stepper": ['back', 'start rotation', 'stop rotation'],
             "Settings": ['back', 'Set Step RPM', 'Set Some Variable'],  # Options for adjusting variables
             "Power Options": ['back', 'Restart', 'Power Off'],  # Power options submenu
-            "Print menu" : ['back','stop print'],
+            "Print menu" : ['stop print'],
         }
         self.menu_callbacks = {
             'Turn on LEDs': lambda:self.pc.hardware.led_array.set_led((255, 0, 0), set_all=True),
@@ -32,8 +32,8 @@ class LCDGui:
             'Set Step RPM': lambda: self.enter_variable_adjustment("RPM",self.pc.hardware.stepper.speed_rpm,self.pc.hardware.stepper.set_speed),
             'Restart': lambda: self.restart_pi(),
             'Power Off': lambda: self.power_off_pi(),
-            'print': lambda arg: self.pc.print(arg),
-            'stop print': lambda: self.pc.stop(),  # Allow stopping the print job from the menu'
+            'print': lambda arg: self.pc.start_print_job(arg),
+            'stop print': lambda: (self.pc.stop(), self.show_menu("main"))  # Allow stopping the print job from the menu'
         }
         self.menu_stack = []  # Stack to keep track of menu navigation
         self.current_menu = 'main'  # Currently displayed menu
@@ -121,9 +121,12 @@ class LCDGui:
             self.show_menu(option)
         elif option in self.menu_callbacks:
             self.menu_callbacks[option]()
-        elif self.current_menu == "Print from USB" and self.selected_video_filename is None:
+        elif self.current_menu == "Print from USB":
             self.selected_video_filename =self.pc.hardware.usb_device.get_full_path(option)
-            self.enter_variable_adjustment("RPM",self.pc.hardware.stepper.speed_rpm,self.pc.hardware.stepper.set_speed)
+            self.menu_callbacks['print'](self.selected_video_filename)
+            self.selected_video_filename = None
+            self.show_menu('Print menu') 
+            #self.enter_variable_adjustment("RPM",self.pc.hardware.stepper.speed_rpm,self.pc.hardware.stepper.set_speed)
             #return  # Return immediately so the prompt is shown and waits for user input.
 
         if self.adjusting_variable:
@@ -172,10 +175,11 @@ class LCDGui:
                 self.adjusting_variable = False
                 self.show_menu('Settings')
                 self.navigate()
-            elif self.selected_video_filename is not None:
-                self.menu_callbacks['print'](self.selected_video_filename)
-                self.show_menu('Print menu')  # Switch to print menu after starting the print job\
-                #self.navigate()
+            # elif self.selected_video_filename is not None:
+            #     self.menu_callbacks['print'](self.selected_video_filename)
+            #     self.selected_video_filename = None
+            #     self.show_menu('Print menu')  # Switch to print menu after starting the print job\
+            #     self.navigate()
             else:
                 self.select_option()
             self.last_button_press_time = current_time
