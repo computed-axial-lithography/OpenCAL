@@ -26,6 +26,7 @@ class PrintController:
 
         # Start video playback.
         # This now delegates thread management to the projector.
+        self.hardware.projector.stop_video()
         self.hardware.projector.play_video_with_mplayer(video_file)
 
         try:
@@ -46,6 +47,7 @@ class PrintController:
         self.hardware.projector.stop_video()
         self.hardware.stepper.stop()
         self.hardware.led_array.clear_leds()
+        self.hardware.projector.start_video_thread("/home/opencal/opencal/OpenCAL/tmp/black.mp4")
 
         # Remove the preprocessed video file if it exists.
         video_path = "/tmp/processed_video.avi"

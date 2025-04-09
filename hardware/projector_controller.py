@@ -7,6 +7,8 @@ class Projector:
         # Initialize the process attribute to keep track of the playback process.
         self.process = None
         self.thread = None  # We'll use this to keep track of the playback thread.
+        self.start_video_thread("/home/opencal/opencal/OpenCAL/tmp/black.mp4")
+
 
     def play_video_with_mplayer(self, video_path="/home/opencal/opencal/OpenCAL/tmp/preprocessed_output.mp4"):
         """
@@ -24,6 +26,7 @@ class Projector:
             "--video-y=0",
             "--loop",
             "--fullscreen",
+            "--no-video-title-show",
             video_path
         ]
         
@@ -39,6 +42,7 @@ class Projector:
             self.process.wait()
             self.process = None
             print("Video playback stopped.")
+    
 
     def start_video_thread(self, video_path="/home/opencal/opencal/OpenCAL/tmp/preprocessed_output.mp4"):
         """

@@ -19,6 +19,7 @@ class HardwareController:
         self.rotary = RotaryEncoderHandler()   
         self._projector = None
         self.usb_device = None
+        self.projector= Projector()
 
         self.errors = []
         self.healthy = True
@@ -64,12 +65,12 @@ class HardwareController:
         # except Exception as e:
         #     self.errors.append(f"Projector failed: {e}")     
 
-    @property
-    def projector(self):
-        if self._projector is None:
-            # Create the projector on first access.
-            self._projector = Projector()
-        return self._projector
+    # @property
+    # def projector(self):
+    #     if self._projector is None:
+    #         # Create the projector on first access.
+    #         self._projector = Projector()
+    #     return self._projector
     
     def communication_check(self):
         print("\nRunning hardware communication check...")
