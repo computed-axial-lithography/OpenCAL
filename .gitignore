@@ -1,0 +1,11 @@
+~*.sldasm
+
+# Ignore Python virtual environment
+venv/
+.env/
+
+#Ignore video files
+*.mp4
+
+__pycache__/
+*.pyc

@@ -1,0 +1,110 @@
+import os
+import subprocess
+import threading
+
+class Projector:
+    def __init__(self):
+        # Initialize the process attribute to keep track of the playback process.
+        self.process = None
+        self.thread = None  # We'll use this to keep track of the playback thread.
+        self.size = 100
+        # Below plays a 5 min black screen video upon startup and initialization (but using a video doesn't feel like the right call)
+        #self.start_video_thread("/home/opencal/opencal/OpenCAL/tmp/black.mp4")
+
+    def get_video_dimensions(self,video_path):
+        """
+        Uses ffprobe to retrieve the video dimensions (width and height) dynamically.
+        Expects ffprobe to output a single line like: widthxheight (e.g., 1920x1080).
+        """
+        cmd = [
+            "/usr/bin/ffprobe",
+            "-v", "error",
+            "-select_streams", "v:0",
+            "-show_entries", "stream=width,height",
+            "-of", "csv=p=0:s=x",
+            video_path
+        ]
+        output = subprocess.check_output(cmd).decode().strip()
+        try:
+            width, height = map(int, output.split("x"))
+        except Exception as e:
+            raise ValueError(f"Unable to parse video dimensions from output: {output}") from e
+        return width, height
+
+
+    def play_video_with_mplayer(self, video_path="/home/opencal/Desktop/smoml.mp4"):
+        """
+        Play the video using cvlc (VLC command-line interface) with the window positioned
+        at x=1920 and y=0, and loop the video indefinitely.
+        """
+        orig_width, orig_height = self.get_video_dimensions(video_path)
+        scale_factor = self.size / 100
+        new_width = int(orig_width / scale_factor)
+        new_height = int(orig_height / scale_factor)
+
+        # Calculate the cropping values to ensure the video remains centered
+        crop_x = int((orig_width) / 2) - new_width / 2
+        crop_y = int((orig_height) / 2) - new_height / 2
+
+        # Construct the crop filter argument to center the zoomed video
+        crop_filter = f"crop={new_width}:{new_height}:{crop_x}:{crop_y}"
+
+        # Set up the environment for the video
+        env = os.environ.copy()
+        env["DISPLAY"] = ":0"
+        env["XAUTHORITY"] = "/home/opencal/.Xauthority"
+
+        # Construct the mpv command to play the video
+        command = [
+            "/usr/bin/mpv", 
+            "--fs",                # Fullscreen mode
+            "--loop",              # Loop the video
+            f"--vf=lavfi=[{crop_filter}]",  # Apply the crop filter for zoom
+            video_path
+        ]
+      
+
+        
+        self.process = subprocess.Popen(command, env=env)
+        print("Video playback started.")
+
+    def resize(self, size_new):
+        self.size = size_new
+
+
+    def stop_video(self):
+        """
+        Stop the video playback by terminating the cvlc process.
+        """
+        if self.process is not None:
+            self.process.terminate()
+            self.process.wait()
+            self.process = None
+            print("Video playback stopped.")
+    
+
+    def start_video_thread(self, video_path="/home/opencal/opencal/OpenCAL/tmp/preprocessed_output.mp4"):
+        """
+        Start the video playback in a new thread.
+        """
+        # Create a new thread for playing the video.
+        self.thread = threading.Thread(target=self.play_video_with_mplayer, args=(video_path,))
+        self.thread.start()
+
+def main():
+    # Create an instance of Projector.
+    projector = Projector()
+    projector.resize(100)
+    # Start video playback in a new thread.
+    projector.play_video_with_mplayer()
+    
+    # Wait for user input to stop the video.
+    input("Press Enter to stop video playback...")
+    projector.stop_video()
+    
+    # Optionally, wait for the video thread to finish.
+    if projector.thread is not None:
+        projector.thread.join()
+
+if __name__ == "__main__":
+    main()
