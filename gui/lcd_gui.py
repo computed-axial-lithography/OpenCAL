@@ -14,7 +14,7 @@ class LCDGui:
         
         self.pc = pc
         #self.hardware = pc.hardware
-
+        self.print_start_time = None  # NEW 4/15 New attribute to track the start time
 
         self.menu_dict = {
             "main": ['Print from USB', 'Manual Control', 'Settings', 'Power Options'],
@@ -35,7 +35,7 @@ class LCDGui:
             'Restart': lambda: self.restart_pi(),
             'Power Off': lambda: self.power_off_pi(),
             'print': lambda arg: self.pc.start_print_job(arg),
-            'stop print': lambda: (self.pc.stop(), self.show_menu("main")),  # Allow stopping the print job from the menu'
+            'stop print': lambda: (self.pc.stop(),  self.clear_timer(), self.show_menu("main")),  # Allow stopping the print job from the menu and clearing timer'
             #NEW 4/11: for resizing the print, we're using percentage (i.e. 105% current, 95%, etc. if float 1.05x is deisred, new scale factors are needed)
             'Resize Print': lambda: self.enter_variable_adjustment("size",self.pc.hardware.projector.size,self.pc.hardware.projector.resize),  # Resize Print option callback
         }
@@ -63,30 +63,12 @@ class LCDGui:
         # For our two-stage process:
         self.selected_video_filename = None
 
-        # NEW 4/11: Initialize print size (for Resize Print functionality) as a percentage (default 100%)
-        # self.print_scale = 100
-
-        # NEW 4/11: Method to enter the print size adjustment mode
-    # def resize_print_adjustment(self):
-    #     """Set up the LCD for adjusting the print size (percentage-based)."""
-    #     self.current_menu = None
-    #     #self.variable_name = "Print Size"  # Changed variable name to display as "Print Size"
-    #     self.current_value = self.print_scale
-    #     self.update_function = self.update_print_scale
-    #     self.pc.hardware.lcd.clear()
-    #     self.pc.hardware.lcd.write_message(f"Current Size: {self.print_scale}%", 0, 0)
-    #     self.pc.hardware.lcd.write_message(f"Desired Size: {self.current_value}%", 1, 0)
-    #     self.pc.hardware.lcd.write_message("Use rotary to adjust", 2, 0)
-    #     self.pc.hardware.lcd.write_message("Click to set", 3, 0)
-    #     self.adjusting_variable = True
-
-    # # NEW 4/11: Callback to update the print size variable after adjustment
-    # def update_print_scale(self, new_value):
-    #     self.print_scale = new_value
-    #     self.pc.hardware.lcd.clear()
-    #     self.pc.hardware.lcd.write_message(f"Size set to: {self.print_scale}%", 0, 0)
-    #     time.sleep(1)
-
+    # NEW 4/16 Clear the LCD timer display call
+    def clear_timer(self):
+        # Reset the timer attribute
+        self.print_start_time = None
+        # Clear the line used for displaying elapsed time (line 3)
+        self.pc.hardware.lcd.write_message(" " * 20, 3, 0)
 
     def show_startup_screen(self):
         """Display the startup screen with 'Hello User!'."""
@@ -223,7 +205,7 @@ class LCDGui:
             if self.adjusting_variable and self.selected_video_filename == None:
                 self.update_function(self.current_value)
                 self.adjusting_variable = False
-                                # NEW: Return to "Manual Control" if adjusting Print Size, else "Settings"
+                # NEW: Return to "Manual Control" if adjusting Print Size, else "Settings"
                 if self.variable_name == "Print Size":
                     self.show_menu('Manual Control')
                     self.navigate()
@@ -233,6 +215,7 @@ class LCDGui:
             elif self.selected_video_filename is not None:
                 self.update_function(self.current_value)
                 self.adjusting_variable = False
+                self.print_start_time = time.time()  # NEW 4/15 Record the print/video start time
                 self.menu_callbacks['print'](self.selected_video_filename)
                 self.selected_video_filename = None
                 self.show_menu('Print menu')  # Switch to print menu after starting the print job\
@@ -269,6 +252,14 @@ class LCDGui:
         self.navigate()
 
         while self.running:
+            # NEW 4/15 Update the LCD timer if a print job has started.
+            if self.print_start_time is not None:
+                elapsed = time.time() - self.print_start_time
+                # Format the elapsed time (e.g., minutes and seconds)
+                minutes, seconds = divmod(int(elapsed), 60)
+                elapsed_formatted = f"{minutes:02d}:{seconds:02d}"
+                # Write the elapsed time to a fixed line on the LCD (line 3)
+                self.pc.hardware.lcd.write_message(f"Elapsed: {elapsed_formatted}", 3, 0)
             if self.adjusting_variable:
                self.pc.hardware.rotary.encoder.when_rotated = self.adjust_variable
             else:

@@ -48,7 +48,7 @@ class PrintController:
         self.hardware.stepper.stop()
         self.hardware.led_array.clear_leds()
         # Below begins a black 5-min video upon completion of the print or upon print termination
-        self.hardware.projector.start_video_thread("/home/opencal/opencal/OpenCAL/tmp/black.mp4")
+        #self.hardware.projector.start_video_thread("/home/opencal/opencal/OpenCAL/tmp/black.mp4")
 
         # Remove the preprocessed video file if it exists.
         video_path = "/tmp/processed_video.avi"
