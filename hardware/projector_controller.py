@@ -32,7 +32,7 @@ class Projector:
         return width, height
 
 
-    def play_video_with_mplayer(self, video_path="/home/opencal/Desktop/smoml.mp4"):
+    def play_video_with_mpv(self, video_path="/home/opencal/Desktop/smoml.mp4"):
         """
         Play the video using cvlc (VLC command-line interface) with the window positioned
         at x=1920 and y=0, and loop the video indefinitely.
@@ -88,7 +88,7 @@ class Projector:
         Start the video playback in a new thread.
         """
         # Create a new thread for playing the video.
-        self.thread = threading.Thread(target=self.play_video_with_mplayer, args=(video_path,))
+        self.thread = threading.Thread(target=self.play_video_with_mpv, args=(video_path,))
         self.thread.start()
 
 def main():
@@ -96,7 +96,7 @@ def main():
     projector = Projector()
     projector.resize(100)
     # Start video playback in a new thread.
-    projector.play_video_with_mplayer()
+    projector.play_video_with_mpv()
     
     # Wait for user input to stop the video.
     input("Press Enter to stop video playback...")

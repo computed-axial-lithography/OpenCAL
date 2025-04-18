@@ -17,13 +17,11 @@ class LCDGui:
         self.pc = pc
         #self.hardware = pc.hardware
         self.print_start_time = None  # NEW 4/15 New attribute to track the start time
-        self.camera = CameraController()    # NEW 4/16: camera controller addition
-
+        
         self.menu_dict = {
             "main": ['Print from USB', 'Manual Control', 'Settings', 'Power Options'],
             "Print from USB": ['back'] + self.pc.hardware.usb_device.get_file_names(),
             "Manual Control": ['back', 'Turn on LEDs', 'Turn off LEDs', 'start stepper', 'stop stepper'],
-            #"Move Stepper": ['back', 'start rotation', 'stop rotation'],
             "Settings": ['back', 'Resize Print', 'Set Step RPM'],  # Options for adjusting variables
             "Power Options": ['back', 'Kill GUI'], #'Restart', 'Power Off'],  # Power options submenu
             "Print menu" : ['stop print'],
@@ -38,11 +36,11 @@ class LCDGui:
             'Restart': lambda: self.restart_pi(),
             'Power Off': lambda: self.power_off_pi(),
             # NEW 4/16: added start_camera()
-            'print': lambda arg: (self.pc.start_print_job(arg)),#, self.camera.start_camera(), self.camera.start_record()),
+            'print': lambda arg: (self.pc.start_print_job(arg), self.pc.hardware.camera.start_record(preview=False)),
             # NEW 4/16: added self.clear_timer(), camera.stop_camera() to stop video, & stop_recording() to stop the recroding process
-            'stop print': lambda: (self.pc.stop(),  self.clear_timer(), self.show_menu("main")), #self.camera.stop_camera(), self.camera.stop_record(),  # Allow stopping the print job from the menu and clearing timer'
+            'stop print': lambda: (self.pc.stop(),  self.clear_timer(), self.show_menu("main"), self.pc.hardware.camera.stop_all()), 
             #NEW 4/11: for resizing the print, we're using percentage i.e 105%...
-            'Resize Print': lambda: self.enter_variable_adjustment("size",self.pc.hardware.projector.size,self.pc.hardware.projector.resize),  # Resize Print option callback
+            'Resize Print': lambda: self.enter_variable_adjustment("size %",self.pc.hardware.projector.size,self.pc.hardware.projector.resize),  # Resize Print option callback
         }
         
         self.menu_stack = []  # Stack to keep track of menu navigation
@@ -144,11 +142,6 @@ class LCDGui:
             
             self.selected_video_filename =self.pc.hardware.usb_device.get_full_path(option)
             self.enter_variable_adjustment("RPM",self.pc.hardware.stepper.speed_rpm,self.pc.hardware.stepper.set_speed)
-            # self.menu_callbacks['print'](self.selected_video_filename)
-            # self.selected_video_filename = None
-            # self.show_menu('Print menu') 
-
-            #return  # Return immediately so the prompt is shown and waits for user input.
 
         if self.adjusting_variable:
             self.adjust_variable()
@@ -175,27 +168,19 @@ class LCDGui:
         """Adjust the variable using the rotary encoder."""
         position =self.pc.hardware.rotary.get_position()
         
-        # NEW 4/11: Handle Print Size adjustments as whole-number percentages for simpler handling
-        if self.variable_name == "Print Size":
-            if position > self.last_rotary_position:
-                self.current_value += 1
-            elif position < self.last_rotary_position:
-                self.current_value -= 1
-            if self.current_value < 10:  # Prevent setting the size below 10%
-                self.pc.hardware.lcd.write_message("Cannot reduce size further", 1, 0)
-                self.current_value = 10
-                time.sleep(2)
-            self.pc.hardware.lcd.clear()
-            self.pc.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_value}%", 0, 0)
-            self.pc.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
-            self.pc.hardware.lcd.write_message("Click to set", 2, 0)
-            self.last_rotary_position = position
-            return
 
         if position > self.last_rotary_position:
             self.current_value += 1
+            print(self.current_value)
         elif position < self.last_rotary_position:
-            self.current_value -= 1
+            print(self.current_value)
+            if self.variable_name == "size %" and self.current_value <= 100:
+                self.pc.hardware.lcd.write_message("Cannot go below 100", 3, 0)
+                self.last_rotary_position = position
+                return
+            else: 
+                self.current_value -= 1
+
 
         self.pc.hardware.lcd.clear()
         self.pc.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_value}", 0, 0)
@@ -210,13 +195,9 @@ class LCDGui:
             if self.adjusting_variable and self.selected_video_filename == None:
                 self.update_function(self.current_value)
                 self.adjusting_variable = False
-                # NEW: Return to "Manual Control" if adjusting Print Size, else "Settings"
-                if self.variable_name == "Print Size":
-                    self.show_menu('Manual Control')
-                    self.navigate()
-                else:
-                    self.show_menu('Settings')
-                    self.navigate()
+                self.show_menu('main')
+                self.navigate()
+
             elif self.selected_video_filename is not None:
                 self.update_function(self.current_value)
                 self.adjusting_variable = False

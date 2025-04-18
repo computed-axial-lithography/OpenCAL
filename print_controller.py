@@ -25,7 +25,7 @@ class PrintController:
         # Start video playback.
         # This now delegates thread management to the projector.
         self.hardware.projector.stop_video()
-        self.hardware.projector.play_video_with_mplayer(video_file)
+        self.hardware.projector.play_video_with_mpv(video_file)
 
         try:
             # Keep the job running until self.running is set to False externally.
