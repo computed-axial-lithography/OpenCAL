@@ -1,8 +1,6 @@
 import time
-import cv2
 import os
 from hardware.hardware_controller import HardwareController
-import preprocess
 import threading
 
 

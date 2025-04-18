@@ -2,12 +2,14 @@ import sys
 import os
 import subprocess
 import time
+import cv2
 
 
 # Add the parent directory of 'gui' to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from print_controller import PrintController
 #from hardware import HardwareController
+from hardware.camera_controller import CameraController
 
 class LCDGui:
     def __init__(self, pc = PrintController()):
@@ -15,28 +17,31 @@ class LCDGui:
         self.pc = pc
         #self.hardware = pc.hardware
         self.print_start_time = None  # NEW 4/15 New attribute to track the start time
+        self.camera = CameraController()    # NEW 4/16: camera controller addition
 
         self.menu_dict = {
             "main": ['Print from USB', 'Manual Control', 'Settings', 'Power Options'],
             "Print from USB": ['back'] + self.pc.hardware.usb_device.get_file_names(),
-            "Manual Control": ['back', 'Turn on LEDs', 'Turn off LEDs', 'Move Stepper', 'Resize Print', 'Kill GUI'],
-            "Move Stepper": ['back', 'start rotation', 'stop rotation'],
-            "Settings": ['back', 'Set Step RPM', 'Set Some Variable'],  # Options for adjusting variables
-            "Power Options": ['back', 'Restart', 'Power Off'],  # Power options submenu
+            "Manual Control": ['back', 'Turn on LEDs', 'Turn off LEDs', 'start stepper', 'stop stepper'],
+            #"Move Stepper": ['back', 'start rotation', 'stop rotation'],
+            "Settings": ['back', 'Resize Print', 'Set Step RPM'],  # Options for adjusting variables
+            "Power Options": ['back', 'Kill GUI'], #'Restart', 'Power Off'],  # Power options submenu
             "Print menu" : ['stop print'],
         }
         self.menu_callbacks = {
             'Turn on LEDs': lambda:self.pc.hardware.led_array.set_led((255, 0, 0), set_all=True),
             'Turn off LEDs':self.pc.hardware.led_array.clear_leds,
-            'start rotation': lambda:self.pc.hardware.stepper.start_rotation(),
-            'stop rotation': lambda:self.pc.hardware.stepper.stop(),
+            'start stepper': lambda:self.pc.hardware.stepper.start_rotation(),
+            'stop stepper': lambda:self.pc.hardware.stepper.stop(),
             'Kill GUI': lambda: self.kill_gui(),
             'Set Step RPM': lambda: self.enter_variable_adjustment("RPM",self.pc.hardware.stepper.speed_rpm,self.pc.hardware.stepper.set_speed),
             'Restart': lambda: self.restart_pi(),
             'Power Off': lambda: self.power_off_pi(),
-            'print': lambda arg: self.pc.start_print_job(arg),
-            'stop print': lambda: (self.pc.stop(),  self.clear_timer(), self.show_menu("main")),  # Allow stopping the print job from the menu and clearing timer'
-            #NEW 4/11: for resizing the print, we're using percentage (i.e. 105% current, 95%, etc. if float 1.05x is deisred, new scale factors are needed)
+            # NEW 4/16: added start_camera()
+            'print': lambda arg: (self.pc.start_print_job(arg)),#, self.camera.start_camera(), self.camera.start_record()),
+            # NEW 4/16: added self.clear_timer(), camera.stop_camera() to stop video, & stop_recording() to stop the recroding process
+            'stop print': lambda: (self.pc.stop(),  self.clear_timer(), self.show_menu("main")), #self.camera.stop_camera(), self.camera.stop_record(),  # Allow stopping the print job from the menu and clearing timer'
+            #NEW 4/11: for resizing the print, we're using percentage i.e 105%...
             'Resize Print': lambda: self.enter_variable_adjustment("size",self.pc.hardware.projector.size,self.pc.hardware.projector.resize),  # Resize Print option callback
         }
         
@@ -243,6 +248,8 @@ class LCDGui:
 
     def kill_gui(self):
         """Handles the kill GUI action."""
+        self.camera.stop_camera()
+        cv2.destroyAllWindows()
         self.running = False
 
     def run(self):
