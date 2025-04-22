@@ -65,6 +65,7 @@ class LCDGui:
 
         # For our two-stage process:
         self.selected_video_filename = None
+        self.video_filename_short = None
 
     # NEW 4/16 Clear the LCD timer display call
     def clear_timer(self):
@@ -139,8 +140,8 @@ class LCDGui:
         elif option in self.menu_callbacks:
             self.menu_callbacks[option]()
         elif self.current_menu == "Print from USB":
-            
-            self.selected_video_filename =self.pc.hardware.usb_device.get_full_path(option)
+            self.video_filename_short = option
+            self.selected_video_filename = self.pc.hardware.usb_device.get_full_path(option)
             self.enter_variable_adjustment("RPM",self.pc.hardware.stepper.speed_rpm,self.pc.hardware.stepper.set_speed)
 
         if self.adjusting_variable:
@@ -158,8 +159,8 @@ class LCDGui:
         self.variable_name = variable_name
         self.current_value = current_value
         self.update_function = update_function
-        self.pc.hardware.lcd.clear()
-        self.pc.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_value}", 0, 0)
+        #self.pc.hardware.lcd.clear()
+        self.pc.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_value}".ljust(20), 0, 0)
         self.pc.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
         self.pc.hardware.lcd.write_message("Click to set", 2, 0)
         self.adjusting_variable = True
@@ -182,10 +183,12 @@ class LCDGui:
                 self.current_value -= 1
 
 
-        self.pc.hardware.lcd.clear()
-        self.pc.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_value}", 0, 0)
-        self.pc.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
-        self.pc.hardware.lcd.write_message("Click to set", 2, 0)
+        #self.pc.hardware.lcd.clear()
+        self.pc.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_value}".ljust(20), 0, 0)
+        #self.pc.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
+        #self.pc.hardware.lcd.write_message("Click to set", 2, 0)
+        if self.selected_video_filename is not None:
+            self.pc.hardware.lcd.write_message(self.video_filename_short, 3, 0)
         self.last_rotary_position = position
 
     def button_press_handler(self):
@@ -204,6 +207,7 @@ class LCDGui:
                 self.print_start_time = time.time()  # NEW 4/15 Record the print/video start time
                 self.menu_callbacks['print'](self.selected_video_filename)
                 self.selected_video_filename = None
+                self.video_filename_short = None
                 self.show_menu('Print menu')  # Switch to print menu after starting the print job\
                 self.navigate()
             else:
@@ -229,7 +233,7 @@ class LCDGui:
 
     def kill_gui(self):
         """Handles the kill GUI action."""
-        self.camera.stop_camera()
+        #self.camera.stop_camera()
         cv2.destroyAllWindows()
         self.running = False
 

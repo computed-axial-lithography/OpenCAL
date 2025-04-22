@@ -1,14 +1,29 @@
-Opened SPI device: /dev/spidev0.0
-1080 54.000fps)
-VO: [gpu] 1920x1080 yuv420p
+ (+) Video --vid=1 (*) (h264 1080x1920 54.000fps)
+VO: [gpu] 1080x1920 yuv420p
 
 Exiting... (Quit)
 Opened SPI device: /dev/spidev0.0
-Speed set to 10 RPM
+11
+11
+11
+12
+13
+14
+15
+15
+14
+13
+12
+11
+10
+9
+Speed set to 8 RPM
 Starting print job... /media/opencal/UBOOKSTORE/smoml.mp4
 Starting continuous rotation CCW
 Turning on all LEDs...
 LEDs updated.
+Opened /dev/video0
+Recording to /home/opencal/opencal/OpenCAL/utils/prints/20250422-144640.mp4  (preview=off)
 Video playback started.
 Stopping print job...
 Video playback stopped.
@@ -20,16 +35,8 @@ Stopping the motor.
 No video file to delete.
 Print job stopped and cleanup complete.
 Print job complete.
-)
- (+) Video --vid=1 (*) (h264 2720x1536 36.000fps)
-VO: [gpu] 2720x1536 yuv420p
-
-Exiting... (Quit)
- (+) Video --vid=1 (*) (h264 1920x1080 25.000fps)
-VO: [gpu] 1920x1080 yuv420p
-
-Exiting... (Quit)
- (+) Video --vid=1 (*) (h264 2720x1536 36.000fps)
+✔ Recording saved to /home/opencal/opencal/OpenCAL/utils/prints/20250422-144640.mp4
+6.000fps)
 VO: [gpu] 2720x1536 yuv420p
 
 Exiting... (Quit)
