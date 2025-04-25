@@ -22,6 +22,7 @@ class CameraController:
             cfg = json.load(f)["camera"]
         self.cam_type    = cfg.get("type", "usb")
         self.camera_index= cfg.get("index", 0)
+        self.save_path = cfg.get("save_path")
 
         self.capture     = None
         self.picam2      = None
@@ -100,9 +101,13 @@ class CameraController:
 
     def start_record(self, filename=None, fps=20.0, frame_size=None, preview=False):
         # unchanged until you get frame_size…
+        if self.cam_type == "usb" and self.capture is None:
+            self._open_usb_camera()
+        elif self.cam_type == "rpi" and self.picam2 is None:
+            self._open_rpi_camera()
         if filename is None:
             ts = time.strftime("%Y%m%d-%H%M%S")
-            filename = f"/path/to/output/{ts}.mp4"
+            filename = self.save_path + f"/{ts}.mp4"
         self.record_file = filename
 
         if frame_size is None:
@@ -132,7 +137,9 @@ class CameraController:
             else:
                 ok, frame = self.capture.read()
             if not ok:
-                break
+                # camera not warmed up yet? wait a bit and retry
+                time.sleep(0.1)
+                continue
             self.writer.write(frame)
 
     def stop_record(self):

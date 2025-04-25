@@ -12,7 +12,6 @@ import cv2
 
 class HardwareController:
     def __init__(self):
-        self.camera = None
         self.stepper = None
         self.led_array = None
         self.lcd = None
@@ -24,11 +23,9 @@ class HardwareController:
         self.errors = []
         self.healthy = True
 
-        try:
-            self.camera = CameraController()
-        except Exception as e:
-            self.errors.append(f"CameraController failed: {e}")
-            self.healthy = False
+        
+        self.camera = CameraController()
+
 
         try:
             self.stepper = StepperMotor()
