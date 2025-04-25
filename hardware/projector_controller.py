@@ -91,6 +91,43 @@ class Projector:
         self.thread = threading.Thread(target=self.play_video_with_mpv, args=(video_path,))
         self.thread.start()
 
+    def display_image(self, image_path):
+        """
+        Display a still image fullscreen until stop_video() is called.
+        Uses mpv with infinite loop on the single frame.
+        """
+        # If something’s already playing, stop it.
+        if self.process:
+            self.stop_video()
+
+        env = os.environ.copy()
+        env["DISPLAY"] = ":0"
+        env["XAUTHORITY"] = "/home/opencal/.Xauthority"
+
+        # mpv will loop the single image forever (until we terminate it)
+        command = [
+            "/usr/bin/mpv",
+            "--fs",                    # fullscreen
+            "--loop-file=inf",         # loop indefinitely
+            "--no-audio",              # no sound
+            "--image-display-duration=inf",  # keep image up forever
+            image_path
+        ]
+
+        self.process = subprocess.Popen(command, env=env)
+        print(f"Image displayed: {image_path}")
+
+    def start_image_thread_for_image(self, image_path):
+        """
+        Same as display_image(), but in a background thread.
+        """
+        self.thread = threading.Thread(
+            target=self.display_image,
+            args=(image_path,),
+            daemon=True
+        )
+        self.thread.start()
+
 def main():
     # Create an instance of Projector.
     projector = Projector()

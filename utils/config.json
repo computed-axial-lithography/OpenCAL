@@ -8,6 +8,7 @@
     "default_steps": 1600
   },
     "camera": {
+      "type": "rpi",
       "index": 0
     },
     "led_array": {
