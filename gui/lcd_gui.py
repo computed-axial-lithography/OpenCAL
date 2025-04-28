@@ -22,10 +22,11 @@ class LCDGui:
             "main": ['Print from USB', 'Manual Control', 'Settings', 'Power Options'],
             "Print from USB": ['back'] + self.pc.hardware.usb_device.get_file_names(),
             "Manual Control": ['back', 'Turn on LEDs', 'Turn off LEDs', 'start stepper', 'stop stepper'],
-            "Settings": ['back', 'Resize Print', 'Set Step RPM', 'Calibration img'],  # Options for adjusting variables
+            "Settings": ['back', 'save to default', 'Resize Print', 'Set Step RPM', 'Calibration img', 'change camera'],  # Options for adjusting variables
             "Power Options": ['back', 'Kill GUI'], #'Restart', 'Power Off'],  # Power options submenu
             "Print menu" : ['stop'],
             "calibration": ['stop'],
+            "change camera": ['back', 'rpi', 'usb'],
         }
         self.menu_callbacks = {
             'Turn on LEDs': lambda:self.pc.hardware.led_array.set_led((255, 0, 0), set_all=True),
@@ -43,6 +44,7 @@ class LCDGui:
             #NEW 4/11: for resizing the print, we're using percentage i.e 105%...
             'Resize Print': lambda: self.enter_variable_adjustment("size %",self.pc.hardware.projector.size,self.pc.hardware.projector.resize),  # Resize Print option callback
             'Calibration img': lambda: (self.pc.hardware.projector.display_image("OpenCAL/tmp/black.png"), self.show_menu("calibration")),
+
 
         }
         

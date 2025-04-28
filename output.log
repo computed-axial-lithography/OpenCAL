@@ -1,6 +1,6 @@
 Opened SPI device: /dev/spidev0.0
-1080 54.000fps)
-VO: [gpu] 1920x1080 yuv420p
+1920 54.000fps)
+VO: [gpu] 1080x1920 yuv420p
 
 Exiting... (Quit)
  (+) Video --vid=1 (*) (h264 1920x1080 54.000fps)

@@ -8,7 +8,7 @@
     "default_steps": 1600
   },
     "camera": {
-      "type": "usb",
+      "type": "rpi",
       "index": 0,
       "save_path": "/home/opencal/opencal/OpenCAL/utils/prints"
     },
