@@ -3,6 +3,9 @@ import os
 import subprocess
 import time
 import cv2
+import json
+
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), '../utils/config.json')
 
 
 # Add the parent directory of 'gui' to sys.path
@@ -22,7 +25,7 @@ class LCDGui:
             "main": ['Print from USB', 'Manual Control', 'Settings', 'Power Options'],
             "Print from USB": ['back'] + self.pc.hardware.usb_device.get_file_names(),
             "Manual Control": ['back', 'Turn on LEDs', 'Turn off LEDs', 'start stepper', 'stop stepper'],
-            "Settings": ['back', 'save to default', 'Resize Print', 'Set Step RPM', 'Calibration img', 'change camera'],  # Options for adjusting variables
+            "Settings": ['back', 'save as default', 'Resize Print', 'Set Step RPM', 'Calibration img', 'change camera'],  # Options for adjusting variables
             "Power Options": ['back', 'Kill GUI'], #'Restart', 'Power Off'],  # Power options submenu
             "Print menu" : ['stop'],
             "calibration": ['stop'],
@@ -44,12 +47,16 @@ class LCDGui:
             #NEW 4/11: for resizing the print, we're using percentage i.e 105%...
             'Resize Print': lambda: self.enter_variable_adjustment("size %",self.pc.hardware.projector.size,self.pc.hardware.projector.resize),  # Resize Print option callback
             'Calibration img': lambda: (self.pc.hardware.projector.display_image("OpenCAL/tmp/black.png"), self.show_menu("calibration")),
+            'usb': lambda: (self.pc.hardware.camera.set_type('usb'), self.splash("usb camera", self.current_menu)),
+            'rpi': lambda: (self.pc.hardware.camera.set_type('rpi'), self.splash("rpi camera", self.current_menu)),
+            'save to default': lambda: (self.save_defaults()),
 
 
         }
         
         self.menu_stack = []  # Stack to keep track of menu navigation
         self.current_menu = 'main'  # Currently displayed menu
+        self.return_menu = 'main'
         self.current_index = 0  # Index of selected menu item
         self.view_start = 0  # Tracks the start of the visible menu slice
         self.view_size = 4  # Number of menu items visible at once
@@ -100,6 +107,56 @@ class LCDGui:
                 if idx < 4:
                    self.pc.hardware.lcd.write_message(menu_list[idx], idx, 1)
             time.sleep(0.05)
+    
+    def save_defaults(self):
+        """
+        Read the existing config.json (or start with an empty one),
+        overwrite the three keys we care about, and write it back out.
+        """
+        # 1) load whatever’s there already (or start fresh)
+        if os.path.exists(CONFIG_PATH):
+            with open(CONFIG_PATH, 'r') as f:
+                cfg = json.load(f)
+        else:
+            cfg = {}
+
+        # 2) make sure the top-level groups exist
+
+
+        # 3) pull in the current live settings
+        #    – default_speed
+        cfg['stepper_motor']['default_speed'] = self.pc.hardware.stepper.speed_rpm
+
+        #    – default_print_size  (add this field to your JSON)
+        #      we assume your projector controller has a .size property
+        cfg['projector']['default_print_size'] = self.pc.hardware.projector.size
+
+        #    – camera type (“rpi” or “usb”)
+        cfg['camera']['type'] = self.pc.hardware.camera.cam_type
+
+        # 4) write it back out, overwriting the old file
+        try:
+            with open(CONFIG_PATH, 'w') as f:
+                json.dump(cfg, f, indent=2)
+        except Exception as e:
+            print(f"Error saving defaults: {e}")
+            return
+
+        # 5) give the user feedback on the LCD
+        self.splash("Defaults saved!", self.current_menu, 1.2)
+
+    def splash(self, message="Saved", next_menu="main", duration=1.0):
+        """
+        Show a one-off message centered on the LCD, wait 'duration' seconds,
+        then display 'next_menu'.
+        """
+        # 1) clear the display
+        self.pc.hardware.lcd.clear()
+        # 2) write the message centered on line 1 (you can tweak line/col if you want)
+        centered = message.center(20)
+        self.pc.hardware.lcd.write_message(centered, 1, 0)
+        # 3) hold for a bit
+        time.sleep(duration)
 
     def navigate(self):
         """Handle menu navigation based on rotary encoder movement with scrolling."""
@@ -160,11 +217,12 @@ class LCDGui:
         """Enter variable adjustment mode and allow the user to adjust any variable.
            A callback (if provided) is stored and called after the adjustment is complete.
         """
+        self.return_menu = self.current_menu
         self.current_menu = None
         self.variable_name = variable_name
         self.current_value = current_value
         self.update_function = update_function
-        #self.pc.hardware.lcd.clear()
+        self.pc.hardware.lcd.clear()
         self.pc.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_value}".ljust(20), 0, 0)
         self.pc.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
         self.pc.hardware.lcd.write_message("Click to set", 2, 0)
@@ -203,7 +261,7 @@ class LCDGui:
             if self.adjusting_variable and self.selected_video_filename == None:
                 self.update_function(self.current_value)
                 self.adjusting_variable = False
-                self.show_menu('main')
+                self.show_menu(self.return_menu)
                 self.navigate()
 
             elif self.selected_video_filename is not None:

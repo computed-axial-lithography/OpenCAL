@@ -23,7 +23,8 @@ class CameraController:
         self.record_file   = None
         self._proc         = None
         self._raw_file     = None
-
+    def set_type(self, type):
+        self.cam_type = type
     def _open_usb_camera(self):
         devices = glob.glob("/dev/video*")
         indices = sorted({int(d.replace("/dev/video", "")) for d in devices if d.replace("/dev/video", "").isdigit()})
