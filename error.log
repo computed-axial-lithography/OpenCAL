@@ -1,49 +1,41 @@
 bash: cannot set terminal process group (-1): Inappropriate ioctl for device
 bash: no job control in this shell
 bash: dircolors: command not found
-/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/devices.py:300: PinFactoryFallback: Falling back from lgpio: 'can not open gpiochip'
-  warnings.warn(
+Exception in thread Thread-1:
 Traceback (most recent call last):
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/pins/pi.py", line 411, in pin
-    pin = self.pins[info]
-          ~~~~~~~~~^^^^^^
-KeyError: PinInfo(number=29, name='GPIO5', names=frozenset({'GPIO5', 'BOARD29', 5, 'WPI21', '5', 'BCM5', 'J8:29'}), pull='', row=15, col=1, interfaces=frozenset({'', 'spi', 'uart', 'gpio', 'i2c', 'dpi'}))
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/home/opencal/opencal/OpenCAL/main.py", line 3, in <module>
-    from gui import LCDGui
-  File "/home/opencal/opencal/OpenCAL/gui/__init__.py", line 1, in <module>
-    from .lcd_gui import LCDGui
-  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 10, in <module>
-    from print_controller import PrintController
-  File "/home/opencal/opencal/OpenCAL/print_controller.py", line 7, in <module>
-    class PrintController:
-  File "/home/opencal/opencal/OpenCAL/print_controller.py", line 8, in PrintController
-    def __init__(self, hardware=HardwareController()):
-                                ^^^^^^^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/OpenCAL/hardware/hardware_controller.py", line 18, in __init__
-    self.rotary = RotaryEncoderHandler()   
-                  ^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/OpenCAL/hardware/rotary_controller.py", line 22, in __init__
-    self.encoder = RotaryEncoder(self.clk_pin, self.dt_pin, wrap=True, max_steps=1000)
-                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/devices.py", line 108, in __call__
-    self = super().__call__(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/input_devices.py", line 1147, in __init__
-    a=InputDevice(a, pull_up=True, pin_factory=pin_factory),
-      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/devices.py", line 108, in __call__
-    self = super().__call__(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/input_devices.py", line 79, in __init__
-    super().__init__(pin, pin_factory=pin_factory)
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/devices.py", line 553, in __init__
-    pin = self.pin_factory.pin(pin)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/pins/pi.py", line 413, in pin
+  File "/usr/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/lgpio.py", line 554, in run
+    cb.func(chip, gpio, level, tick)
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/pins/lgpio.py", line 248, in _call_when_changed
+    super()._call_when_changed(ticks / 1000000000, level)
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/pins/local.py", line 111, in _call_when_changed
+    super()._call_when_changed(
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/pins/pi.py", line 618, in _call_when_changed
+    method(ticks, state)
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/input_devices.py", line 179, in _pin_changed
+    self._fire_events(ticks, bool(self._state_to_value(state)))
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/mixins.py", line 385, in _fire_events
+    self._fire_activated()
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/mixins.py", line 431, in _fire_activated
+    super()._fire_activated()
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/mixins.py", line 348, in _fire_activated
+    self.when_activated()
+  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 261, in button_press_handler
+    self.menu_callbacks['print'](self.selected_video_filename)
+  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 44, in <lambda>
+    'print': lambda arg: (self.pc.start_print_job(arg),self.pc.hardware.camera.start_camera(), self.pc.hardware.camera.start_record(preview=False)),
+                                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/opencal/opencal/OpenCAL/hardware/camera_controller.py", line 82, in start_record
+    self._proc = subprocess.Popen(cmd)
+                 ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/subprocess.py", line 1024, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/usr/lib/python3.11/subprocess.py", line 1901, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: 'libcamera-vid'
+error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+[KV: 00:00:00 / 00:01:00 (0%)[KV: 00:00:00 / 00:01:00 (1%)[KV: 00:00:00 / 00:01:00 (2%)[KV: 00:00:01 / 00:01:00 (2%)[KV: 00:00:01 / 00:01:00 (3%)[KV: 00:00:02 / 00:01:00 (3%)[KV: 00:00:02 / 00:01:00 (4%)[KV: 00:00:02 / 00:01:00 (5%)[KV: 00:00:03 / 00:01:00 (5%)/python3.11/site-packages/gpiozero/pins/pi.py", line 413, in pin
     pin = self.pin_class(self, info)
           ^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/pins/rpigpio.py", line 101, in __init__

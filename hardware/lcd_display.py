@@ -11,7 +11,7 @@ from time import sleep
 
 
 class LCDDisplay:
-    def __init__(self, config_file="/home/opencal/opencal/OpenCAL/utils/config.json"):
+    def __init__(self, config_file="OpenCAL/utils/config.json"):
         """Initialize the LCD display.
         
         Args:

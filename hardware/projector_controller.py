@@ -32,11 +32,14 @@ class Projector:
         return width, height
 
 
-    def play_video_with_mpv(self, video_path="/home/opencal/Desktop/smoml.mp4"):
+    def play_video_with_mpv(self, video_path=None):
         """
         Play the video using cvlc (VLC command-line interface) with the window positioned
         at x=1920 and y=0, and loop the video indefinitely.
         """
+        if not video_path:
+                raise ValueError("play_video_with_mpv() requires a `video_path` argument")
+        
         orig_width, orig_height = self.get_video_dimensions(video_path)
         scale_factor = self.size / 100
         new_width = int(orig_width / scale_factor)
@@ -52,7 +55,7 @@ class Projector:
         # Set up the environment for the video
         env = os.environ.copy()
         env["DISPLAY"] = ":0"
-        env["XAUTHORITY"] = "/home/opencal/.Xauthority"
+        #env["XAUTHORITY"] = "/home/opencal/.Xauthority"
 
         # Construct the mpv command to play the video
         command = [
@@ -83,10 +86,13 @@ class Projector:
             print("Video playback stopped.")
     
 
-    def start_video_thread(self, video_path="/home/opencal/opencal/OpenCAL/tmp/preprocessed_output.mp4"):
+    def start_video_thread(self, video_path=None):
         """
         Start the video playback in a new thread.
         """
+        if not video_path:
+            raise ValueError("start_video_thread() requires a `video_path` argument")
+
         # Create a new thread for playing the video.
         self.thread = threading.Thread(target=self.play_video_with_mpv, args=(video_path,))
         self.thread.start()
@@ -102,7 +108,7 @@ class Projector:
 
         env = os.environ.copy()
         env["DISPLAY"] = ":0"
-        env["XAUTHORITY"] = "/home/opencal/.Xauthority"
+        #env["XAUTHORITY"] = "/home/opencal/.Xauthority"
 
         # mpv will loop the single image forever (until we terminate it)
         command = [
@@ -133,7 +139,8 @@ def main():
     projector = Projector()
     projector.resize(100)
     # Start video playback in a new thread.
-    projector.play_video_with_mpv()
+    #projector.play_video_with_mpv()
+    projector.display_image("/home/opencal/opencal/OpenCAL/tmp/black.png")
     
     # Wait for user input to stop the video.
     input("Press Enter to stop video playback...")

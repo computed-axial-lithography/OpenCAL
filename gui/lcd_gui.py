@@ -120,21 +120,12 @@ class LCDGui:
         else:
             cfg = {}
 
-        # 2) make sure the top-level groups exist
-
-
-        # 3) pull in the current live settings
-        #    – default_speed
         cfg['stepper_motor']['default_speed'] = self.pc.hardware.stepper.speed_rpm
 
-        #    – default_print_size  (add this field to your JSON)
-        #      we assume your projector controller has a .size property
         cfg['projector']['default_print_size'] = self.pc.hardware.projector.size
 
-        #    – camera type (“rpi” or “usb”)
         cfg['camera']['type'] = self.pc.hardware.camera.cam_type
 
-        # 4) write it back out, overwriting the old file
         try:
             with open(CONFIG_PATH, 'w') as f:
                 json.dump(cfg, f, indent=2)
@@ -142,7 +133,6 @@ class LCDGui:
             print(f"Error saving defaults: {e}")
             return
 
-        # 5) give the user feedback on the LCD
         self.splash("Defaults saved!", self.current_menu, 1.2)
 
     def splash(self, message="Saved", next_menu="main", duration=1.0):

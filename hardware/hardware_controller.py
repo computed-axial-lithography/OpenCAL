@@ -6,16 +6,26 @@ from .rotary_controller import RotaryEncoderHandler
 from .projector_controller import Projector
 from .usb_manager import MP4Driver
 
+from pathlib import Path
+
 import time
 import cv2
 
 
 class HardwareController:
     def __init__(self):
+
+        here = Path(__file__).resolve().parent       
+        config_file = here.parent / "utils" / "config.json"
+
+
+        if not config_file.is_file():
+            raise FileNotFoundError(f"Config not found at {config_file!s}")
+
         self.stepper = None
         self.led_array = None
         self.lcd = None
-        self.rotary = RotaryEncoderHandler()   
+        self.rotary = RotaryEncoderHandler(config_file)   
         self._projector = None
         self.usb_device = None
         self.projector= Projector()
@@ -24,23 +34,23 @@ class HardwareController:
         self.healthy = True
 
         
-        self.camera = CameraController()
+        self.camera = CameraController(config_file)
 
 
         try:
-            self.stepper = StepperMotor()
+            self.stepper = StepperMotor(config_file)
         except Exception as e:
             self.errors.append(f"StepperMotor failed: {e}")
             self.healthy = False
 
         try:
-            self.led_array = LEDArray()
+            self.led_array = LEDArray(config_file)
         except Exception as e:
             self.errors.append(f"LEDArray failed: {e}")
             self.healthy = False
 
         try:
-            self.lcd = LCDDisplay()
+            self.lcd = LCDDisplay(config_file)
         except Exception as e:
             self.errors.append(f"LCDDisplay failed: {e}")
             self.healthy = False

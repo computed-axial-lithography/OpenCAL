@@ -7,7 +7,7 @@ import subprocess
 import os
 
 class CameraController:
-    def __init__(self, config_file="/home/opencal/opencal/OpenCAL/utils/config.json"):
+    def __init__(self, config_file="OpenCAL/utils/config.json"):
         with open(config_file) as f:
             cfg = json.load(f)["camera"]
         self.cam_type     = cfg.get("type", "usb")
@@ -71,7 +71,7 @@ class CameraController:
             self._raw_file = filename
             self.record_file = os.path.splitext(filename)[0] + ".mp4"
             cmd = [
-                "libcamera-vid",
+                "/usr/bin/libcamera-vid",
                 "--timeout", "0",
                 "--inline",
                 "--width", str(frame_size[0]),
@@ -147,7 +147,7 @@ class CameraController:
 
 if __name__ == "__main__":
     cam = CameraController()
-    cam.cam_type = "usb"  # or "usb"
+    cam.cam_type = "rpi"  # or "usb"
     cam.start_record(preview=False)
     print("Recording... Press Ctrl+C to stop.")
 
