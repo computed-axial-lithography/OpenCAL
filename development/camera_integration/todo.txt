@@ -1,3 +1,0 @@
-find stepper motor, figure out low level control, drivers
-
-alignment and zoom of video, starting projection and video playback synced

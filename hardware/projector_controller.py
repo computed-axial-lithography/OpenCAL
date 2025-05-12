@@ -1,15 +1,18 @@
 import os
 import subprocess
 import threading
+import json
 
 class Projector:
-    def __init__(self):
+    def __init__(self, config_file="OpenCAL/utils/config.json"):
         # Initialize the process attribute to keep track of the playback process.
+        with open(config_file, 'r') as f:
+            config = json.load(f)
+        self.size = config['projector'].get("default_print_size", 100)  # Default size is 100 if not specified
+        
         self.process = None
         self.thread = None  # We'll use this to keep track of the playback thread.
-        self.size = 100
-        # Below plays a 5 min black screen video upon startup and initialization (but using a video doesn't feel like the right call)
-        #self.start_video_thread("/home/opencal/opencal/OpenCAL/tmp/black.mp4")
+        
 
     def get_video_dimensions(self,video_path):
         """

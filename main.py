@@ -3,14 +3,6 @@ from hardware.hardware_controller import HardwareController
 from gui import LCDGui
 from print_controller import PrintController
 
-def startup_sequence():
-    """Run system checks before enabling the GUI."""
-    print("System Starting Up...")
-    hardware = HardwareController()
-
-    # hardware.communication_check()  # Verify hardware comms
-    return hardware
-
 def main():
     print_controller = PrintController()
     

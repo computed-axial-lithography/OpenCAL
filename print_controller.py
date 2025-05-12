@@ -45,18 +45,5 @@ class PrintController:
         self.hardware.projector.stop_video()
         self.hardware.stepper.stop()
         self.hardware.led_array.clear_leds()
-        # Below begins a black 5-min video upon completion of the print or upon print termination
-        #self.hardware.projector.start_video_thread("/home/opencal/opencal/OpenCAL/tmp/black.mp4")
-
-        # Remove the preprocessed video file if it exists.
-        video_path = "/tmp/processed_video.avi"
-        if os.path.exists(video_path):
-            try:
-                os.remove(video_path)
-                print(f"Deleted video file: {video_path}")
-            except Exception as e:
-                print(f"Error deleting video file: {e}")
-        else:
-            print("No video file to delete.")
 
         print("Print job stopped and cleanup complete.")
