@@ -106,9 +106,12 @@ class CameraController:
                 "--inline",
                 "--width", str(frame_size[0]),
                 "--height", str(frame_size[1]),
-                "--framerate", str(self.fps),
-                "-o", filename
+                "--framerate", str(self.fps)
+                
             ]
+            if not preview:
+                cmd += ["--nopreview"]        # or ["--preview", "none"]
+            cmd += ["-o", filename]
             self._proc = subprocess.Popen(cmd)  # Start the recording process
             print(f"🔴 RPi recording (raw H264) → {filename}")
             return
@@ -139,26 +142,31 @@ class CameraController:
             self.writer.write(frame)  # Write the frame to the video file
 
     def stop_record(self):
-        """Stop recording and finalize the video file."""
         if self._proc:
-            # Stop libcamera-vid process
-            self._proc.send_signal(signal.SIGINT)
-            self._proc.wait()  
-            # Wrap raw h264 into mp4 container
+            # stop libcamera-vid
+            self._proc.send_signal(subprocess.signal.SIGINT)
+            self._proc.wait()
+            # wrap raw h264 into mp4 container
             raw = self._raw_file
             mp4 = self.record_file
-            # Requires MP4Box (GPAC)
-            subprocess.run([
-                "ffmpeg",
-                "-y",                                 # overwrite
-                "-f", "h264",                         # raw H264 elementary stream
-                "-framerate", str(self.fps),          # camera’s fps
-                "-i", raw,                            # input file
-                "-c", "copy",                         # just wrap, don’t re‑encode
+            # requires MP4Box (GPAC)\
+            cmd = [
+                "/usr/bin/ffmpeg",
+                "-fflags", "+genpts",
+                "-f", "h264",
+                "-r", "20",
+                "-i", raw,
+                "-r", "20",
+                "-c:v", "libx264",
+                "-preset", "veryfast",
+                "-crf", "23",
+                "-movflags", "+faststart",
                 mp4
-            ], check=True)
-            os.remove(raw)  # Remove the raw file after conversion
-            print(f"Saved RPi recording to {mp4}")
+            ]
+            subprocess.run(cmd, check=True)
+
+            os.remove(raw)
+            print(f"💾 Saved RPi recording to {mp4}")
             self._proc = None
             self._raw_file = None
             return
@@ -166,9 +174,9 @@ class CameraController:
         # USB stop
         self.recording = False
         if self.record_thread:
-            self.record_thread.join(1.0)  # Wait for the recording thread to finish
+            self.record_thread.join(1.0)
         if self.writer:
-            self.writer.release()  # Release the video writer
+            self.writer.release()
         print(f"💾 Saved recording to {self.record_file}")
         self.record_file, self.writer = None, None
 
@@ -193,6 +201,6 @@ if __name__ == "__main__":
     cam.start_record(preview=False)  # Start recording without preview
     print("Recording... Press Ctrl+C to stop.")
 
-    time.sleep(5)  # Record for 5 seconds
+    time.sleep(10)  # Record for 5 seconds
 
     cam.stop_all()  # Stop all operations
