@@ -31,6 +31,7 @@ class CameraController:
         self.record_file   = None
         self._proc         = None
         self._raw_file     = None
+        self.fps = 20
 
     def set_type(self, type):
         """Set the type of camera to use ("usb" or "rpi")."""
@@ -82,7 +83,7 @@ class CameraController:
                 break
         cv2.destroyAllWindows()  # Close all OpenCV windows
 
-    def start_record(self, filename=None, fps=20.0, frame_size=(640,480), preview=False):
+    def start_record(self, filename=None, frame_size=(640,480), preview=False):
         """Start recording video from the camera.
         
         Args:
@@ -104,7 +105,7 @@ class CameraController:
                 "--inline",
                 "--width", str(frame_size[0]),
                 "--height", str(frame_size[1]),
-                "--framerate", str(fps),
+                "--framerate", str(self.fps),
                 "-o", filename
             ]
             self._proc = subprocess.Popen(cmd)  # Start the recording process
@@ -121,7 +122,7 @@ class CameraController:
         w = int(self.capture.get(cv2.CAP_PROP_FRAME_WIDTH))  # Get frame width
         h = int(self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT))  # Get frame height
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Codec for MP4
-        self.writer = cv2.VideoWriter(filename, fourcc, fps, (w, h))  # Initialize video writer
+        self.writer = cv2.VideoWriter(filename, fourcc, self.fps, (w, h))  # Initialize video writer
         self.recording = True
         self.record_thread = threading.Thread(target=self._record_loop, daemon=True)
         self.record_thread.start()  # Start the recording thread
@@ -146,7 +147,14 @@ class CameraController:
             raw = self._raw_file
             mp4 = self.record_file
             # Requires MP4Box (GPAC)
-            subprocess.run(["MP4Box", "-quiet", "-add", raw, mp4], check=True)
+            subprocess.run([
+                "ffmpeg",
+                "-y",
+                "-r", str(self.fps),      # <-- force input to self._fps (e.g. 20)
+                "-i", raw,
+                "-c", "copy",
+                mp4
+            ], check=True)
             os.remove(raw)  # Remove the raw file after conversion
             print(f"💾 Saved RPi recording to {mp4}")
             self._proc = None
