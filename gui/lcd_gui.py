@@ -18,8 +18,7 @@ class LCDGui:
     def __init__(self, pc = PrintController()):
         
         self.pc = pc
-        #self.hardware = pc.hardware
-        self.print_start_time = None  # NEW 4/15 New attribute to track the start time
+        self.print_start_time = None  
         
         self.menu_dict = {
             "main": ['Print from USB', 'Manual Control', 'Settings', 'Power Options'],
@@ -40,11 +39,8 @@ class LCDGui:
             'Set Step RPM': lambda: self.enter_variable_adjustment("RPM",self.pc.hardware.stepper.speed_rpm,self.pc.hardware.stepper.set_speed),
             'Restart': lambda: self.restart_pi(),
             'Power Off': lambda: self.power_off_pi(),
-            # NEW 4/16: added start_camera()
-            'print': lambda arg: (self.pc.start_print_job(arg),self.pc.hardware.camera.start_camera(), self.pc.hardware.camera.start_record(preview=False)),
-            # NEW 4/16: added self.clear_timer(), camera.stop_camera() to stop video, & stop_recording() to stop the recroding process
-            'stop': lambda: (self.pc.stop(),  self.clear_timer(), self.show_menu("main"), self.pc.hardware.camera.stop_all()), 
-            #NEW 4/11: for resizing the print, we're using percentage i.e 105%...
+            'print': lambda arg: self.pc.start_print_job(arg),  # Start print job, camera handling is now in PrintController
+            'stop': lambda: (self.pc.stop(), self.clear_timer(), self.show_menu("main")),
             'Resize Print': lambda: self.enter_variable_adjustment("size %",self.pc.hardware.projector.size,self.pc.hardware.projector.resize),  # Resize Print option callback
             'Calibration img': lambda: (self.pc.hardware.projector.display_image("OpenCAL/tmp/black.png"), self.show_menu("calibration")),
             'usb': lambda: (self.pc.hardware.camera.set_type('usb'), self.splash("usb camera", self.current_menu)),
@@ -79,7 +75,6 @@ class LCDGui:
         self.selected_video_filename = None
         self.video_filename_short = None
 
-    # NEW 4/16 Clear the LCD timer display call
     def clear_timer(self):
         # Reset the timer attribute
         self.print_start_time = None
@@ -257,7 +252,7 @@ class LCDGui:
             elif self.selected_video_filename is not None:
                 self.update_function(self.current_value)
                 self.adjusting_variable = False
-                self.print_start_time = time.time()  # NEW 4/15 Record the print/video start time
+                self.print_start_time = time.time()  
                 self.menu_callbacks['print'](self.selected_video_filename)
                 self.selected_video_filename = None
                 self.video_filename_short = None
@@ -297,7 +292,6 @@ class LCDGui:
         self.navigate()
 
         while self.running:
-            # NEW 4/15 Update the LCD timer if a print job has started.
             if self.print_start_time is not None:
                 elapsed = time.time() - self.print_start_time
                 # Format the elapsed time (e.g., minutes and seconds)

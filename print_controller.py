@@ -10,9 +10,8 @@ class PrintController:
         self.running = False
 
     def start_print_job(self, video_file):
-            """Start the print job in a new thread."""
-            threading.Thread(target=self.print, args=(video_file,)).start()
-
+        """Start the print job in a new thread."""
+        threading.Thread(target=self.print, args=(video_file,)).start()
 
     def print(self, video_file):
         print(f"Starting print job... {video_file}")
@@ -23,9 +22,13 @@ class PrintController:
         self.hardware.led_array.set_led((255, 0, 0), set_all=True)
 
         # Start video playback.
-        # This now delegates thread management to the projector.
         self.hardware.projector.stop_video()
         self.hardware.projector.play_video_with_mpv(video_file)
+
+        # Handle camera operations if a camera is available
+        if self.hardware.camera:
+            self.hardware.camera.start_camera(preview=False)  # Start the camera
+            self.hardware.camera.start_record()  # Start recording
 
         try:
             # Keep the job running until self.running is set to False externally.
@@ -45,5 +48,9 @@ class PrintController:
         self.hardware.projector.stop_video()
         self.hardware.stepper.stop()
         self.hardware.led_array.clear_leds()
+
+        # Stop camera operations if a camera is available
+        if self.hardware.camera:
+            self.hardware.camera.stop_all()  # Stop all camera operations
 
         print("Print job stopped and cleanup complete.")

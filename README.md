@@ -42,6 +42,9 @@ This code was written to be run on a raspberry pi 5 without any exterior monitor
 git clone https://github.com/computed-axial-lithography/OpenCAL.git
 cd <repo>
 
+sudo apt update
+xargs sudo apt install -y < apt-requirements.txt
+
 # (Optional) create and activate virtual environment
 python3 -m venv venv
 source venv/bin/activate
