@@ -5,6 +5,7 @@ import threading
 import glob
 import subprocess
 import os
+import signal
 
 class CameraController:
     def __init__(self, config_file="OpenCAL/utils/config.json"):
@@ -141,22 +142,23 @@ class CameraController:
         """Stop recording and finalize the video file."""
         if self._proc:
             # Stop libcamera-vid process
-            self._proc.send_signal(subprocess.signal.SIGINT)
-            self._proc.wait()
+            self._proc.send_signal(signal.SIGINT)
+            self._proc.wait()  
             # Wrap raw h264 into mp4 container
             raw = self._raw_file
             mp4 = self.record_file
             # Requires MP4Box (GPAC)
             subprocess.run([
                 "ffmpeg",
-                "-y",
-                "-r", str(self.fps),      # <-- force input to self._fps (e.g. 20)
-                "-i", raw,
-                "-c", "copy",
+                "-y",                                 # overwrite
+                "-f", "h264",                         # raw H264 elementary stream
+                "-framerate", str(self.fps),          # camera’s fps
+                "-i", raw,                            # input file
+                "-c", "copy",                         # just wrap, don’t re‑encode
                 mp4
             ], check=True)
             os.remove(raw)  # Remove the raw file after conversion
-            print(f"💾 Saved RPi recording to {mp4}")
+            print(f"Saved RPi recording to {mp4}")
             self._proc = None
             self._raw_file = None
             return
