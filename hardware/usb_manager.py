@@ -2,6 +2,7 @@ import os
 
 class MP4Driver:
     def __init__(self, mount_point="/media/opencal"):
+        # Initialize the MP4Driver with a specified mount point for the USB storage
         self.mount_point = mount_point
 
     def list_mp4_files(self):
@@ -17,8 +18,10 @@ class MP4Driver:
         # Walk through the directory and find mp4 files
         for root, dirs, files in os.walk(self.mount_point):
             for file in files:
-                if file.lower().endswith('.mp4'):  # Case-insensitive check
-                    mp4_files.append(os.path.join(root, file))  # Full path of the file
+                # Case-insensitive check for .mp4 file extension
+                if file.lower().endswith('.mp4'):
+                    # Append the full path of the file to the list
+                    mp4_files.append(os.path.join(root, file))
         
         return mp4_files
 
@@ -26,6 +29,7 @@ class MP4Driver:
         """
         Return only the file names (without paths).
         """
+        # Get the list of full MP4 file paths and extract just the file names
         mp4_files = self.list_mp4_files()
         return [os.path.basename(file) for file in mp4_files]
 
@@ -33,18 +37,22 @@ class MP4Driver:
         """
         Print the names of all MP4 files found.
         """
+        # Retrieve the list of MP4 file names
         mp4_files = self.get_file_names()
         if not mp4_files:
             print("No MP4 files found.")
         else:
             print("MP4 Files found:")
+            # Print each file name
             for file in mp4_files:
                 print(file)
+
     def get_full_path(self, filename):
         """
         Given a filename (as returned by get_file_names), return the full path to the file.
         Raises FileNotFoundError if the file is not found.
         """
+        # Search for the full path of the specified file name
         for full_path in self.list_mp4_files():
             if os.path.basename(full_path) == filename:
                 return full_path

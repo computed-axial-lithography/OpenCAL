@@ -1,95 +1,157 @@
 import os
-# Force Qt to use the "xcb" platform instead of "wayland"
-os.environ["QT_QPA_PLATFORM"] = "xcb"
-
-import cv2
-import numpy as np
+import subprocess
+import threading
+import json
 
 class Projector:
-    def __init__(self, screen_width, screen_height):
-        self.window_name = "ProjectorDisplay"
-        self.screen_width = screen_width
-        self.screen_height = screen_height
-        # Create a resizable window
-        cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
-        # Move the window to the projector (x=1920, y=0)
-        cv2.moveWindow(self.window_name, 1920, 0)
-        # Set the window to fullscreen
-        cv2.setWindowProperty(self.window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+    def __init__(self, config_file="OpenCAL/utils/config.json"):
+        # Initialize the process attribute to keep track of the playback process.
+        with open(config_file, 'r') as f:
+            config = json.load(f)
+        self.size = config['projector'].get("default_print_size", 100)  # Default size is 100 if not specified
+        
+        self.process = None
+        self.thread = None  # We'll use this to keep track of the playback thread.
+        
 
-    def display(self, frame, rotation_angle=0):
-        if frame is None:
-            print("Error: Received empty frame.")
-            return False
-        
-        # Optionally rotate the frame if needed:
-        frame = self.rotate_frame(frame, rotation_angle)
-        
-        # Get frame dimensions
-        frame_h, frame_w = frame.shape[:2]
-        
-        # Compute scale factors to fit the frame within the projector resolution (only scale down)
-        scale_w = self.screen_width / frame_w
-        scale_h = self.screen_height / frame_h
-        scale = min(scale_w, scale_h, 1.0)
-        
-        # Resize frame if it's larger than the screen
-        if scale < 1.0:
-            new_w = int(frame_w * scale)
-            new_h = int(frame_h * scale)
-            frame = cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_AREA)
-            frame_h, frame_w = frame.shape[:2]
-        
-        # Create a black background of projector dimensions
-        background = np.zeros((self.screen_height, self.screen_width, 3), dtype=np.uint8)
-        
-        # Calculate offsets to center the video frame on the background
-        x_offset = (self.screen_width - frame_w) // 2
-        y_offset = (self.screen_height - frame_h) // 2
-        # Place the frame on the background
-        background[y_offset:y_offset+frame_h, x_offset:x_offset+frame_w] = frame
-        
-        # Display the final image
-        cv2.imshow(self.window_name, background)
-        
-        # Wait 33ms; exit if 'q' is pressed.
-        if cv2.waitKey(33) & 0xFF == ord('q'):
-            return False
-        return True
+    def get_video_dimensions(self,video_path):
+        """
+        Uses ffprobe to retrieve the video dimensions (width and height) dynamically.
+        Expects ffprobe to output a single line like: widthxheight (e.g., 1920x1080).
+        """
+        cmd = [
+            "/usr/bin/ffprobe",
+            "-v", "error",
+            "-select_streams", "v:0",
+            "-show_entries", "stream=width,height",
+            "-of", "csv=p=0:s=x",
+            video_path
+        ]
+        output = subprocess.check_output(cmd).decode().strip()
+        try:
+            width, height = map(int, output.split("x"))
+        except Exception as e:
+            raise ValueError(f"Unable to parse video dimensions from output: {output}") from e
+        return width, height
 
-    def rotate_frame(self, frame, angle):
-        """Rotate the frame by the specified angle (in degrees)."""
-        (h, w) = frame.shape[:2]
-        center = (w // 2, h // 2)
-        M = cv2.getRotationMatrix2D(center, angle, 1.0)
-        rotated = cv2.warpAffine(frame, M, (w, h))
-        return rotated
+
+    def play_video_with_mpv(self, video_path=None):
+        """
+        Play the video using cvlc (VLC command-line interface) with the window positioned
+        at x=1920 and y=0, and loop the video indefinitely.
+        """
+        if not video_path:
+                raise ValueError("play_video_with_mpv() requires a `video_path` argument")
+        
+        orig_width, orig_height = self.get_video_dimensions(video_path)
+        scale_factor = self.size / 100
+        new_width = int(orig_width / scale_factor)
+        new_height = int(orig_height / scale_factor)
+
+        # Calculate the cropping values to ensure the video remains centered
+        crop_x = int((orig_width) / 2) - new_width / 2
+        crop_y = int((orig_height) / 2) - new_height / 2
+
+        # Construct the crop filter argument to center the zoomed video
+        crop_filter = f"crop={new_width}:{new_height}:{crop_x}:{crop_y}"
+
+        # Set up the environment for the video
+        env = os.environ.copy()
+        env["DISPLAY"] = ":0"
+        #env["XAUTHORITY"] = "/home/opencal/.Xauthority"
+
+        # Construct the mpv command to play the video
+        command = [
+            "/usr/bin/mpv", 
+            "--fs",                # Fullscreen mode
+            "--loop",              # Loop the video
+            f"--vf=lavfi=[{crop_filter}]",  # Apply the crop filter for zoom
+            video_path
+        ]
+      
+
+        
+        self.process = subprocess.Popen(command, env=env)
+        print("Video playback started.")
+
+    def resize(self, size_new):
+        self.size = size_new
+
+
+    def stop_video(self):
+        """
+        Stop the video playback by terminating the cvlc process.
+        """
+        if self.process is not None:
+            self.process.terminate()
+            self.process.wait()
+            self.process = None
+            print("Video playback stopped.")
+    
+
+    def start_video_thread(self, video_path=None):
+        """
+        Start the video playback in a new thread.
+        """
+        if not video_path:
+            raise ValueError("start_video_thread() requires a `video_path` argument")
+
+        # Create a new thread for playing the video.
+        self.thread = threading.Thread(target=self.play_video_with_mpv, args=(video_path,))
+        self.thread.start()
+
+    def display_image(self, image_path):
+        """
+        Display a still image fullscreen until stop_video() is called.
+        Uses mpv with infinite loop on the single frame.
+        """
+        # If something’s already playing, stop it.
+        if self.process:
+            self.stop_video()
+
+        env = os.environ.copy()
+        env["DISPLAY"] = ":0"
+        #env["XAUTHORITY"] = "/home/opencal/.Xauthority"
+
+        # mpv will loop the single image forever (until we terminate it)
+        command = [
+            "/usr/bin/mpv",
+            "--fs",                    # fullscreen
+            "--loop-file=inf",         # loop indefinitely
+            "--no-audio",              # no sound
+            "--image-display-duration=inf",  # keep image up forever
+            image_path
+        ]
+
+        self.process = subprocess.Popen(command, env=env)
+        print(f"Image displayed: {image_path}")
+
+    def start_image_thread_for_image(self, image_path):
+        """
+        Same as display_image(), but in a background thread.
+        """
+        self.thread = threading.Thread(
+            target=self.display_image,
+            args=(image_path,),
+            daemon=True
+        )
+        self.thread.start()
 
 def main():
-    video_path = "/media/opencal/UBOOKSTORE/PEGDA700_starship_rebinned_36degps_intensity11x.mp4"
-    cap = cv2.VideoCapture(video_path)
+    # Create an instance of Projector.
+    projector = Projector()
+    projector.resize(100)
+    # Start video playback in a new thread.
+    #projector.play_video_with_mpv()
+    projector.display_image("/home/opencal/opencal/OpenCAL/tmp/black.png")
     
-    if not cap.isOpened():
-        print(f"Error: Unable to open video file {video_path}")
-        return
+    # Wait for user input to stop the video.
+    input("Press Enter to stop video playback...")
+    projector.stop_video()
     
-    # Define projector resolution (1920x1080)
-    screen_width = 1920
-    screen_height = 1080
-    projector = Projector(screen_width, screen_height)
-    
-    rotation_angle = 0  # Change this if you need a rotated output
-
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break  # End of video
-        
-        if not projector.display(frame, rotation_angle):
-            break  # Exit if 'q' is pressed
-
-    cap.release()
-    cv2.destroyAllWindows()
+    # Optionally, wait for the video thread to finish.
+    if projector.thread is not None:
+        projector.thread.join()
 
 if __name__ == "__main__":
     main()

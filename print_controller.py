@@ -1,52 +1,56 @@
-from hardware.hardware_controller import HardwareController
 import time
-import cv2
-from hardware.projector_controller import Projector
+import os
+from hardware.hardware_controller import HardwareController
+import threading
 
 
 class PrintController:
     def __init__(self, hardware=HardwareController()):
         self.hardware = hardware
-        
         self.running = False
+
+    def start_print_job(self, video_file):
+        """Start the print job in a new thread."""
+        threading.Thread(target=self.print, args=(video_file,)).start()
 
     def print(self, video_file):
         print(f"Starting print job... {video_file}")
         self.running = True
-      
-        # Open video file
-        cap = cv2.VideoCapture(video_file)
-        if not cap.isOpened():
-            print(f"Failed to open video file: {video_file}")
-            return
 
-        # Start hardware
-        self.hardware.stepper.start_rotation("CCW") # Start stepper motor
-        self.hardware.led_array.set_led((255, 0, 0), set_all=True)  # Turn on LEDs
+        # Start motor rotation and LED color change.
+        self.hardware.stepper.start_rotation("CCW")
+        self.hardware.led_array.set_led((255, 0, 0), set_all=True)
 
-        # Get video FPS to sync frame timing
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        frame_delay = 1.0 / fps if fps > 0 else 1.0 / 30  # Default to 30 FPS if unknown
+        # Start video playback.
+        self.hardware.projector.stop_video()
+        self.hardware.projector.play_video_with_mpv(video_file)
+
+        # Handle camera operations if a camera is available
+        if self.hardware.camera:
+            self.hardware.camera.start_camera(preview=False)  # Start the camera
+            self.hardware.camera.start_record()  # Start recording
 
         try:
+            # Keep the job running until self.running is set to False externally.
             while self.running:
-                ret, frame = cap.read()
-                if not ret:
-                    break  # End of video
-                self.hardware.projector.display(frame,-90)
-                # Keep timing consistent
-                time.sleep(frame_delay)
-
-        except Exception as e:
-            print(f"Error during print: {e}")
-
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("Print job interrupted by user.")
         finally:
-            cap.release()
-            self.hardware.stepper.stop()
-            self.hardware.led_array.clear_leds()  # Turn off LEDs
+            self.stop()
             print("Print job complete.")
 
     def stop(self):
         print("Stopping print job...")
         self.running = False
 
+        # Stop the video, motor, and clear LEDs.
+        self.hardware.projector.stop_video()
+        self.hardware.stepper.stop()
+        self.hardware.led_array.clear_leds()
+
+        # Stop camera operations if a camera is available
+        if self.hardware.camera:
+            self.hardware.camera.stop_all()  # Stop all camera operations
+
+        print("Print job stopped and cleanup complete.")

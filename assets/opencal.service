@@ -1,0 +1,17 @@
+[Unit]
+Description=Run main.py on startup
+After=multi-user.target
+
+[Service]
+ExecStart=/bin/bash -i -c '/home/opencal/opencal/.venv/bin/python /home/opencal/opencal/OpenCAL/main.py'
+WorkingDirectory=/home/opencal/opencal/OpenCAL
+StandardOutput=file:/home/opencal/opencal/OpenCAL/output.log
+StandardError=file:/home/opencal/opencal/OpenCAL/error.log
+Restart=no
+User=opencal
+Group=opencal
+Environment="VIRTUAL_ENV=/home/opencal/opencal/OpenCAL/.venv"
+Environment="PATH=$VIRTUAL_ENV/bin:$PATH"
+
+[Install]
+WantedBy=multi-user.target

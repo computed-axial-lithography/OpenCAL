@@ -1,0 +1,15 @@
+python3
+python3-venv          
+python3-pip           
+build-essential
+python3-opencv        
+libcamera-apps        
+ffmpeg                
+mpv  
+python3-gpiozero     
+python3-libgpiod        
+python3-spidev          
+python3-smbus2         
+i2c-tools 
+usbutils              
+v4l-utils

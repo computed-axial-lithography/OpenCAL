@@ -1,11 +1,211 @@
 Opened SPI device: /dev/spidev0.0
+1920 54.000fps)
+VO: [gpu] 1080x1920 yuv420p
+PM
+101
+102
+102
+101
+ (+) Video --vid=1 (*) (h264 1920x1080 54.000fps)
+VO: [gpu] 1920x1080 yuv420p
 Opened SPI device: /dev/spidev0.0
-System Starting Up...
+10
+Speed set to 9 RPM
+Starting print job... /media/opencal/UBOOKSTORE/output.mp4
+Starting continuous rotation CCW
+Turning on all LEDs...
+LEDs updated.
+Opened /dev/video0
+Recording to /home/opencal/opencal/OpenCAL/utils/prints/20250424-164634.mp4  (preview=off)
+Video playback started.
+Stopping print job...
+Video playback stopped.
+Stopping the motor.
+No video file to delete.
+Print job stopped and cleanup complete.
+✔ Recording saved to /home/opencal/opencal/OpenCAL/utils/prints/20250424-164634.mp4
+Stopping print job...
+Stopping the motor.
+No video file to delete.
+Print job stopped and cleanup complete.
+Print job complete.
+Speed set to 9 RPM
+Starting print job... /media/opencal/UBOOKSTORE/output.mp4
+Starting continuous rotation CCW
+Turning on all LEDs...
+LEDs updated.
+Opened /dev/video0
+Recording to /home/opencal/opencal/OpenCAL/utils/prints/20250424-164727.mp4  (preview=off)
+Video playback started.
+
+Exiting... (Quit)
+Quit)
+ (+) Video --vid=1 (*) (h264 1920x1080 25.000fps)
+VO: [gpu] 1920x1080 yuv420p
+ (+) Video --vid=1 (*) (h264 1920x1080 25.000fps)
+VO: [gpu] 1920x1080 yuv420p
+
+Exiting... (Quit)
+ (+) Video --vid=1 (*) (h264 1920x1080 54.000fps)
+VO: [gpu] 1920x1080 yuv420p
+
+Exiting... (Quit)
+ (+) Video --vid=1 (*) (h264 1920x1080 25.000fps)
+VO: [gpu] 1920x1080 yuv420p
+ (+) Video --vid=1 (*) (h264 1920x1080 25.000fps)
+VO: [gpu] 1920x1080 yuv420p
+
+Exiting... (Quit)
+ (+) Video --vid=1 (*) (h264 2720x1536 36.000fps)
+VO: [gpu] 2720x1536 yuv420p
+
+Exiting... (Quit)
+ (+) Video --vid=1 (*) (h264 1920x1080 25.000fps)
+VO: [gpu] 1920x1080 yuv420p
+
+Exiting... (Quit)
+ (+) Video --vid=1 (*) (h264 1920x1080 25.000fps)
+VO: [gpu] 1920x1080 yuv420p
+
+Exiting... (Quit)
+
+Exiting... (Quit)
+
+Exiting... (Quit)
 Opened SPI device: /dev/spidev0.0
-3 RPM
-Starting continuous rotation CW
+Speed set to 6 RPM
+Starting print job... /media/opencal/UBOOKSTORE/thinker2x.mp4
+Starting continuous rotation CCW
+Turning on all LEDs...
+LEDs updated.
+Video playback started.
+Stopping print job...
+Video playback stopped.
 Stopping the motor.
-Speed set to 5 RPM
-Starting continuous rotation CW
+Stopping print job...
 Stopping the motor.
-Speed set to 19 RPM
+No video file to delete.
+Print job stopped and cleanup complete.
+No video file to delete.
+Print job stopped and cleanup complete.
+Print job complete.
+Video playback started.
+Video playback started.
+Speed set to 6 RPM
+Starting print job... /media/opencal/UBOOKSTORE/thinker2x.mp4
+Starting continuous rotation CCW
+Turning on all LEDs...
+LEDs updated.
+Video playback stopped.
+Video playback started.
+Stopping print job...
+Video playback stopped.
+Stopping the motor.
+No video file to delete.
+Print job stopped and cleanup complete.
+Stopping print job...
+Stopping the motor.
+Video playback started.
+No video file to delete.
+Print job stopped and cleanup complete.
+Print job complete.
+Video playback started.
+Speed set to 6 RPM
+Starting print job... /media/opencal/UBOOKSTORE/thinker2x.mp4
+Starting continuous rotation CCW
+Turning on all LEDs...
+LEDs updated.
+Video playback stopped.
+Video playback started.
+Stopping print job...
+Video playback stopped.
+Stopping the motor.
+No video file to delete.
+Print job stopped and cleanup complete.
+Video playback started.
+Stopping print job...
+Video playback stopped.
+Stopping the motor.
+No video file to delete.
+Print job stopped and cleanup complete.
+Print job complete.
+Video playback started.
+Speed set to 6 RPM
+Starting print job... /media/opencal/UBOOKSTORE/thinker2x.mp4
+Starting continuous rotation CCW
+Turning on all LEDs...
+LEDs updated.
+Video playback stopped.
+Video playback started.
+Stopping print job...
+Video playback stopped.
+Stopping the motor.
+Stopping print job...
+Stopping the motor.
+No video file to delete.
+Print job stopped and cleanup complete.
+No video file to delete.
+Print job stopped and cleanup complete.
+Print job complete.
+Video playback started.
+Video playback started.
+Speed set to 6 RPM
+Starting print job... /media/opencal/UBOOKSTORE/thinker2x.mp4
+Starting continuous rotation CCW
+Turning on all LEDs...
+LEDs updated.
+Video playback stopped.
+Video playback started.
+Stopping print job...
+Video playback stopped.
+Stopping the motor.
+No video file to delete.
+Print job stopped and cleanup complete.
+Stopping print job...
+Stopping the motor.
+No video file to delete.
+Print job stopped and cleanup complete.
+Print job complete.
+Video playback started.
+Video playback started.
+Speed set to 6 RPM
+Starting print job... /media/opencal/UBOOKSTORE/output.mp4
+Starting continuous rotation CCW
+Turning on all LEDs...
+LEDs updated.
+Video playback stopped.
+Video playback started.
+Stopping print job...
+Video playback stopped.
+Stopping the motor.
+No video file to delete.
+Print job stopped and cleanup complete.
+Stopping print job...
+Stopping the motor.
+No video file to delete.
+Print job stopped and cleanup complete.
+Print job complete.
+Video playback started.
+Video playback started.
+Speed set to 6 RPM
+Starting print job... /media/opencal/UBOOKSTORE/tinker.mp4
+Starting continuous rotation CCW
+Turning on all LEDs...
+LEDs updated.
+Video playback stopped.
+Video playback started.
+Stopping print job...
+Video playback stopped.
+Stopping the motor.
+No video file to delete.
+Print job stopped and cleanup complete.
+Video playback started.
+Stopping print job...
+Video playback stopped.
+Stopping the motor.
+No video file to delete.
+Print job stopped and cleanup complete.
+Print job complete.
+Video playback started.
+
+Exiting... (Quit)
