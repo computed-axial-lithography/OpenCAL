@@ -79,6 +79,7 @@
     "btn_pin": 19
   },
   "projector": {
-    "default_print_size": 100
+    "default_print_size": 100,
+    "calibration_img_path": "/home/opencal/opencal/OpenCAL/utils/calibration"
   }
 }

@@ -42,7 +42,7 @@ class LCDGui:
             'print': lambda arg: self.pc.start_print_job(arg),  # Start print job, camera handling is now in PrintController
             'stop': lambda: (self.pc.stop(), self.clear_timer(), self.show_menu("main")),
             'Resize Print': lambda: self.enter_variable_adjustment("size %",self.pc.hardware.projector.size,self.pc.hardware.projector.resize),  # Resize Print option callback
-            'Calibration img': lambda: (self.pc.hardware.projector.display_image("OpenCAL/tmp/black.png"), self.show_menu("calibration")),
+            'Calibration img': lambda: (self.pc.hardware.projector.display_image(), self.show_menu("calibration")),
             'usb': lambda: (self.pc.hardware.camera.set_type('usb'), self.splash("usb camera", self.current_menu)),
             'rpi': lambda: (self.pc.hardware.camera.set_type('rpi'), self.splash("rpi camera", self.current_menu)),
             'save to default': lambda: (self.save_defaults()),

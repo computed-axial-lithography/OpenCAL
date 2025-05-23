@@ -1,9 +1,0 @@
-from gpiozero import LED
-from time import sleep
-
-test_pin = LED(22)
-while True:
-    test_pin.on()
-    sleep(1)
-    test_pin.off()
-    sleep(1)

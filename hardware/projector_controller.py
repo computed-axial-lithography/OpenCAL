@@ -9,6 +9,7 @@ class Projector:
         with open(config_file, 'r') as f:
             config = json.load(f)
         self.size = config['projector'].get("default_print_size", 100)  # Default size is 100 if not specified
+        self.calibration_img_path = config['projector'].get("calibration_img_path", "/home/opencal/OpenCAL/utils/calibration.png")
         
         self.process = None
         self.thread = None  # We'll use this to keep track of the playback thread.
@@ -100,11 +101,13 @@ class Projector:
         self.thread = threading.Thread(target=self.play_video_with_mpv, args=(video_path,))
         self.thread.start()
 
-    def display_image(self, image_path):
+    def display_image(self, image_path = None):
         """
         Display a still image fullscreen until stop_video() is called.
         Uses mpv with infinite loop on the single frame.
         """
+        if image_path is None:
+            image_path = self.calibration_img_path
         # If something’s already playing, stop it.
         if self.process:
             self.stop_video()
@@ -138,12 +141,12 @@ class Projector:
         self.thread.start()
 
 def main():
-    # Create an instance of Projector.
+    # Example test for playback on projector:
     projector = Projector()
     projector.resize(100)
     # Start video playback in a new thread.
-    #projector.play_video_with_mpv()
-    projector.display_image("/home/opencal/opencal/OpenCAL/tmp/black.png")
+    projector.play_video_with_mpv() #include video path here
+    
     
     # Wait for user input to stop the video.
     input("Press Enter to stop video playback...")
