@@ -1,49 +1,52 @@
 # OpenCAL - an open-source layerless 3d printer
 
-This project contains the software needed to create your own CAL (Computed Axial Lithography) 3d printer which will be a duplicate of the printer that we have made in the advanced manufacturing lab at UC Berkeley. This project is intended for a wide variety of users, with the hope that a less experienced user can get started with minimal changes to any of the actual code although they may need to touch the config file at utils/config.json. 
+This project contains the software needed to create your own CAL. It depends on Python 3.x and some system libraries; configuration is stored in `utils/config.json`.
 
 ---
 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Features](#Features)
-2. [Installation](#installation)
-3. [Usage](#usage)
+2. [Features](#features)
+3. [Installation](#installation)
 4. [Configuration](#configuration)
+5. [Running as a systemd service](#running-as-a-systemd-service)
+6. [Usage](#usage)
 
 ---
 
 ## Features
-Overview of some features available through the gui
-1. Print from usb
+
+Overview of some features available through the GUI:
+
+1. Print from USB
 2. Edit settings
 3. Control stepper and LEDs manually
 4. Scale the print size %
-5. Kill gui (helps if testing other functions on the pi)
+5. Kill GUI (helps if testing other functions on the Pi)
 
 ## Overview
 
-This code was written to be run on a raspberry pi 5 without any exterior monitor (although one will be needed for setup) and includes software to operate the printer via a simple gui. At its core, the code sets up communication between all of the physical elements of the printer (stepper, projector, LEDs, gui, camera, usb storage) and coordinates common actions between them, the most important being the ability to print. See the system architecture below for an idea of the files involved and how they are setup to work together.
+This code was written to be run on a Raspberry Pi 5 without any exterior monitor (although one will be needed for setup) and includes software to operate the printer based on the CAL method. All configuration can be tweaked via `utils/config.json`.
 
 ![System Architecture Diagram](assets/sw_overview.png "Architecture")
-
 
 ## Installation
 
 **Prerequisites**:
 
-* Python 3.x
+* System packages (listed in `apt_requirements.txt`)
 
 **Steps**:
 
 ```bash
 # Clone the repo
 git clone https://github.com/computed-axial-lithography/OpenCAL.git
-cd <repo>
+cd OpenCAL
 
+# Install system dependencies
 sudo apt update
-xargs sudo apt install -y < apt-requirements.txt
+xargs sudo apt install -y < apt_requirements.txt
 
 # (Optional) create and activate virtual environment
 python3 -m venv venv
@@ -52,40 +55,81 @@ source venv/bin/activate
 # Install Python dependencies
 pip install -r requirements.txt
 ```
-### Running as a systemd service
-1. Copy `assets/opencal.service` to `/etc/systemd/system/`
-2. Edit the ExecStart path if needed:
-   ```ini
-   [Service]
-   ExecStart=/home/pi/OpenCAL/venv/bin/python /home/pi/OpenCAL/main.py
-
-sudo systemctl daemon-reload
-sudo systemctl restart opencal.service
-(check status)
-sudo systemctl status opencal.service
-
-
-
-## Usage
-
-If everything is properly connected and installed, the system can run entirely from the gui. Testing of most of the physical electronics can be done by running the corresponding file in hardware/. Expected sequence for printing:
-1. Provide .mp4 via usb storage device
-2. Navigate to "Print from USB" on the gui
-3. Select .mp4 file for printing
-4. Confirm the rotation speed (in rpm) of the resin
-5. When print or test is complete, select "stop print"
-6. (Optional) review video of print forming, video will be saved to the file location specified in the config.json
 
 ## Configuration
 
-The system configuration can be updated by editing the utils/config.json file. 
+Edit `utils/config.json` to match your hardware setup. For example:
 
-```yaml
-# config.json example
+```json
+{
   "rotary_encoder": {
     "clk_pin": 5,
     "dt_pin": 6,
     "btn_pin": 19
   },
+  "camera": {
+    "type": "rpi",
+    "index": 0,
+    "save_path": "/home/pi/OpenCAL/utils/prints"
+  }
+}
 ```
 
+## Running as a systemd service
+
+To have OpenCAL start automatically at boot, register it as a `systemd` service:
+
+1. **Copy the service file**
+
+   ```bash
+   sudo cp assets/opencal.service /etc/systemd/system/opencal.service
+   ```
+
+2. **Edit the service definition**
+
+   ```bash
+   sudo nano /etc/systemd/system/opencal.service
+   ```
+
+   Make sure these fields match your install location and user. For example, if you cloned into `/home/pi/OpenCAL` and created a `venv` there, you might have:
+
+   ```ini
+   [Unit]
+   Description=OpenCAL 3D Printer Service
+   After=network.target
+
+   [Service]
+   User=pi
+   WorkingDirectory=/home/pi/OpenCAL
+   ExecStart=/home/pi/OpenCAL/venv/bin/python /home/pi/OpenCAL/main.py
+   Restart=on-failure
+   ```
+
+3. **Reload, enable, and start**
+
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl enable opencal.service    # start at boot
+   sudo systemctl start  opencal.service
+   ```
+
+4. **Verify it’s running**
+
+   ```bash
+   sudo systemctl status opencal.service
+   sudo journalctl -u opencal.service -f
+   ```
+
+* **`daemon-reload`** tells `systemd` to re-scan unit files.
+* **`enable`** makes it start on every boot; **`start`** fires it now.
+* **`status`** shows exit codes and recent logs; **`journalctl -f`** follows live output so you can spot errors immediately.
+
+## Usage
+
+If everything is properly connected and installed, the system can run entirely from the GUI. Expected sequence for printing:
+
+1. Provide `.mp4` via USB storage device
+2. Navigate to "Print from USB" on the GUI
+3. Select `.mp4` file for printing
+4. Confirm the rotation speed (in rpm) of the resin
+5. Start the print or test
