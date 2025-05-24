@@ -21,12 +21,15 @@ Traceback (most recent call last):
     super()._fire_activated()
   File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/mixins.py", line 348, in _fire_activated
     self.when_activated()
-  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 261, in button_press_handler
-    self.menu_callbacks['print'](self.selected_video_filename)
-  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 44, in <lambda>
-    'print': lambda arg: (self.pc.start_print_job(arg),self.pc.hardware.camera.start_camera(), self.pc.hardware.camera.start_record(preview=False)),
-                                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/OpenCAL/hardware/camera_controller.py", line 82, in start_record
+  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 262, in button_press_handler
+    self.select_option()
+  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 188, in select_option
+    self.menu_callbacks[option]()
+  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 45, in <lambda>
+    'Calibration img': lambda: (self.pc.hardware.projector.display_image(), self.show_menu("calibration")),
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'HardwareController' object has no attribute 'projector'
+opencal/OpenCAL/hardware/camera_controller.py", line 82, in start_record
     self._proc = subprocess.Popen(cmd)
                  ^^^^^^^^^^^^^^^^^^^^^
   File "/usr/lib/python3.11/subprocess.py", line 1024, in __init__

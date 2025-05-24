@@ -80,6 +80,6 @@
   },
   "projector": {
     "default_print_size": 100,
-    "calibration_img_path": "/home/opencal/opencal/OpenCAL/utils/calibration"
+    "calibration_img_path": "/home/opencal/opencal/OpenCAL/utils/OpenCAL_Alignment_Calibration_Image.png"
   }
 }
