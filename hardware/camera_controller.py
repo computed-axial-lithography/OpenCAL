@@ -163,9 +163,15 @@ class CameraController:
                 "-movflags", "+faststart",
                 mp4
             ]
-            subprocess.run(cmd, check=True)
+            try:
+                subprocess.run(cmd, check=True)
+                os.remove(raw)
+            except subprocess.CalledProcessError as e:
+                print("FFmpeg failed with exit code:", e.returncode)
+                print("Command:", e.cmd)
+                print("Output:", e.output)
 
-            os.remove(raw)
+            
             print(f"💾 Saved RPi recording to {mp4}")
             self._proc = None
             self._raw_file = None

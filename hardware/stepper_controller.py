@@ -5,7 +5,7 @@ from gpiozero import OutputDevice
 import json
 
 class StepperMotor:
-    def __init__(self, config_file="OpenCAL/utils/config.json"):
+    def __init__(self, config_file=None):
         """Initialize GPIO communication with the stepper motor driver (Step/Dir mode)."""
         
         # Load configuration from the specified JSON file
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     motor = StepperMotor()  # Create an instance of the StepperMotor class
     motor.set_speed(20)  # Set the motor speed to the default (20 RPM)
     motor.start_rotation()  # Start continuous rotation
-    time.sleep(60.00)  # Run for 60 seconds
+    time.sleep(30.0)  # Run for 60 seconds
     #motor.rotate_steps(15, "CCW")  # Example of rotating a specific number of steps
     # time.sleep(2)  # Wait 2 seconds
     motor.stop()  # Stop the motor

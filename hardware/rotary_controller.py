@@ -6,7 +6,7 @@ except ImportError:
     pass  # Handle the case where the signal module is not available
 
 class RotaryEncoderHandler:
-    def __init__(self, config_file="OpenCAL/utils/config.json"):
+    def __init__(self, config_file=None):
         """
         Rotary Encoder Driver using GPIOZero
         :param config_file: Path to the configuration JSON file

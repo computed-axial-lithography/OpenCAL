@@ -4,7 +4,7 @@ import threading
 import json
 
 class Projector:
-    def __init__(self, config_file="OpenCAL/utils/config.json"):
+    def __init__(self, config_file=None):
         # Initialize the process attribute to keep track of the playback process.
         with open(config_file, 'r') as f:
             config = json.load(f)
@@ -58,7 +58,7 @@ class Projector:
 
         # Set up the environment for the video
         env = os.environ.copy()
-        env["DISPLAY"] = ":0"
+        #env["DISPLAY"] = ":0"
         #env["XAUTHORITY"] = "/home/opencal/.Xauthority"
 
         # Construct the mpv command to play the video

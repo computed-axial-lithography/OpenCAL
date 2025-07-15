@@ -1,6 +1,16 @@
 bash: cannot set terminal process group (-1): Inappropriate ioctl for device
 bash: no job control in this shell
 bash: dircolors: command not found
+Exception in thread Thread-5 (print):
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.11/threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/opencal/opencal/OpenCAL/print_controller.py", line 28, in print
+    self.hardware.projector.play_video_with_mpv(video_file)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'play_video_with_mpv'
 Exception in thread Thread-1:
 Traceback (most recent call last):
   File "/usr/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
@@ -21,30 +31,40 @@ Traceback (most recent call last):
     super()._fire_activated()
   File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/mixins.py", line 348, in _fire_activated
     self.when_activated()
-  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 262, in button_press_handler
+  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 263, in button_press_handler
     self.select_option()
-  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 188, in select_option
+  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 189, in select_option
     self.menu_callbacks[option]()
-  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 45, in <lambda>
-    'Calibration img': lambda: (self.pc.hardware.projector.display_image(), self.show_menu("calibration")),
-                                ^^^^^^^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'HardwareController' object has no attribute 'projector'
-opencal/OpenCAL/hardware/camera_controller.py", line 82, in start_record
-    self._proc = subprocess.Popen(cmd)
-                 ^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.11/subprocess.py", line 1024, in __init__
-    self._execute_child(args, executable, preexec_fn, close_fds,
-  File "/usr/lib/python3.11/subprocess.py", line 1901, in _execute_child
-    raise child_exception_type(errno_num, err_msg, err_filename)
-FileNotFoundError: [Errno 2] No such file or directory: 'libcamera-vid'
-error: XDG_RUNTIME_DIR is invalid or not set in the environment.
-[KV: 00:00:00 / 00:01:00 (0%)[KV: 00:00:00 / 00:01:00 (1%)[KV: 00:00:00 / 00:01:00 (2%)[KV: 00:00:01 / 00:01:00 (2%)[KV: 00:00:01 / 00:01:00 (3%)[KV: 00:00:02 / 00:01:00 (3%)[KV: 00:00:02 / 00:01:00 (4%)[KV: 00:00:02 / 00:01:00 (5%)[KV: 00:00:03 / 00:01:00 (5%)/python3.11/site-packages/gpiozero/pins/pi.py", line 413, in pin
-    pin = self.pin_class(self, info)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/pins/rpigpio.py", line 101, in __init__
-    GPIO.setup(self._number, GPIO.IN, self.GPIO_PULL_UPS[self._pull])
-RuntimeError: Cannot determine SOC peripheral base address
-[KV: 00:00:05 / 00:01:00 (9%)[KV: 00:00:05 / 00:01:00 (9%) Dropped: 1[KV: 00:00:05 / 00:01:00 (9%) Dropped: 2[KV: 00:00:05 / 00:01:00 (9%) Dropped: 3[KV: 00:00:05 / 00:01:00 (9%) Dropped: 4[KV: 00:00:05 / 00:01:00 (10%) Dropped: 4[KV: 00:00:06 / 00:01:00 (10%) Dropped: 4[KV: 00:00:06 / 00:01:00 (11%) Dropped: 4[KV: 00:00:06 / 00:01:00 (12%) Dropped: 4[KV: 00:00:07 / 00:01:00 (12%) Dropped: 4[KV: 00:00:07 / 00:01:00 (13%) Dropped: 4[KV: 00:00:08 / 00:01:00 (13%) Dropped: 4[KV: 00:00:08 / 00:01:00 (14%) Dropped: 4[KV: 00:00:08 / 00:01:00 (15%) Dropped: 4[KV: 00:00:09 / 00:01:00 (15%) Dropped: 4[KV: 00:00:09 / 00:01:00 (16%) Dropped: 4[KV: 00:00:09 / 00:01:00 (17%) Dropped: 4[KV: 00:00:10 / 00:01:00 (17%) Dropped: 4[KV: 00:00:10 / 00:01:00 (18%) Dropped: 4[KV: 00:00:11 / 00:01:00 (18%) Dropped: 4
+  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 44, in <lambda>
+    'stop': lambda: (self.pc.stop(), self.clear_timer(), self.show_menu("main")),
+                     ^^^^^^^^^^^^^^
+  File "/home/opencal/opencal/OpenCAL/print_controller.py", line 50, in stop
+    self.hardware.projector.stop_video()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'stop_video'
+back (most recent call last):
+  File "/usr/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.11/threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 301, in run
+    self.pc.hardware.lcd.write_message(f"Elapsed: {elapsed_formatted}", 3, 0)
+  File "/home/opencal/opencal/OpenCAL/hardware/lcd_display.py", line 71, in write_message
+    self._update_lcd(row)  # Only update the changed row
+    ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/opencal/opencal/OpenCAL/hardware/lcd_display.py", line 87, in _update_lcd
+    self.lcd.cursor_pos = (row, 0)  # Set cursor position for the specified row
+    ^^^^^^^^^^^^^^^^^^^
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/RPLCD/lcd.py", line 159, in _set_cursor_pos
+    self.command(c.LCD_SETDDRAMADDR | row_offsets[value[0]] + value[1])
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/RPLCD/lcd.py", line 382, in command
+    self._send_instruction(value)
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/RPLCD/i2c.py", line 240, in _send_instruction
+    self.bus.write_byte(self._address, (c.RS_INSTRUCTION |
+  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/smbus2/smbus2.py", line 416, in write_byte
+    ioctl(self.fd, I2C_SMBUS, msg)
+OSError: [Errno 121] Remote I/O error
+%) Dropped: 4[KV: 00:00:11 / 00:01:00 (18%) Dropped: 4
 : 3[KV: 00:00:30 / 00:01:00 (52%) Dropped: 3[KV: 00:00:31 / 00:01:00 (52%) Dropped: 3[KV: 00:00:31 / 00:01:00 (53%) Dropped: 3[KV: 00:00:32 / 00:01:00 (53%) Dropped: 3[KV: 00:00:32 / 00:01:00 (54%) Dropped: 3[KV: 00:00:32 / 00:01:00 (55%) Dropped: 3[KV: 00:00:33 / 00:01:00 (55%) Dropped: 3[KV: 00:00:33 / 00:01:00 (56%) Dropped: 3[KV: 00:00:33 / 00:01:00 (57%) Dropped: 3[KV: 00:00:34 / 00:01:00 (57%) Dropped: 3[KV: 00:00:34 / 00:01:00 (58%) Dropped: 3[KV: 00:00:35 / 00:01:00 (58%) Dropped: 3[KV: 00:00:35 / 00:01:00 (59%) Dropped: 3[KV: 00:00:35 / 00:01:00 (60%) Dropped: 3[KV: 00:00:36 / 00:01:00 (60%) Dropped: 3[KV: 00:00:36 / 00:01:00 (61%) Dropped: 3[KV: 00:00:36 / 00:01:00 (62%) Dropped: 3[KV: 00:00:37 / 00:01:00 (62%) Dropped: 3[KV: 00:00:37 / 00:01:00 (63%) Dropped: 3[KV: 00:00:38 / 00:01:00 (63%) Dropped: 3[KV: 00:00:38 / 00:01:00 (64%) Dropped: 3[KV: 00:00:38 / 00:01:00 (65%) Dropped: 3[KV: 00:00:39 / 00:01:00 (65%) Dropped: 3[KV: 00:00:39 / 00:01:00 (66%) Dropped: 3[KV: 00:00:39 / 00:01:00 (67%) Dropped: 3[KV: 00:00:40 / 00:01:00 (67%) Dropped: 3[KV: 00:00:40 / 00:01:00 (68%) Dropped: 3[KV: 00:00:41 / 00:01:00 (68%) Dropped: 3[KV: 00:00:41 / 00:01:00 (68%) Dropped: 4[KV: 00:00:41 / 00:01:00 (68%) Dropped: 5[KV: 00:00:41 / 00:01:00 (68%) Dropped: 6[KV: 00:00:41 / 00:01:00 (69%) Dropped: 7[KV: 00:00:41 / 00:01:00 (69%) Dropped: 8[KV: 00:00:41 / 00:01:00 (69%) Dropped: 9[KV: 00:00:41 / 00:01:00 (70%) Dropped: 10[KV: 00:00:42 / 00:01:00 (70%) Dropped: 10[KV: 00:00:42 / 00:01:00 (71%) Dropped: 10[KV: 00:00:42 / 00:01:00 (72%) Dropped: 10[KV: 00:00:43 / 00:01:00 (72%) Dropped: 10[KV: 00:00:43 / 00:01:00 (73%) Dropped: 10[KV: 00:00:44 / 00:01:00 (73%) Dropped: 10[KV: 00:00:44 / 00:01:00 (74%) Dropped: 10[KV: 00:00:44 / 00:01:00 (75%) Dropped: 10[KV: 00:00:45 / 00:01:00 (75%) Dropped: 10[KV: 00:00:45 / 00:01:00 (76%) Dropped: 10[KV: 00:00:45 / 00:01:00 (77%) Dropped: 10[KV: 00:00:46 / 00:01:00 (77%) Dropped: 10[KV: 00:00:46 / 00:01:00 (78%) Dropped: 10[KV: 00:00:47 / 00:01:00 (78%) Dropped: 10[KV: 00:00:47 / 00:01:00 (79%) Dropped: 10[KV: 00:00:47 / 00:01:00 (80%) Dropped: 10[KV: 00:00:48 / 00:01:00 (80%) Dropped: 10[KV: 00:00:48 / 00:01:00 (81%) Dropped: 10[KV: 00:00:48 / 00:01:00 (82%) Dropped: 10[KV: 00:00:49 / 00:01:00 (82%) Dropped: 10[KV: 00:00:49 / 00:01:00 (83%) Dropped: 10[KV: 00:00:50 / 00:01:00 (83%) Dropped: 10[KV: 00:00:50 / 00:01:00 (84%) Dropped: 10[KV: 00:00:50 / 00:01:00 (85%) Dropped: 10[KV: 00:00:51 / 00:01:00 (85%) Dropped: 10[KV: 00:00:51 / 00:01:00 (86%) Dropped: 10[KV: 00:00:51 / 00:01:00 (87%) Dropped: 10[KV: 00:00:52 / 00:01:00 (87%) Dropped: 10[KV: 00:00:52 / 00:01:00 (88%) Dropped: 10[KV: 00:00:53 / 00:01:00 (88%) Dropped: 10[KV: 00:00:53 / 00:01:00 (89%) Dropped: 10[KV: 00:00:53 / 00:01:00 (90%) Dropped: 10[KV: 00:00:54 / 00:01:00 (90%) Dropped: 10[KV: 00:00:54 / 00:01:00 (91%) Dropped: 10[KV: 00:00:54 / 00:01:00 (92%) Dropped: 10[KV: 00:00:55 / 00:01:00 (92%) Dropped: 10[KV: 00:00:55 / 00:01:00 (93%) Dropped: 10[KV: 00:00:56 / 00:01:00 (93%) Dropped: 10[KV: 00:00:56 / 00:01:00 (94%) Dropped: 10[KV: 00:00:56 / 00:01:00 (95%) Dropped: 10[KV: 00:00:57 / 00:01:00 (95%) Dropped: 10[KV: 00:00:57 / 00:01:00 (96%) Dropped: 10[KV: 00:00:57 / 00:01:00 (97%) Dropped: 10[KV: 00:00:58 / 00:01:00 (97%) Dropped: 10Exception in thread Thread-4 (run):
 Traceback (most recent call last):
   File "/usr/lib/python3.11/threading.py", line 1038, in _bootstrap_inner

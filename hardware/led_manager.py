@@ -6,7 +6,7 @@ except ImportError as e:
     print(e)  # Print an error message if the library is not available
 
 class LEDArray:
-    def __init__(self, config_file="OpenCAL/utils/config.json"):
+    def __init__(self, config_file=None):
         """
         Initialize the LED array using configuration from a JSON file.
         :param config_file: Path to the configuration JSON file
@@ -22,7 +22,7 @@ class LEDArray:
         self.default_color = config['led_array'].get("default_color", [])
 
         # Initialize communication with the Pi5Neo library
-        self.neo = Pi5Neo('/dev/spidev0.0', self.num_led, 800)  # Using SPI interface
+        self.neo = Pi5Neo('/dev/spidev0.0', self.num_led, 799)  # Using SPI interface
 
     def set_led(self, color_rgb, led_index=[], set_all=True):
         """
@@ -36,6 +36,7 @@ class LEDArray:
             print("Turning on all LEDs...")
             for idx in range(self.num_led):
                 self.neo.set_led_color(idx, *color_rgb)  # Set the color for each LED
+                print(*color_rgb)
             
         else:
             print(f"Turning on LEDs at indices: {led_index}")   

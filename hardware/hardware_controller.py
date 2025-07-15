@@ -21,6 +21,7 @@ class HardwareController:
         # Check if the configuration file exists
         if not config_file.is_file():
             raise FileNotFoundError(f"Config not found at {config_file!s}")
+        print(config_file)
 
         # Initialize error tracking and health status
         self.errors = []  # List to store any initialization errors
@@ -35,40 +36,49 @@ class HardwareController:
             self.stepper = StepperMotor(config_file)
         except Exception as e:
             self.errors.append(f"StepperMotor failed: {e}")
+            self.stepper = None
             self.healthy = False
 
         try:
             self.led_array = LEDArray(config_file)
         except Exception as e:
             self.errors.append(f"LEDArray failed: {e}")
+            self.led_array = None
             self.healthy = False
 
         try:
             self.lcd = LCDDisplay(config_file)
         except Exception as e:
             self.errors.append(f"LCDDisplay failed: {e}")
+            self.lcd = None
             self.healthy = False
 
         try:
             self.rotary = RotaryEncoderHandler(config_file)   
         except Exception as e:
             self.errors.append(f"RotaryEncoderHandler failed: {e}")
+            self.rotary = None
             self.healthy = False
 
         try:
-            self.projector = Projector()
+            self.projector = Projector(config_file)
         except Exception as e:
+            print(f"Projector failed: {e}") 
             self.errors.append(f"Projector failed: {e}")
+            self.projector = None
             self.healthy = False
 
         try:
             self.usb_device = MP4Driver()
         except Exception as e:
             self.errors.append(f"USB device failed: {e}")
+            self.usb_device = None
             self.healthy = False
 
         try:
             self.camera = CameraController(config_file)  # Initialize camera controller
         except Exception as e:
             self.errors.append(f"CameraController failed: {e}")
+            self.camera = None
             self.healthy = False
+

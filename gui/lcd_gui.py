@@ -15,8 +15,9 @@ from print_controller import PrintController
 from hardware.camera_controller import CameraController
 
 class LCDGui:
-    def __init__(self, pc = PrintController()):
-        
+    def __init__(self, pc = None):
+        if pc is None:
+            pc = PrintController()
         self.pc = pc
         self.print_start_time = None  
         

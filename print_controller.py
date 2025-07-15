@@ -7,6 +7,8 @@ import threading
 class PrintController:
     def __init__(self, hardware=HardwareController()):
         self.hardware = hardware
+        if not self.hardware.healthy:
+            print("not all peripherals connected, some functionality may not work")
         self.running = False
 
     def start_print_job(self, video_file):
@@ -22,7 +24,7 @@ class PrintController:
         self.hardware.led_array.set_led((255, 0, 0), set_all=True)
 
         # Start video playback.
-        self.hardware.projector.stop_video()
+        #self.hardware.projector.stop_video()
         self.hardware.projector.play_video_with_mpv(video_file)
 
         # Handle camera operations if a camera is available
