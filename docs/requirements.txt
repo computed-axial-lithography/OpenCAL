@@ -1,0 +1,3 @@
+opencv_python
+smbus2
+gpiozero
