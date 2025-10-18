@@ -1,7 +1,9 @@
 import threading
-from hardware.hardware_controller import HardwareController
+
 from gui import LCDGui
-from print_controller import PrintController
+from hardware.hardware_controller import HardwareController
+from src.print_controller import PrintController
+
 
 def main():
     print_controller = PrintController()
