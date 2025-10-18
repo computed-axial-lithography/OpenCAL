@@ -6,8 +6,8 @@ import time
 
 import cv2
 
-from hardware.camera_controller import CameraController
-from src.print_controller import PrintController
+from opencal.hardware.camera_controller import CameraController
+from opencal.print_controller import PrintController
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "../utils/config.json")
 
