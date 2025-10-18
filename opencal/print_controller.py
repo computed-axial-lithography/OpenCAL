@@ -1,7 +1,8 @@
-import time
 import os
-from hardware.hardware_controller import HardwareController
 import threading
+import time
+
+from .hardware.hardware_controller import HardwareController
 
 
 class PrintController:
@@ -24,7 +25,7 @@ class PrintController:
         self.hardware.led_array.set_led((255, 0, 0), set_all=True)
 
         # Start video playback.
-        #self.hardware.projector.stop_video()
+        # self.hardware.projector.stop_video()
         self.hardware.projector.play_video_with_mpv(video_file)
 
         # Handle camera operations if a camera is available
