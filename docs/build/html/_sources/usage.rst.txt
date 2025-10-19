@@ -3,6 +3,13 @@ Usage
 
 Usage test
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+   
+   usage
+   api
+
 .. py:function:: mod.func()
 
     Does something.
