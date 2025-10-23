@@ -1,4 +1,3 @@
-import os
 import threading
 import time
 
@@ -6,8 +5,8 @@ from .hardware.hardware_controller import HardwareController
 
 
 class PrintController:
-    def __init__(self, hardware=HardwareController()):
-        self.hardware = hardware
+    def __init__(self, hardware: HardwareController | None = None):
+        self.hardware = hardware or HardwareController()
         if not self.hardware.healthy:
             print("not all peripherals connected, some functionality may not work")
         self.running = False
@@ -22,7 +21,7 @@ class PrintController:
 
         # Start motor rotation and LED color change.
         self.hardware.stepper.start_rotation("CCW")
-        self.hardware.led_array.set_led((255, 0, 0), set_all=True)
+        self.hardware.led_array.set_led((255, 0, 0))
 
         # Start video playback.
         # self.hardware.projector.stop_video()

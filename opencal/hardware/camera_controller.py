@@ -5,17 +5,20 @@ import threading
 import glob
 import subprocess
 import os
-import signal
+from pathlib import Path
 
 class CameraController:
-    def __init__(self, config_file="OpenCAL/utils/config.json"):
+    def __init__(self, config_file: Path | None =Path("OpenCAL/utils/config.json")):
         """Initialize the CameraController with configuration from a JSON file.
         
         Args:
             config_file (str): Path to the JSON configuration file.
         """
-        with open(config_file) as f:
-            cfg = json.load(f)["camera"]
+        if config_file:
+            with open(config_file) as f:
+                cfg = json.load(f)["camera"]
+        else:
+            cfg = {}
         
         # Camera configuration parameters
         self.cam_type     = cfg.get("type", "usb")  # Type of camera (usb or rpi)

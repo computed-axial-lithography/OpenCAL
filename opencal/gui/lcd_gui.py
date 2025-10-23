@@ -6,13 +6,13 @@ import time
 
 import cv2
 
-from opencal.hardware.camera_controller import CameraController
 from opencal.print_controller import PrintController
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "../utils/config.json")
 
 
 # Add the parent directory of 'gui' to sys.path
+# TODO: This is probably unnecessary
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # from hardware import HardwareController
 
@@ -68,7 +68,11 @@ class LCDGui:
             "print": lambda arg: self.pc.start_print_job(
                 arg
             ),  # Start print job, camera handling is now in PrintController
-            "stop": lambda: (self.pc.stop(), self.clear_timer(), self.show_menu("main")),
+            "stop": lambda: (
+                self.pc.stop(),
+                self.clear_timer(),
+                self.show_menu("main"),
+            ),
             "Resize Print": lambda: self.enter_variable_adjustment(
                 "size %",
                 self.pc.hardware.projector.size,
@@ -191,7 +195,10 @@ class LCDGui:
         menu_list = self.menu_dict[self.current_menu]
         menu_length = len(menu_list)
 
-        if position > self.last_rotary_position and self.current_index < menu_length - 1:
+        if (
+            position > self.last_rotary_position
+            and self.current_index < menu_length - 1
+        ):
             self.current_index += 1
         elif position < self.last_rotary_position and self.current_index > 0:
             self.current_index -= 1
@@ -294,7 +301,7 @@ class LCDGui:
         """Handles button press and debouncing."""
         current_time = time.time()
         if current_time - self.last_button_press_time > 1:
-            if self.adjusting_variable and self.selected_video_filename == None:
+            if self.adjusting_variable and self.selected_video_filename is None:
                 self.update_function(self.current_value)
                 self.adjusting_variable = False
                 self.show_menu(self.return_menu)
@@ -351,7 +358,9 @@ class LCDGui:
                 minutes, seconds = divmod(int(elapsed), 60)
                 elapsed_formatted = f"{minutes:02d}:{seconds:02d}"
                 # Write the elapsed time to a fixed line on the LCD (line 3)
-                self.pc.hardware.lcd.write_message(f"Elapsed: {elapsed_formatted}", 3, 0)
+                self.pc.hardware.lcd.write_message(
+                    f"Elapsed: {elapsed_formatted}", 3, 0
+                )
             if self.adjusting_variable:
                 self.pc.hardware.rotary.encoder.when_rotated = self.adjust_variable
             else:

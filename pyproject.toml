@@ -1,0 +1,13 @@
+[project]
+name = "opencal"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "gpiozero==2.0.1",
+    "opencv-python==4.11.0.86",
+    "pi5neo==1.0.5",
+    "rplcd==1.4.0",
+    "smbus2==0.5.0",
+]

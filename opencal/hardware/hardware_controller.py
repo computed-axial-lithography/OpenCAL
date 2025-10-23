@@ -8,9 +8,6 @@ from .usb_manager import MP4Driver
 
 from pathlib import Path
 
-import time
-import cv2
-
 
 class HardwareController:
     def __init__(self):
@@ -30,34 +27,31 @@ class HardwareController:
         # Attempt to initialize all hardware components
         self.initialize_hardware(config_file)
 
-    def initialize_hardware(self, config_file):
+    def initialize_hardware(self, config_file: Path):
         """Initialize all hardware components and handle any errors."""
+        # TODO: All this error checking needs to actually do something
         try:
             self.stepper = StepperMotor(config_file)
         except Exception as e:
             self.errors.append(f"StepperMotor failed: {e}")
-            self.stepper = None
             self.healthy = False
 
         try:
             self.led_array = LEDArray(config_file)
         except Exception as e:
             self.errors.append(f"LEDArray failed: {e}")
-            self.led_array = None
             self.healthy = False
 
         try:
             self.lcd = LCDDisplay(config_file)
         except Exception as e:
             self.errors.append(f"LCDDisplay failed: {e}")
-            self.lcd = None
             self.healthy = False
 
         try:
             self.rotary = RotaryEncoderHandler(config_file)   
         except Exception as e:
             self.errors.append(f"RotaryEncoderHandler failed: {e}")
-            self.rotary = None
             self.healthy = False
 
         try:
@@ -65,20 +59,17 @@ class HardwareController:
         except Exception as e:
             print(f"Projector failed: {e}") 
             self.errors.append(f"Projector failed: {e}")
-            self.projector = None
             self.healthy = False
 
         try:
             self.usb_device = MP4Driver()
         except Exception as e:
             self.errors.append(f"USB device failed: {e}")
-            self.usb_device = None
             self.healthy = False
 
         try:
             self.camera = CameraController(config_file)  # Initialize camera controller
         except Exception as e:
             self.errors.append(f"CameraController failed: {e}")
-            self.camera = None
             self.healthy = False
 

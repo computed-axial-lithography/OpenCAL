@@ -1,5 +1,6 @@
 import os
 
+
 class MP4Driver:
     def __init__(self, mount_point="/media/opencal"):
         # Initialize the MP4Driver with a specified mount point for the USB storage
@@ -14,15 +15,15 @@ class MP4Driver:
         # Check if the mount point exists
         if not os.path.exists(self.mount_point):
             raise FileNotFoundError(f"Mount point {self.mount_point} not found.")
-        
+
         # Walk through the directory and find mp4 files
         for root, dirs, files in os.walk(self.mount_point):
             for file in files:
                 # Case-insensitive check for .mp4 file extension
-                if file.lower().endswith('.mp4'):
+                if file.lower().endswith(".mp4"):
                     # Append the full path of the file to the list
                     mp4_files.append(os.path.join(root, file))
-        
+
         return mp4_files
 
     def get_file_names(self):

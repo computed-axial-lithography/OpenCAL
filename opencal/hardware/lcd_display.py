@@ -1,7 +1,3 @@
-try:
-    import smbus2
-except ImportError:
-    smbus2 = None  # Handle the case where the smbus2 library is not available
 
 import time
 import json
@@ -9,18 +5,21 @@ import threading
 from RPLCD.i2c import CharLCD
 from time import sleep
 
+from pathlib import Path
 
 class LCDDisplay:
-    def __init__(self, config_file=None):
+    def __init__(self, config_file: Path | None =None):
         """Initialize the LCD display.
         
         Args:
             config_file (str): Path to JSON configuration file.
         """
         # Load config from the JSON file
-        with open(config_file, 'r') as f:
-            config = json.load(f)
-            
+        if config_file:
+            with open(config_file) as f:
+                config = json.load(f)
+        else:
+            config = {}
         # Retrieve LCD settings from config
         self.address = int(config['lcd_display'].get("address", '0x27'), 16)  # I2C address of the LCD
         self.port = config['lcd_display'].get("port", 'PCF8574')  # Port for the LCD
