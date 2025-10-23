@@ -1,0 +1,4 @@
+opencv_python
+smbus2
+gpiozero
+sphinx_rtd_theme

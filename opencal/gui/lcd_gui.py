@@ -1,67 +1,104 @@
-import sys
+import json
 import os
 import subprocess
+import sys
 import time
-import cv2
-import json
 
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), '../utils/config.json')
+import cv2
+
+from opencal.hardware.camera_controller import CameraController
+from opencal.print_controller import PrintController
+
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), "../utils/config.json")
 
 
 # Add the parent directory of 'gui' to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from print_controller import PrintController
-#from hardware import HardwareController
-from hardware.camera_controller import CameraController
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+# from hardware import HardwareController
+
 
 class LCDGui:
-    def __init__(self, pc = None):
+    def __init__(self, pc=None):
         if pc is None:
             pc = PrintController()
         self.pc = pc
-        self.print_start_time = None  
-        
+        self.print_start_time = None
+
         self.menu_dict = {
-            "main": ['Print from USB', 'Manual Control', 'Settings', 'Power Options'],
-            "Print from USB": ['back'] + self.pc.hardware.usb_device.get_file_names(),
-            "Manual Control": ['back', 'Turn on LEDs', 'Turn off LEDs', 'start stepper', 'stop stepper'],
-            "Settings": ['back', 'save as default', 'Resize Print', 'Set Step RPM', 'Calibration img', 'change camera'],  # Options for adjusting variables
-            "Power Options": ['back', 'Kill GUI'], #'Restart', 'Power Off'],  # Power options submenu
-            "Print menu" : ['stop'],
-            "calibration": ['stop'],
-            "change camera": ['back', 'rpi', 'usb'],
+            "main": ["Print from USB", "Manual Control", "Settings", "Power Options"],
+            "Print from USB": ["back"] + self.pc.hardware.usb_device.get_file_names(),
+            "Manual Control": [
+                "back",
+                "Turn on LEDs",
+                "Turn off LEDs",
+                "start stepper",
+                "stop stepper",
+            ],
+            "Settings": [
+                "back",
+                "save as default",
+                "Resize Print",
+                "Set Step RPM",
+                "Calibration img",
+                "change camera",
+            ],  # Options for adjusting variables
+            "Power Options": [
+                "back",
+                "Kill GUI",
+            ],  #'Restart', 'Power Off'],  # Power options submenu
+            "Print menu": ["stop"],
+            "calibration": ["stop"],
+            "change camera": ["back", "rpi", "usb"],
         }
         self.menu_callbacks = {
-            'Turn on LEDs': lambda:self.pc.hardware.led_array.set_led((255, 0, 0), set_all=True),
-            'Turn off LEDs':self.pc.hardware.led_array.clear_leds,
-            'start stepper': lambda:self.pc.hardware.stepper.start_rotation(),
-            'stop stepper': lambda:self.pc.hardware.stepper.stop(),
-            'Kill GUI': lambda: self.kill_gui(),
-            'Set Step RPM': lambda: self.enter_variable_adjustment("RPM",self.pc.hardware.stepper.speed_rpm,self.pc.hardware.stepper.set_speed),
-            'Restart': lambda: self.restart_pi(),
-            'Power Off': lambda: self.power_off_pi(),
-            'print': lambda arg: self.pc.start_print_job(arg),  # Start print job, camera handling is now in PrintController
-            'stop': lambda: (self.pc.stop(), self.clear_timer(), self.show_menu("main")),
-            'Resize Print': lambda: self.enter_variable_adjustment("size %",self.pc.hardware.projector.size,self.pc.hardware.projector.resize),  # Resize Print option callback
-            'Calibration img': lambda: (self.pc.hardware.projector.display_image(), self.show_menu("calibration")),
-            'usb': lambda: (self.pc.hardware.camera.set_type('usb'), self.splash("usb camera", self.current_menu)),
-            'rpi': lambda: (self.pc.hardware.camera.set_type('rpi'), self.splash("rpi camera", self.current_menu)),
-            'save to default': lambda: (self.save_defaults()),
-
-
+            "Turn on LEDs": lambda: self.pc.hardware.led_array.set_led(
+                (255, 0, 0), set_all=True
+            ),
+            "Turn off LEDs": self.pc.hardware.led_array.clear_leds,
+            "start stepper": lambda: self.pc.hardware.stepper.start_rotation(),
+            "stop stepper": lambda: self.pc.hardware.stepper.stop(),
+            "Kill GUI": lambda: self.kill_gui(),
+            "Set Step RPM": lambda: self.enter_variable_adjustment(
+                "RPM",
+                self.pc.hardware.stepper.speed_rpm,
+                self.pc.hardware.stepper.set_speed,
+            ),
+            "Restart": lambda: self.restart_pi(),
+            "Power Off": lambda: self.power_off_pi(),
+            "print": lambda arg: self.pc.start_print_job(
+                arg
+            ),  # Start print job, camera handling is now in PrintController
+            "stop": lambda: (self.pc.stop(), self.clear_timer(), self.show_menu("main")),
+            "Resize Print": lambda: self.enter_variable_adjustment(
+                "size %",
+                self.pc.hardware.projector.size,
+                self.pc.hardware.projector.resize,
+            ),  # Resize Print option callback
+            "Calibration img": lambda: (
+                self.pc.hardware.projector.display_image(),
+                self.show_menu("calibration"),
+            ),
+            "usb": lambda: (
+                self.pc.hardware.camera.set_type("usb"),
+                self.splash("usb camera", self.current_menu),
+            ),
+            "rpi": lambda: (
+                self.pc.hardware.camera.set_type("rpi"),
+                self.splash("rpi camera", self.current_menu),
+            ),
+            "save to default": lambda: (self.save_defaults()),
         }
-        
+
         self.menu_stack = []  # Stack to keep track of menu navigation
-        self.current_menu = 'main'  # Currently displayed menu
-        self.return_menu = 'main'
+        self.current_menu = "main"  # Currently displayed menu
+        self.return_menu = "main"
         self.current_index = 0  # Index of selected menu item
         self.view_start = 0  # Tracks the start of the visible menu slice
         self.view_size = 4  # Number of menu items visible at once
-        
 
         # Check if rotary exists before calling its get_position method.
         if self.pc.hardware.rotary is not None:
-            self.last_rotary_position =self.pc.hardware.rotary.get_position()
+            self.last_rotary_position = self.pc.hardware.rotary.get_position()
         else:
             self.last_rotary_position = 0
 
@@ -101,9 +138,9 @@ class LCDGui:
             menu_list = self.menu_dict.get(menu, [])
             for idx in range(len(menu_list)):
                 if idx < 4:
-                   self.pc.hardware.lcd.write_message(menu_list[idx], idx, 1)
+                    self.pc.hardware.lcd.write_message(menu_list[idx], idx, 1)
             time.sleep(0.05)
-    
+
     def save_defaults(self):
         """
         Read the existing config.json (or start with an empty one),
@@ -111,19 +148,19 @@ class LCDGui:
         """
         # 1) load whatever’s there already (or start fresh)
         if os.path.exists(CONFIG_PATH):
-            with open(CONFIG_PATH, 'r') as f:
+            with open(CONFIG_PATH, "r") as f:
                 cfg = json.load(f)
         else:
             cfg = {}
 
-        cfg['stepper_motor']['default_speed'] = self.pc.hardware.stepper.speed_rpm
+        cfg["stepper_motor"]["default_speed"] = self.pc.hardware.stepper.speed_rpm
 
-        cfg['projector']['default_print_size'] = self.pc.hardware.projector.size
+        cfg["projector"]["default_print_size"] = self.pc.hardware.projector.size
 
-        cfg['camera']['type'] = self.pc.hardware.camera.cam_type
+        cfg["camera"]["type"] = self.pc.hardware.camera.cam_type
 
         try:
-            with open(CONFIG_PATH, 'w') as f:
+            with open(CONFIG_PATH, "w") as f:
                 json.dump(cfg, f, indent=2)
         except Exception as e:
             print(f"Error saving defaults: {e}")
@@ -147,7 +184,7 @@ class LCDGui:
     def navigate(self):
         """Handle menu navigation based on rotary encoder movement with scrolling."""
         if self.pc.hardware.rotary is not None:
-            position =self.pc.hardware.rotary.get_position()
+            position = self.pc.hardware.rotary.get_position()
         else:
             position = self.last_rotary_position
 
@@ -170,7 +207,9 @@ class LCDGui:
             menu_idx = self.view_start + i
             if menu_idx < menu_length:
                 prefix = ">" if menu_idx == self.current_index else " "
-                self.pc.hardware.lcd.write_message(f"{prefix}{menu_list[menu_idx]}".ljust(20), i, 0)
+                self.pc.hardware.lcd.write_message(
+                    f"{prefix}{menu_list[menu_idx]}".ljust(20), i, 0
+                )
 
     def select_option(self):
         """Handle menu selection."""
@@ -182,15 +221,23 @@ class LCDGui:
             else:
                 self.show_menu("main")
         elif option in self.menu_dict:
-            self.menu_dict["Print from USB"] = ['back'] + self.pc.hardware.usb_device.get_file_names()
+            self.menu_dict["Print from USB"] = [
+                "back"
+            ] + self.pc.hardware.usb_device.get_file_names()
             self.menu_stack.append(self.current_menu)
             self.show_menu(option)
         elif option in self.menu_callbacks:
             self.menu_callbacks[option]()
         elif self.current_menu == "Print from USB":
             self.video_filename_short = option
-            self.selected_video_filename = self.pc.hardware.usb_device.get_full_path(option)
-            self.enter_variable_adjustment("RPM",self.pc.hardware.stepper.speed_rpm,self.pc.hardware.stepper.set_speed)
+            self.selected_video_filename = self.pc.hardware.usb_device.get_full_path(
+                option
+            )
+            self.enter_variable_adjustment(
+                "RPM",
+                self.pc.hardware.stepper.speed_rpm,
+                self.pc.hardware.stepper.set_speed,
+            )
 
         if self.adjusting_variable:
             self.adjust_variable()
@@ -198,10 +245,11 @@ class LCDGui:
             self.navigate()
         time.sleep(0.05)
 
-
-    def enter_variable_adjustment(self, variable_name, current_value, update_function=None):
+    def enter_variable_adjustment(
+        self, variable_name, current_value, update_function=None
+    ):
         """Enter variable adjustment mode and allow the user to adjust any variable.
-           A callback (if provided) is stored and called after the adjustment is complete.
+        A callback (if provided) is stored and called after the adjustment is complete.
         """
         self.return_menu = self.current_menu
         self.current_menu = None
@@ -209,15 +257,16 @@ class LCDGui:
         self.current_value = current_value
         self.update_function = update_function
         self.pc.hardware.lcd.clear()
-        self.pc.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_value}".ljust(20), 0, 0)
+        self.pc.hardware.lcd.write_message(
+            f"Current {self.variable_name}: {self.current_value}".ljust(20), 0, 0
+        )
         self.pc.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
         self.pc.hardware.lcd.write_message("Click to set", 2, 0)
         self.adjusting_variable = True
 
     def adjust_variable(self):
         """Adjust the variable using the rotary encoder."""
-        position =self.pc.hardware.rotary.get_position()
-        
+        position = self.pc.hardware.rotary.get_position()
 
         if position > self.last_rotary_position:
             self.current_value += 1
@@ -228,14 +277,15 @@ class LCDGui:
                 self.pc.hardware.lcd.write_message("Cannot go below 100", 3, 0)
                 self.last_rotary_position = position
                 return
-            else: 
+            else:
                 self.current_value -= 1
 
-
-        #self.pc.hardware.lcd.clear()
-        self.pc.hardware.lcd.write_message(f"Current {self.variable_name}: {self.current_value}".ljust(20), 0, 0)
-        #self.pc.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
-        #self.pc.hardware.lcd.write_message("Click to set", 2, 0)
+        # self.pc.hardware.lcd.clear()
+        self.pc.hardware.lcd.write_message(
+            f"Current {self.variable_name}: {self.current_value}".ljust(20), 0, 0
+        )
+        # self.pc.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
+        # self.pc.hardware.lcd.write_message("Click to set", 2, 0)
         if self.selected_video_filename is not None:
             self.pc.hardware.lcd.write_message(self.video_filename_short, 3, 0)
         self.last_rotary_position = position
@@ -253,11 +303,13 @@ class LCDGui:
             elif self.selected_video_filename is not None:
                 self.update_function(self.current_value)
                 self.adjusting_variable = False
-                self.print_start_time = time.time()  
-                self.menu_callbacks['print'](self.selected_video_filename)
+                self.print_start_time = time.time()
+                self.menu_callbacks["print"](self.selected_video_filename)
                 self.selected_video_filename = None
                 self.video_filename_short = None
-                self.show_menu('Print menu')  # Switch to print menu after starting the print job\
+                self.show_menu(
+                    "Print menu"
+                )  # Switch to print menu after starting the print job\
                 self.navigate()
             else:
                 self.select_option()
@@ -282,14 +334,14 @@ class LCDGui:
 
     def kill_gui(self):
         """Handles the kill GUI action."""
-        #self.camera.stop_camera()
+        # self.camera.stop_camera()
         cv2.destroyAllWindows()
         self.running = False
 
     def run(self):
         """Main method to run the GUI."""
         self.show_startup_screen()
-        self.show_menu('main')
+        self.show_menu("main")
         self.navigate()
 
         while self.running:
@@ -301,9 +353,9 @@ class LCDGui:
                 # Write the elapsed time to a fixed line on the LCD (line 3)
                 self.pc.hardware.lcd.write_message(f"Elapsed: {elapsed_formatted}", 3, 0)
             if self.adjusting_variable:
-               self.pc.hardware.rotary.encoder.when_rotated = self.adjust_variable
+                self.pc.hardware.rotary.encoder.when_rotated = self.adjust_variable
             else:
-               self.pc.hardware.rotary.encoder.when_rotated = self.navigate
+                self.pc.hardware.rotary.encoder.when_rotated = self.navigate
             self.pc.hardware.rotary.button.when_pressed = self.button_press_handler
             time.sleep(0.05)
 
@@ -318,5 +370,3 @@ class LCDGui:
 if __name__ == "__main__":
     gui = LCDGui()
     gui.run()
-
-

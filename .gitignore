@@ -4,8 +4,12 @@
 venv/
 .env/
 
+# ignore RTD build results
+docs/build/
+
 #Ignore video files
 *.mp4
 
 __pycache__/
 *.pyc
+*.log
