@@ -1,7 +1,7 @@
 import threading
 
 from opencal.gui import LCDGui
-from opencal.print_controller import PrintController
+from opencal.hardware import PrintController
 
 
 def main():

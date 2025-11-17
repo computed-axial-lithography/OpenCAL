@@ -1,12 +1,7 @@
-<<<<<<<< HEAD:opencal/print_controller.py
-========
 import time
 from hardware.hardware_controller import HardwareController
->>>>>>>> db4c355be1655af2d4b351feb87c9fed20a314f9:opencal/hardware/print_controller.py
 import threading
 import time
-
-from .hardware.hardware_controller import HardwareController
 
 
 class PrintController:

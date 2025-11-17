@@ -6,7 +6,7 @@ import time
 
 import cv2
 
-from opencal.print_controller import PrintController
+from opencal.hardware import PrintController
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "../utils/config.json")
 
