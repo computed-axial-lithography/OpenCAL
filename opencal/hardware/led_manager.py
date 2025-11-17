@@ -28,11 +28,10 @@ class LEDArray:
 
     def set_led(self, color: tuple[int, int, int], led_index: list | None = None):
         """
-        Turn on LEDs at the specified index, or all LEDs if set_all is True.
-        Args:
-            color_rgb (tuple): RGB values as (R, G, B).
-            led_index (list): List of LED indices to turn on.
-            set_all (bool): If True, turn on all LEDs.
+        Set the specified LEDs to a given RGB color.
+        
+        :param color: (G, R, B)
+        :param led_index: List of indices to update (or all LEDs if not specified)
         """
         if led_index is None:
             print("Turning on all LEDs...")
@@ -49,21 +48,18 @@ class LEDArray:
         print("LEDs updated.")
 
     def clear_leds(self):
-        """
-        Turn off all LEDs in the array.
-        """
-        self.neo.clear_strip()  # Clear the LED strip
-        self.neo.update_strip()  # Update the LED strip to apply changes
+        """Turn off all LEDs."""
+        print("Clearing all LEDs...")
+        self.pixels.clear_strip()
+        self.pixels.update_strip()
 
 
 if __name__ == "__main__":
-    led_array = LEDArray()  # Create an instance of the LEDArray class
+    led_array = LEDArray(config_file="/home/opencal/opencal/OpenCAL/utils/config.json")
 
     try:
-        # Clear all LEDs before starting the test
-        print("Clearing all LEDs...")
         led_array.clear_leds()
-
+        time.sleep(1)
         print("Turning on all LEDs to red for 10 seconds...")
         led_array.set_led((255, 0, 0))  # Set all LEDs to red
         time.sleep(10)  # Keep the LEDs on for 10 seconds

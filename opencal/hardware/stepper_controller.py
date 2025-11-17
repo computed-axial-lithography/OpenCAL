@@ -11,11 +11,8 @@ class StepperMotor:
         """Initialize GPIO communication with the stepper motor driver (Step/Dir mode)."""
 
         # Load configuration from the specified JSON file
-        if config_file:
-            with open(config_file, "r") as f:
-                config = json.load(f)
-        else:
-            config = {}
+        with open(config_file) as f:
+            config = json.load(f)
 
         # Set up GPIO pins for step, direction, and enable
         self.step_pin = config["stepper_motor"].get("step_pin", 18)  # Default to GPIO18
@@ -50,7 +47,7 @@ class StepperMotor:
         self._rotation_thread = None  # Reference to the thread for continuous rotation
         self._running = False  # Flag to control whether the motor is currently running
 
-    def enable(self, enable_on=True):
+    def enable_method(self, enable_on=True):
         """Enable or disable the stepper motor driver."""
         if enable_on:
             self.enable.on()  # Turn on the enable pin
@@ -96,10 +93,11 @@ class StepperMotor:
             self.step.off()  # Deactivate the step pin
             start_time = time.perf_counter()  # Reset the start time for the next pulse
 
-    def start_rotation(self, direction=None):
+    def start_rotation(self, direction: str | None = None):
         """
         Start rotating the stepper motor continuously at the set speed.
-        - direction: "CW" for clockwise, "CCW" for counterclockwise.
+        
+        :param direction: "CW" for clockwise, "CCW" for counterclockwise.
         """
         direction = (
             direction or self.default_direction
@@ -114,11 +112,9 @@ class StepperMotor:
 
         # Start a new thread for continuous rotation if not already running
         if not self._running:
+            print("Starting a new thread for rotation")
             self._running = True
-            self._rotation_thread = threading.Thread(target=self._rotate_motor)
-            self._rotation_thread.daemon = (
-                True  # Ensure the thread terminates with the program
-            )
+            self._rotation_thread = threading.Thread(target=self._rotate_motor, daemon=True)
             self._rotation_thread.start()  # Start the rotation thread
 
     def _rotate_motor(self):
