@@ -1,91 +1,71 @@
 bash: cannot set terminal process group (-1): Inappropriate ioctl for device
 bash: no job control in this shell
 bash: dircolors: command not found
-Exception in thread Thread-5 (print):
-Traceback (most recent call last):
-  File "/usr/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
-    self.run()
-  File "/usr/lib/python3.11/threading.py", line 975, in run
-    self._target(*self._args, **self._kwargs)
-  File "/home/opencal/opencal/OpenCAL/print_controller.py", line 28, in print
-    self.hardware.projector.play_video_with_mpv(video_file)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'NoneType' object has no attribute 'play_video_with_mpv'
-Exception in thread Thread-1:
-Traceback (most recent call last):
-  File "/usr/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
-    self.run()
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/lgpio.py", line 554, in run
-    cb.func(chip, gpio, level, tick)
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/pins/lgpio.py", line 248, in _call_when_changed
-    super()._call_when_changed(ticks / 1000000000, level)
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/pins/local.py", line 111, in _call_when_changed
-    super()._call_when_changed(
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/pins/pi.py", line 618, in _call_when_changed
-    method(ticks, state)
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/input_devices.py", line 179, in _pin_changed
-    self._fire_events(ticks, bool(self._state_to_value(state)))
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/mixins.py", line 385, in _fire_events
-    self._fire_activated()
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/mixins.py", line 431, in _fire_activated
-    super()._fire_activated()
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/gpiozero/mixins.py", line 348, in _fire_activated
-    self.when_activated()
-  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 263, in button_press_handler
-    self.select_option()
-  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 189, in select_option
-    self.menu_callbacks[option]()
-  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 44, in <lambda>
-    'stop': lambda: (self.pc.stop(), self.clear_timer(), self.show_menu("main")),
-                     ^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/OpenCAL/print_controller.py", line 50, in stop
-    self.hardware.projector.stop_video()
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'NoneType' object has no attribute 'stop_video'
-back (most recent call last):
-  File "/usr/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
-    self.run()
-  File "/usr/lib/python3.11/threading.py", line 975, in run
-    self._target(*self._args, **self._kwargs)
-  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 301, in run
-    self.pc.hardware.lcd.write_message(f"Elapsed: {elapsed_formatted}", 3, 0)
-  File "/home/opencal/opencal/OpenCAL/hardware/lcd_display.py", line 71, in write_message
-    self._update_lcd(row)  # Only update the changed row
-    ^^^^^^^^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/OpenCAL/hardware/lcd_display.py", line 87, in _update_lcd
-    self.lcd.cursor_pos = (row, 0)  # Set cursor position for the specified row
-    ^^^^^^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/RPLCD/lcd.py", line 159, in _set_cursor_pos
-    self.command(c.LCD_SETDDRAMADDR | row_offsets[value[0]] + value[1])
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/RPLCD/lcd.py", line 382, in command
-    self._send_instruction(value)
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/RPLCD/i2c.py", line 240, in _send_instruction
-    self.bus.write_byte(self._address, (c.RS_INSTRUCTION |
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/smbus2/smbus2.py", line 416, in write_byte
-    ioctl(self.fd, I2C_SMBUS, msg)
-OSError: [Errno 121] Remote I/O error
-%) Dropped: 4[KV: 00:00:11 / 00:01:00 (18%) Dropped: 4
-: 3[KV: 00:00:30 / 00:01:00 (52%) Dropped: 3[KV: 00:00:31 / 00:01:00 (52%) Dropped: 3[KV: 00:00:31 / 00:01:00 (53%) Dropped: 3[KV: 00:00:32 / 00:01:00 (53%) Dropped: 3[KV: 00:00:32 / 00:01:00 (54%) Dropped: 3[KV: 00:00:32 / 00:01:00 (55%) Dropped: 3[KV: 00:00:33 / 00:01:00 (55%) Dropped: 3[KV: 00:00:33 / 00:01:00 (56%) Dropped: 3[KV: 00:00:33 / 00:01:00 (57%) Dropped: 3[KV: 00:00:34 / 00:01:00 (57%) Dropped: 3[KV: 00:00:34 / 00:01:00 (58%) Dropped: 3[KV: 00:00:35 / 00:01:00 (58%) Dropped: 3[KV: 00:00:35 / 00:01:00 (59%) Dropped: 3[KV: 00:00:35 / 00:01:00 (60%) Dropped: 3[KV: 00:00:36 / 00:01:00 (60%) Dropped: 3[KV: 00:00:36 / 00:01:00 (61%) Dropped: 3[KV: 00:00:36 / 00:01:00 (62%) Dropped: 3[KV: 00:00:37 / 00:01:00 (62%) Dropped: 3[KV: 00:00:37 / 00:01:00 (63%) Dropped: 3[KV: 00:00:38 / 00:01:00 (63%) Dropped: 3[KV: 00:00:38 / 00:01:00 (64%) Dropped: 3[KV: 00:00:38 / 00:01:00 (65%) Dropped: 3[KV: 00:00:39 / 00:01:00 (65%) Dropped: 3[KV: 00:00:39 / 00:01:00 (66%) Dropped: 3[KV: 00:00:39 / 00:01:00 (67%) Dropped: 3[KV: 00:00:40 / 00:01:00 (67%) Dropped: 3[KV: 00:00:40 / 00:01:00 (68%) Dropped: 3[KV: 00:00:41 / 00:01:00 (68%) Dropped: 3[KV: 00:00:41 / 00:01:00 (68%) Dropped: 4[KV: 00:00:41 / 00:01:00 (68%) Dropped: 5[KV: 00:00:41 / 00:01:00 (68%) Dropped: 6[KV: 00:00:41 / 00:01:00 (69%) Dropped: 7[KV: 00:00:41 / 00:01:00 (69%) Dropped: 8[KV: 00:00:41 / 00:01:00 (69%) Dropped: 9[KV: 00:00:41 / 00:01:00 (70%) Dropped: 10[KV: 00:00:42 / 00:01:00 (70%) Dropped: 10[KV: 00:00:42 / 00:01:00 (71%) Dropped: 10[KV: 00:00:42 / 00:01:00 (72%) Dropped: 10[KV: 00:00:43 / 00:01:00 (72%) Dropped: 10[KV: 00:00:43 / 00:01:00 (73%) Dropped: 10[KV: 00:00:44 / 00:01:00 (73%) Dropped: 10[KV: 00:00:44 / 00:01:00 (74%) Dropped: 10[KV: 00:00:44 / 00:01:00 (75%) Dropped: 10[KV: 00:00:45 / 00:01:00 (75%) Dropped: 10[KV: 00:00:45 / 00:01:00 (76%) Dropped: 10[KV: 00:00:45 / 00:01:00 (77%) Dropped: 10[KV: 00:00:46 / 00:01:00 (77%) Dropped: 10[KV: 00:00:46 / 00:01:00 (78%) Dropped: 10[KV: 00:00:47 / 00:01:00 (78%) Dropped: 10[KV: 00:00:47 / 00:01:00 (79%) Dropped: 10[KV: 00:00:47 / 00:01:00 (80%) Dropped: 10[KV: 00:00:48 / 00:01:00 (80%) Dropped: 10[KV: 00:00:48 / 00:01:00 (81%) Dropped: 10[KV: 00:00:48 / 00:01:00 (82%) Dropped: 10[KV: 00:00:49 / 00:01:00 (82%) Dropped: 10[KV: 00:00:49 / 00:01:00 (83%) Dropped: 10[KV: 00:00:50 / 00:01:00 (83%) Dropped: 10[KV: 00:00:50 / 00:01:00 (84%) Dropped: 10[KV: 00:00:50 / 00:01:00 (85%) Dropped: 10[KV: 00:00:51 / 00:01:00 (85%) Dropped: 10[KV: 00:00:51 / 00:01:00 (86%) Dropped: 10[KV: 00:00:51 / 00:01:00 (87%) Dropped: 10[KV: 00:00:52 / 00:01:00 (87%) Dropped: 10[KV: 00:00:52 / 00:01:00 (88%) Dropped: 10[KV: 00:00:53 / 00:01:00 (88%) Dropped: 10[KV: 00:00:53 / 00:01:00 (89%) Dropped: 10[KV: 00:00:53 / 00:01:00 (90%) Dropped: 10[KV: 00:00:54 / 00:01:00 (90%) Dropped: 10[KV: 00:00:54 / 00:01:00 (91%) Dropped: 10[KV: 00:00:54 / 00:01:00 (92%) Dropped: 10[KV: 00:00:55 / 00:01:00 (92%) Dropped: 10[KV: 00:00:55 / 00:01:00 (93%) Dropped: 10[KV: 00:00:56 / 00:01:00 (93%) Dropped: 10[KV: 00:00:56 / 00:01:00 (94%) Dropped: 10[KV: 00:00:56 / 00:01:00 (95%) Dropped: 10[KV: 00:00:57 / 00:01:00 (95%) Dropped: 10[KV: 00:00:57 / 00:01:00 (96%) Dropped: 10[KV: 00:00:57 / 00:01:00 (97%) Dropped: 10[KV: 00:00:58 / 00:01:00 (97%) Dropped: 10Exception in thread Thread-4 (run):
-Traceback (most recent call last):
-  File "/usr/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
-    self.run()
-  File "/usr/lib/python3.11/threading.py", line 975, in run
-    self._target(*self._args, **self._kwargs)
-  File "/home/opencal/opencal/OpenCAL/gui/lcd_gui.py", line 254, in run
-    self.pc.hardware.lcd.write_message(f"Elapsed: {elapsed_formatted}", 3, 0)
-  File "/home/opencal/opencal/OpenCAL/hardware/lcd_display.py", line 71, in write_message
-    self._update_lcd(row)  # Only update the changed row
-    ^^^^^^^^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/OpenCAL/hardware/lcd_display.py", line 87, in _update_lcd
-    self.lcd.cursor_pos = (row, 0)
-    ^^^^^^^^^^^^^^^^^^^
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/RPLCD/lcd.py", line 159, in _set_cursor_pos
-    self.command(c.LCD_SETDDRAMADDR | row_offsets[value[0]] + value[1])
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/RPLCD/lcd.py", line 382, in command
-    self._send_instruction(value)
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/RPLCD/i2c.py", line 240, in _send_instruction
-    self.bus.write_byte(self._address, (c.RS_INSTRUCTION |
-  File "/home/opencal/opencal/.venv/lib/python3.11/site-packages/smbus2/smbus2.py", line 416, in write_byte
+bash: su: command not found
+valid or not set in the environment.
+[0:02:08.433802497] [1308] [1;32m INFO [1;37mCamera [1;34mcamera_manager.cpp:327 [0mlibcamera v0.4.0+53-29156679
+ERROR: *** no cameras available ***
+error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+[KV: 00:00:00 / 00:01:00 (0%)[KV: 00:00:00 / 00:01:00 (1%)[KV: 00:00:00 / 00:01:00 (2%)[KV: 00:00:01 / 00:01:00 (2%)[KV: 00:00:01 / 00:01:00 (3%)[KV: 00:00:02 / 00:01:00 (3%)[KV: 00:00:02 / 00:01:00 (4%)[KV: 00:00:02 / 00:01:00 (5%)[KV: 00:00:03 / 00:01:00 (5%)[KV: 00:00:03 / 00:01:00 (6%)[KV: 00:00:03 / 00:01:00 (7%)[KV: 00:00:04 / 00:01:00 (7%)[KV: 00:00:04 / 00:01:00 (8%)[KV: 00:00:05 / 00:01:00 (8%)[KV: 00:00:05 / 00:01:00 (9%)
+ffmpeg version 5.1.6-0+deb12u1+rpt3 Copyright (c) 2000-2024 the FFmpeg developers
+  built with gcc 12 (Debian 12.2.0-14)
+  configuration: --prefix=/usr --extra-version=0+deb12u1+rpt3 --toolchain=hardened --incdir=/usr/include/aarch64-linux-gnu --enable-gpl --disable-stripping --disable-mmal --enable-gnutls --enable-ladspa --enable-libaom --enable-libass --enable-libbluray --enable-libbs2b --enable-libcaca --enable-libcdio --enable-libcodec2 --enable-libdav1d --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libglslang --enable-libgme --enable-libgsm --enable-libjack --enable-libmp3lame --enable-libmysofa --enable-libopenjpeg --enable-libopenmpt --enable-libopus --enable-libpulse --enable-librabbitmq --enable-librist --enable-librubberband --enable-libshine --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libsrt --enable-libssh --enable-libsvtav1 --enable-libtheora --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzimg --enable-libzmq --enable-libzvbi --enable-lv2 --enable-omx --enable-openal --enable-opencl --enable-opengl --enable-sand --enable-sdl2 --disable-sndio --enable-libjxl --enable-neon --enable-v4l2-request --enable-libudev --enable-epoxy --libdir=/usr/lib/aarch64-linux-gnu --arch=arm64 --enable-pocketsphinx --enable-librsvg --enable-libdc1394 --enable-libdrm --enable-vout-drm --enable-libiec61883 --enable-chromaprint --enable-frei0r --enable-libx264 --enable-libplacebo --enable-librav1e --enable-shared
+  libavutil      57. 28.100 / 57. 28.100
+  libavcodec     59. 37.100 / 59. 37.100
+  libavformat    59. 27.100 / 59. 27.100
+  libavdevice    59.  7.100 / 59.  7.100
+  libavfilter     8. 44.100 /  8. 44.100
+  libswscale      6.  7.100 /  6.  7.100
+  libswresample   4.  7.100 /  4.  7.100
+  libpostproc    56.  6.100 / 56.  6.100
+/home/opencal/opencal/OpenCAL/utils/prints/20250715-004933.h264: No such file or directory
+error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+[0:02:20.610731621] [1349] [1;32m INFO [1;37mCamera [1;34mcamera_manager.cpp:327 [0mlibcamera v0.4.0+53-29156679
+ERROR: *** no cameras available ***
+error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+[KV: 00:00:00 / 00:01:00 (0%)[KV: 00:00:00 / 00:01:00 (1%)[KV: 00:00:00 / 00:01:00 (2%)[KV: 00:00:01 / 00:01:00 (2%)[KV: 00:00:01 / 00:01:00 (3%)[KV: 00:00:02 / 00:01:00 (3%)[KV: 00:00:02 / 00:01:00 (4%)[KV: 00:00:02 / 00:01:00 (5%)[KV: 00:00:03 / 00:01:00 (5%)[KV: 00:00:03 / 00:01:00 (6%)[KV: 00:00:03 / 00:01:00 (7%)[KV: 00:00:04 / 00:01:00 (7%)[KV: 00:00:04 / 00:01:00 (8%)
+ffmpeg version 5.1.6-0+deb12u1+rpt3 Copyright (c) 2000-2024 the FFmpeg developers
+  built with gcc 12 (Debian 12.2.0-14)
+  configuration: --prefix=/usr --extra-version=0+deb12u1+rpt3 --toolchain=hardened --incdir=/usr/include/aarch64-linux-gnu --enable-gpl --disable-stripping --disable-mmal --enable-gnutls --enable-ladspa --enable-libaom --enable-libass --enable-libbluray --enable-libbs2b --enable-libcaca --enable-libcdio --enable-libcodec2 --enable-libdav1d --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libglslang --enable-libgme --enable-libgsm --enable-libjack --enable-libmp3lame --enable-libmysofa --enable-libopenjpeg --enable-libopenmpt --enable-libopus --enable-libpulse --enable-librabbitmq --enable-librist --enable-librubberband --enable-libshine --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libsrt --enable-libssh --enable-libsvtav1 --enable-libtheora --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzimg --enable-libzmq --enable-libzvbi --enable-lv2 --enable-omx --enable-openal --enable-opencl --enable-opengl --enable-sand --enable-sdl2 --disable-sndio --enable-libjxl --enable-neon --enable-v4l2-request --enable-libudev --enable-epoxy --libdir=/usr/lib/aarch64-linux-gnu --arch=arm64 --enable-pocketsphinx --enable-librsvg --enable-libdc1394 --enable-libdrm --enable-vout-drm --enable-libiec61883 --enable-chromaprint --enable-frei0r --enable-libx264 --enable-libplacebo --enable-librav1e --enable-shared
+  libavutil      57. 28.100 / 57. 28.100
+  libavcodec     59. 37.100 / 59. 37.100
+  libavformat    59. 27.100 / 59. 27.100
+  libavdevice    59.  7.100 / 59.  7.100
+  libavfilter     8. 44.100 /  8. 44.100
+  libswscale      6.  7.100 /  6.  7.100
+  libswresample   4.  7.100 /  4.  7.100
+  libpostproc    56.  6.100 / 56.  6.100
+/home/opencal/opencal/OpenCAL/utils/prints/20250715-004946.h264: No such file or directory
+error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+[0:03:06.693935572] [1960] [1;32m INFO [1;37mCamera [1;34mcamera_manager.cpp:327 [0mlibcamera v0.4.0+53-29156679
+ERROR: *** no cameras available ***
+error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+[KV: 00:00:00 / 00:01:00 (0%)[KV: 00:00:00 / 00:01:00 (1%)[KV: 00:00:00 / 00:01:00 (2%)[KV: 00:00:01 / 00:01:00 (2%)[KV: 00:00:01 / 00:01:00 (3%)[KV: 00:00:02 / 00:01:00 (3%)[KV: 00:00:02 / 00:01:00 (4%)
+ffmpeg version 5.1.6-0+deb12u1+rpt3 Copyright (c) 2000-2024 the FFmpeg developers
+  built with gcc 12 (Debian 12.2.0-14)
+  configuration: --prefix=/usr --extra-version=0+deb12u1+rpt3 --toolchain=hardened --incdir=/usr/include/aarch64-linux-gnu --enable-gpl --disable-stripping --disable-mmal --enable-gnutls --enable-ladspa --enable-libaom --enable-libass --enable-libbluray --enable-libbs2b --enable-libcaca --enable-libcdio --enable-libcodec2 --enable-libdav1d --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libglslang --enable-libgme --enable-libgsm --enable-libjack --enable-libmp3lame --enable-libmysofa --enable-libopenjpeg --enable-libopenmpt --enable-libopus --enable-libpulse --enable-librabbitmq --enable-librist --enable-librubberband --enable-libshine --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libsrt --enable-libssh --enable-libsvtav1 --enable-libtheora --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzimg --enable-libzmq --enable-libzvbi --enable-lv2 --enable-omx --enable-openal --enable-opencl --enable-opengl --enable-sand --enable-sdl2 --disable-sndio --enable-libjxl --enable-neon --enable-v4l2-request --enable-libudev --enable-epoxy --libdir=/usr/lib/aarch64-linux-gnu --arch=arm64 --enable-pocketsphinx --enable-librsvg --enable-libdc1394 --enable-libdrm --enable-vout-drm --enable-libiec61883 --enable-chromaprint --enable-frei0r --enable-libx264 --enable-libplacebo --enable-librav1e --enable-shared
+  libavutil      57. 28.100 / 57. 28.100
+  libavcodec     59. 37.100 / 59. 37.100
+  libavformat    59. 27.100 / 59. 27.100
+  libavdevice    59.  7.100 / 59.  7.100
+  libavfilter     8. 44.100 /  8. 44.100
+  libswscale      6.  7.100 /  6.  7.100
+  libswresample   4.  7.100 /  4.  7.100
+  libpostproc    56.  6.100 / 56.  6.100
+/home/opencal/opencal/OpenCAL/utils/prints/20250715-005032.h264: No such file or directory
+n3.11/site-packages/smbus2/smbus2.py", line 416, in write_byte
     ioctl(self.fd, I2C_SMBUS, msg)
 OSError: [Errno 121] Remote I/O error
 [KV: 00:00:58 / 00:01:00 (98%) Dropped: 10Exception in thread Thread-9 (_rotate_motor):

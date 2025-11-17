@@ -10,15 +10,12 @@ CONFIG_PATH = os.path.join(os.path.dirname(__file__), '../utils/config.json')
 
 # Add the parent directory of 'gui' to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from print_controller import PrintController
-#from hardware import HardwareController
+from hardware.print_controller import PrintController
 from hardware.camera_controller import CameraController
 
 class LCDGui:
-    def __init__(self, pc = None):
-        if pc is None:
-            pc = PrintController()
-        self.pc = pc
+    def __init__(self, pc: PrintController | None = None):
+        self.pc = pc or PrintController()
         self.print_start_time = None  
         
         self.menu_dict = {
@@ -32,7 +29,7 @@ class LCDGui:
             "change camera": ['back', 'rpi', 'usb'],
         }
         self.menu_callbacks = {
-            'Turn on LEDs': lambda:self.pc.hardware.led_array.set_led((255, 0, 0), set_all=True),
+            'Turn on LEDs': lambda:self.pc.hardware.led_array.set_led((255, 0, 0)),
             'Turn off LEDs':self.pc.hardware.led_array.clear_leds,
             'start stepper': lambda:self.pc.hardware.stepper.start_rotation(),
             'stop stepper': lambda:self.pc.hardware.stepper.stop(),

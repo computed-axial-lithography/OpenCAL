@@ -1,8 +1,4 @@
-try:
-    import smbus2
-except ImportError:
-    smbus2 = None  # Handle the case where the smbus2 library is not available
-
+import smbus2
 import time
 import json
 import threading

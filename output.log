@@ -1,112 +1,46 @@
-/home/opencal/opencal/OpenCAL/utils/config.json
-Opened SPI device: /dev/spidev0.0
-not all peripherals connected, some functionality may not work
-GUI peripherals missing, not starting GUI
-EDs...
-LEDs updated.
-Turning on all LEDs...
-LEDs updated.
-Turning on all LEDs...
-LEDs updated.
-Turning on all LEDs...
-LEDs updated.
-Turning on all LEDs...
-LEDs updated.
-Turning on all LEDs...
-LEDs updated.
-Turning on all LEDs...
-LEDs updated.
-Turning on all LEDs...
-LEDs updated.
-Turning on all LEDs...
-LEDs updated.
-Turning on all LEDs...
-LEDs updated.
-Turning on all LEDs...
-LEDs updated.
-Turning on all LEDs...
-LEDs updated.
-er Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Encoder Button Pressed!
-Starting continuous rotation CW
-Stopping the motor.
-Stopping the motor.
-Stopping the motor.
-Stopping the motor.
-Stopping the motor.
-Stopping the motor.
-Stopping the motor.
-Stopping the motor.
-Stopping the motor.
-Stopping the motor.
-Stopping the motor.
-Stopping the motor.
-Stopping the motor.
-Stopping the motor.
-Stopping the motor.
-Stopping the motor.
-Stopping the motor.
-Stopping the motor.
-Stopping the motor.
-Stopping the motor.
+ (+) Video --vid=1 (*) (h264 1080x1920 54.000fps)
+[vo/gpu] Can't open TTY for VT control: No such device or address
+[vo/gpu/opengl] Failed to set up VT switcher. Terminal switching will be unavailable.
+[vo/gpu] Failed to commit ModeSetting atomic request (-13)
+[vo/gpu/opengl] Failed to set CRTC for connector 42: Permission denied
+[vo/gpu-next] Can't open TTY for VT control: No such device or address
+[vo/gpu-next/opengl] Failed to set up VT switcher. Terminal switching will be unavailable.
+[vo/gpu-next] Failed to commit ModeSetting atomic request (-13)
+[vo/gpu-next/opengl] Failed to set CRTC for connector 42: Permission denied
+[vo/sdl] Using opengl
+[vo/sdl] Warning: this legacy VO has bad performance. Consider fixing your graphics drivers, or not forcing the sdl VO.
+VO: [sdl] 1080x1920 yuv420p
+
+Exiting... (Quit)
+ (+) Video --vid=1 (*) (h264 1920x1080 54.000fps)
+[vo/gpu] Can't open TTY for VT control: No such device or address
+[vo/gpu/opengl] Failed to set up VT switcher. Terminal switching will be unavailable.
+[vo/gpu] Failed to commit ModeSetting atomic request (-13)
+[vo/gpu/opengl] Failed to set CRTC for connector 42: Permission denied
+[vo/gpu-next] Can't open TTY for VT control: No such device or address
+[vo/gpu-next/opengl] Failed to set up VT switcher. Terminal switching will be unavailable.
+[vo/gpu-next] Failed to commit ModeSetting atomic request (-13)
+[vo/gpu-next/opengl] Failed to set CRTC for connector 42: Permission denied
+[vo/sdl] Using opengl
+[vo/sdl] Warning: this legacy VO has bad performance. Consider fixing your graphics drivers, or not forcing the sdl VO.
+VO: [sdl] 1920x1080 yuv420p
+
+Exiting... (Quit)
+ (+) Video --vid=1 (*) (h264 1080x1920 54.000fps)
+[vo/gpu] Can't open TTY for VT control: No such device or address
+[vo/gpu/opengl] Failed to set up VT switcher. Terminal switching will be unavailable.
+[vo/gpu] Failed to commit ModeSetting atomic request (-13)
+[vo/gpu/opengl] Failed to set CRTC for connector 42: Permission denied
+[vo/gpu-next] Can't open TTY for VT control: No such device or address
+[vo/gpu-next/opengl] Failed to set up VT switcher. Terminal switching will be unavailable.
+[vo/gpu-next] Failed to commit ModeSetting atomic request (-13)
+[vo/gpu-next/opengl] Failed to set CRTC for connector 42: Permission denied
+[vo/sdl] Using opengl
+[vo/sdl] Warning: this legacy VO has bad performance. Consider fixing your graphics drivers, or not forcing the sdl VO.
+VO: [sdl] 1080x1920 yuv420p
+
+Exiting... (Quit)
+g the motor.
 Stopping the motor.
 Stopping the motor.
 Stopping the motor.

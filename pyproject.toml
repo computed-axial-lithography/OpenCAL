@@ -1,0 +1,18 @@
+[project]
+name = "opencal"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "adafruit-blinka>=8.66.2",
+    "adafruit-circuitpython-neopixel>=6.3.17",
+    "adafruit-circuitpython-pixelbuf>=2.0.9",
+    "gpiozero==2.0.1",
+    "lgpio>=0.2.2.0",
+    "opencv-python==4.11.0.86",
+    "pi5neo==1.0.5",
+    "picamera2>=0.3.31",
+    "rplcd==1.4.0",
+    "smbus2==0.5.0",
+]

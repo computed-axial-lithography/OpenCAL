@@ -1,5 +1,4 @@
 import time
-import os
 from hardware.hardware_controller import HardwareController
 import threading
 
@@ -21,7 +20,7 @@ class PrintController:
 
         # Start motor rotation and LED color change.
         self.hardware.stepper.start_rotation("CCW")
-        self.hardware.led_array.set_led((255, 0, 0), set_all=True)
+        self.hardware.led_array.set_led((255, 0, 0))
 
         # Start video playback.
         #self.hardware.projector.stop_video()

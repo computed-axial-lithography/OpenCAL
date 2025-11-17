@@ -8,9 +8,6 @@ from .usb_manager import MP4Driver
 
 from pathlib import Path
 
-import time
-import cv2
-
 
 class HardwareController:
     def __init__(self):
