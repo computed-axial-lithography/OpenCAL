@@ -1,0 +1,5 @@
+gpiozero==2.0.1
+opencv-python==4.11.0.86
+pi5neo==1.0.5
+rplcd==1.4.0
+smbus2==0.5.0

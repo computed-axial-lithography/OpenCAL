@@ -51,9 +51,7 @@ class LCDGui:
             "change camera": ["back", "rpi", "usb"],
         }
         self.menu_callbacks = {
-            "Turn on LEDs": lambda: self.pc.hardware.led_array.set_led(
-                (255, 0, 0), set_all=True
-            ),
+            "Turn on LEDs": lambda: self.pc.hardware.led_array.set_led((255, 0, 0)),
             "Turn off LEDs": self.pc.hardware.led_array.clear_leds,
             "start stepper": lambda: self.pc.hardware.stepper.start_rotation(),
             "stop stepper": lambda: self.pc.hardware.stepper.stop(),

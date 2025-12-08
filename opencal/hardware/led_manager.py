@@ -50,8 +50,8 @@ class LEDArray:
     def clear_leds(self):
         """Turn off all LEDs."""
         print("Clearing all LEDs...")
-        self.pixels.clear_strip()
-        self.pixels.update_strip()
+        self.neo.clear_strip()
+        self.neo.update_strip()
 
 
 if __name__ == "__main__":

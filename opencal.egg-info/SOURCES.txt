@@ -1,0 +1,9 @@
+README.md
+pyproject.toml
+opencal/__init__.py
+opencal/__main__.py
+opencal.egg-info/PKG-INFO
+opencal.egg-info/SOURCES.txt
+opencal.egg-info/dependency_links.txt
+opencal.egg-info/requires.txt
+opencal.egg-info/top_level.txt

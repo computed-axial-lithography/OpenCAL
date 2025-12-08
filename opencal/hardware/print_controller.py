@@ -1,5 +1,5 @@
 import time
-from hardware.hardware_controller import HardwareController
+from .hardware_controller import HardwareController
 import threading
 import time
 
