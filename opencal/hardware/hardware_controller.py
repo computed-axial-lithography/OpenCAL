@@ -31,6 +31,7 @@ class HardwareController:
         """Initialize all hardware components and handle any errors."""
         # TODO: All this error checking needs to actually do something
         try:
+            print('initializing stepper')
             self.stepper = StepperMotor(config_file)
         except Exception as e:
             self.errors.append(f"StepperMotor failed: {e}")
