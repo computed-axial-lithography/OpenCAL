@@ -3,12 +3,13 @@ import os
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 import cv2
 
 from opencal.hardware import PrintController
 
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "../utils/config.json")
+CONFIG_PATH = Path(__file__).parent / 'utils/config.json'
 
 
 # Add the parent directory of 'gui' to sys.path
