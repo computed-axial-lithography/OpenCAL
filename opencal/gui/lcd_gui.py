@@ -46,6 +46,7 @@ class LCDGui:
             "Power Options": [
                 "back",
                 "Kill GUI",
+                "Power Off",
             ],  #'Restart', 'Power Off'],  # Power options submenu
             "Print menu": ["stop"],
             "calibration": ["stop"],
@@ -336,12 +337,16 @@ class LCDGui:
         self.pc.hardware.lcd.clear()
         self.pc.hardware.lcd.write_message("Powering Off...", 1, 0)
         time.sleep(2)
-        os.system("sudo poweroff")
+        self.kill_gui()
+        result = subprocess.call(["sudo", "shutdown", "-h", "now"])
+        # TODO: error handling
+        # os.system("sudo shutdown -h now")
 
     def kill_gui(self):
         """Handles the kill GUI action."""
         # self.camera.stop_camera()
         cv2.destroyAllWindows()
+        # TODO: add threading Events?
         self.running = False
 
     def run(self):

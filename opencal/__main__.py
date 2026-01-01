@@ -1,7 +1,7 @@
 import threading
 
-from opencal.gui import LCDGui
 from opencal.hardware import PrintController
+from opencal.gui import LCDGui
 
 
 def main():
@@ -9,7 +9,10 @@ def main():
 
     # Pass print_controller to the GUI
     gui = LCDGui(pc=print_controller)
-    if not print_controller.hardware.lcd or not print_controller.hardware.rotary:
+    if (
+        print_controller.hardware.lcd is None
+        or print_controller.hardware.rotary is None
+    ):
         print("GUI peripherals missing, not starting GUI")
         return
 

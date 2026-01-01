@@ -14,10 +14,16 @@ class StepperMotor:
         with open(config_file) as f:
             config = json.load(f)
 
+        print('inside stepper init')
+
         # Set up GPIO pins for step, direction, and enable
-        self.step_pin = config["stepper_motor"].get("step_pin", 18)  # Default to GPIO18
-        self.dir_pin = config["stepper_motor"].get("dir_pin", 23)  # Default to GPIO23
-        self.enable_pin = config["stepper_motor"].get(
+        self.step_pin: int = config["stepper_motor"].get(
+            "step_pin", 18
+        )  # Default to GPIO18
+        self.dir_pin: int = config["stepper_motor"].get(
+            "dir_pin", 23
+        )  # Default to GPIO23
+        self.enable_pin: int = config["stepper_motor"].get(
             "enable_pin", 27
         )  # Optional enable pin
 
@@ -27,8 +33,11 @@ class StepperMotor:
 
         # Enable the driver if an enable pin is specified
         if self.enable_pin:
-            self.enable = OutputDevice(self.enable_pin)
-            self.enable.on()  # Enable the driver by default
+            self.enable = OutputDevice(self.enable_pin, active_high=False)
+            # NOTE: this used to be `on`, I think `off` makes more sense, but TBD
+            self.enable.off()  # Disable the driver by default
+
+
 
         # Load default parameters from the configuration
         self.default_speed = config["stepper_motor"].get(
@@ -46,13 +55,6 @@ class StepperMotor:
         self.step_delay = 60.00 / (self.default_speed * self.default_steps)
         self._rotation_thread = None  # Reference to the thread for continuous rotation
         self._running = False  # Flag to control whether the motor is currently running
-
-    def enable_method(self, enable_on=True):
-        """Enable or disable the stepper motor driver."""
-        if enable_on:
-            self.enable.on()  # Turn on the enable pin
-        else:
-            self.enable.off()  # Turn off the enable pin
 
     def set_speed(self, rpm=None):
         """Set the stepper motor speed in RPM (frequency of step pulses)."""
@@ -96,7 +98,7 @@ class StepperMotor:
     def start_rotation(self, direction: str | None = None):
         """
         Start rotating the stepper motor continuously at the set speed.
-        
+
         :param direction: "CW" for clockwise, "CCW" for counterclockwise.
         """
         direction = (
@@ -114,12 +116,19 @@ class StepperMotor:
         if not self._running:
             print("Starting a new thread for rotation")
             self._running = True
-            self._rotation_thread = threading.Thread(target=self._rotate_motor, daemon=True)
+            
+            if self.enable_pin:
+                self.enable.on()
+
+            self._rotation_thread = threading.Thread(
+                target=self._rotate_motor, daemon=True
+            )
             self._rotation_thread.start()  # Start the rotation thread
 
     def _rotate_motor(self):
         """Internal method to handle continuous rotation of the motor."""
         next_time = time.perf_counter()  # Initialize the next time for scheduling
+        print(self.enable.value)
         while self._running:  # Continue while the motor is running
             self.step.on()  # Activate the step pin
             self.step.off()  # Deactivate the step pin
