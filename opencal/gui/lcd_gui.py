@@ -47,7 +47,7 @@ class LCDGui:
                 "back",
                 "Kill GUI",
                 "Power Off",
-            ],  #'Restart', 'Power Off'],  # Power options submenu
+            ],  
             "Print menu": ["stop"],
             "calibration": ["stop"],
             "change camera": ["back", "rpi", "usb"],
