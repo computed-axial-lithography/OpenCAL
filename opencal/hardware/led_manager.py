@@ -1,32 +1,30 @@
 import json
 import time
+from typing import Any, final
 from pi5neo import Pi5Neo
 from pathlib import Path
 
+from opencal.utils.config import LedArrayConfig
 
+@final
 class LEDArray:
-    def __init__(self, config_file: Path | None = None):
+    def __init__(self, config: LedArrayConfig):
         """
         Initialize the LED array using configuration from a JSON file.
         :param config_file: Path to the configuration JSON file
         """
         # Load configuration from the specified JSON file
-        if config_file:
-            with open(config_file) as f:
-                config = json.load(f)
-        else:
-            config = {}
 
-        self.num_led = config["led_array"].get("num_led")  # Number of LEDs in the array
+        self.num_led: int = config.num_led  # Number of LEDs in the array
 
         # Retrieve the pin values and indices for the LED ring from the configuration
-        self.ring_indices = config["led_array"].get("ring_indices", {})
-        self.default_color = config["led_array"].get("default_color", [])
+        self.ring_indices = config.ring_indices
+        self.default_color = config.default_color
 
         # Initialize communication with the Pi5Neo library
-        self.neo = Pi5Neo("/dev/spidev0.0", self.num_led, 799)  # Using SPI interface
+        self.neo: Pi5Neo = Pi5Neo("/dev/spidev0.0", self.num_led, 799)  # Using SPI interface
 
-    def set_led(self, color: tuple[int, int, int], led_index: list | None = None):
+    def set_led(self, color: tuple[int, int, int], led_index: list[int] | None = None):
         """
         Set the specified LEDs to a given RGB color.
         
@@ -40,7 +38,7 @@ class LEDArray:
         else:
             print(f"Turning on LEDs at indices: {led_index}")
             for idx in led_index:
-                self.neo.set_led_color(
+                _ = self.neo.set_led_color(
                     idx, *color
                 )  # Set the color for specified indices
 
@@ -55,7 +53,9 @@ class LEDArray:
 
 
 if __name__ == "__main__":
-    led_array = LEDArray(config_file="/home/opencal/opencal/OpenCAL/utils/config.json")
+    from opencal.utils.config import Config
+    cfg = Config()
+    led_array = LEDArray(cfg.led_array)
 
     try:
         led_array.clear_leds()

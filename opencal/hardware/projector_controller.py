@@ -2,24 +2,22 @@ import os
 import subprocess
 import threading
 import json
+from typing import final
+
+from opencal.utils.config import ProjectorConfig
 
 
+@final
 class Projector:
-    def __init__(self, config_file=None):
+    def __init__(self, config: ProjectorConfig):
         # Initialize the process attribute to keep track of the playback process.
-        with open(config_file, "r") as f:
-            config = json.load(f)
-        self.size = config["projector"].get(
-            "default_print_size", 100
-        )  # Default size is 100 if not specified
-        self.calibration_img_path = config["projector"].get(
-            "calibration_img_path", "/home/opencal/OpenCAL/utils/calibration.png"
-        )
+        self.size = config.default_print_size
+        self.calibration_img_path = config.calibration_img_path
 
         self.process = None
         self.thread = None  # We'll use this to keep track of the playback thread.
 
-    def get_video_dimensions(self, video_path):
+    def get_video_dimensions(self, video_path: str):
         """
         Uses ffprobe to retrieve the video dimensions (width and height) dynamically.
         Expects ffprobe to output a single line like: widthxheight (e.g., 1920x1080).

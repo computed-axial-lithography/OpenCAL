@@ -1,3 +1,4 @@
+from typing import final
 import cv2
 import time
 import json
@@ -7,23 +8,22 @@ import subprocess
 import os
 from pathlib import Path
 
+from opencal.utils.config import CameraConfig
+
+
+@final
 class CameraController:
-    def __init__(self, config_file: Path | None =Path("OpenCAL/utils/config.json")):
+    def __init__(self, config: CameraConfig):
         """Initialize the CameraController with configuration from a JSON file.
         
         Args:
             config_file (str): Path to the JSON configuration file.
         """
-        if config_file:
-            with open(config_file) as f:
-                cfg = json.load(f)["camera"]
-        else:
-            cfg = {}
-        
         # Camera configuration parameters
-        self.cam_type     = cfg.get("type", "usb")  # Type of camera (usb or rpi)
-        self.camera_index = cfg.get("index", 0)     # Index of the camera
-        self.save_path    = cfg.get("save_path")     # Path to save recordings
+
+        self.cam_type     = config.type
+        self.camera_index = config.index
+        self.save_path    = config.save_path
 
         # Initialize camera state variables
         self.capture       = None
@@ -37,7 +37,7 @@ class CameraController:
         self._raw_file     = None
         self.fps = 20
 
-    def set_type(self, type):
+    def set_type(self, type: str):
         """Set the type of camera to use ("usb" or "rpi")."""
         self.cam_type = type
 
@@ -58,7 +58,7 @@ class CameraController:
         
         raise IOError("No usable V4L2 camera found")  # Raise error if no camera is found
 
-    def start_camera(self, preview=True):
+    def start_camera(self, preview: bool = True):
         """Start the camera and begin streaming if requested.
         
         Args:
@@ -87,7 +87,7 @@ class CameraController:
                 break
         cv2.destroyAllWindows()  # Close all OpenCV windows
 
-    def start_record(self, filename=None, frame_size=(640,480), preview=False):
+    def start_record(self, filename: str | None = None, frame_size: tuple[int, int] = (640,480), preview: bool = False):
         """Start recording video from the camera.
         
         Args:
@@ -205,7 +205,9 @@ class CameraController:
         self.stop_camera()  # Stop camera streaming
 
 if __name__ == "__main__":
-    cam = CameraController()  # Create an instance of the CameraController
+    from opencal.utils.config import Config
+    cfg = Config()
+    cam = CameraController(cfg.camera)  # Create an instance of the CameraController
     cam.cam_type = "rpi"  # Set camera type to Raspberry Pi (or "usb")
     cam.start_record(preview=False)  # Start recording without preview
     print("Recording... Press Ctrl+C to stop.")

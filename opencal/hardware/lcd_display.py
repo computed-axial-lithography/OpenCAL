@@ -1,30 +1,26 @@
 
 import time
-import json
 import threading
+from typing import final
 from RPLCD.i2c import CharLCD
 from time import sleep
 
-from pathlib import Path
+from opencal.utils.config import LcdDisplayConfig
 
+
+@final
 class LCDDisplay:
-    def __init__(self, config_file: Path | None =None):
+    def __init__(self, config: LcdDisplayConfig):
         """Initialize the LCD display.
         
         Args:
             config_file (str): Path to JSON configuration file.
         """
-        # Load config from the JSON file
-        if config_file:
-            with open(config_file) as f:
-                config = json.load(f)
-        else:
-            config = {}
         # Retrieve LCD settings from config
-        self.address = int(config['lcd_display'].get("address", '0x27'), 16)  # I2C address of the LCD
-        self.port = config['lcd_display'].get("port", 'PCF8574')  # Port for the LCD
-        self.cols = config['lcd_display'].get("cols", 20)  # Number of columns on the LCD
-        self.rows = config['lcd_display'].get("rows", 4)  # Number of rows on the LCD
+        self.address = int(config.address, 16)
+        self.port = config.port
+        self.cols = config.cols
+        self.rows = config.rows
 
         # Initialize the LCD
         self.lcd = CharLCD(self.port, self.address)
@@ -36,7 +32,8 @@ class LCDDisplay:
         self.framebuffer = [""] * self.rows
 
         # Dictionary to store scrolling text (row -> text)
-        self.scrolling_text = {}
+        # TODO: should this be list[str]? 
+        self.scrolling_text: dict[int, str] = {}
 
         # Flag to control scrolling thread
         self.scrolling_active = True
@@ -50,7 +47,7 @@ class LCDDisplay:
         self.framebuffer = [""] * self.rows  # Reset the framebuffer
         self.scrolling_text = {}  # Clear any scrolling text
 
-    def write_message(self, message, row=0, col=0):
+    def write_message(self, message: str, row: int = 0, _col: int = 0):
         """Write a message to a specific row on the LCD.
         
         - If the message is <= 20 characters, it remains static.
@@ -65,11 +62,11 @@ class LCDDisplay:
             self.scrolling_text[row] = message
         else:
             # Remove any old scrolling data for this row
-            self.scrolling_text.pop(row, None)
+            _ = self.scrolling_text.pop(row, None)
             self.framebuffer[row] = message  # Update the framebuffer with the new message
             self._update_lcd(row)  # Only update the changed row
 
-    def _update_lcd(self, row=None):
+    def _update_lcd(self, row: int | None = None):
         """Update the LCD display.
 
         Args:
@@ -81,13 +78,14 @@ class LCDDisplay:
                 self.lcd.home()  # Move cursor to home position
                 for i in range(self.rows):
                     self.lcd.cursor_pos = (i, 0)  # Set cursor position for each row
-                    self.lcd.write_string(self.framebuffer[i].ljust(self.cols)[:self.cols])  # Write the message
+                    self.lcd.write_string(self.framebuffer[i].ljust(self.cols)[:self.cols])  # Write the message  # pyright: ignore[reportUnknownMemberType]
             else:
                 self.lcd.cursor_pos = (row, 0)  # Set cursor position for the specified row
-                self.lcd.write_string(self.framebuffer[row].ljust(self.cols)[:self.cols])  # Write the message
+                self.lcd.write_string(self.framebuffer[row].ljust(self.cols)[:self.cols])  # Write the message  # pyright: ignore[reportUnknownMemberType]
 
     def _scrolling_loop(self):
         """Continuously scroll long text while keeping other rows fixed."""
+        # TODO: sleeping in this function is suspicious
         while self.scrolling_active:
             # Iterate over a copy of the scrolling dictionary to avoid modification errors
             scrolling_items = list(self.scrolling_text.items())
@@ -107,7 +105,9 @@ class LCDDisplay:
 
 # Test section
 if __name__ == "__main__":
-    lcd_display = LCDDisplay()  # Create an instance of the LCDDisplay class
+    from opencal.utils.config import Config
+    cfg = Config()
+    lcd_display = LCDDisplay(cfg.lcd_display)  # Create an instance of the LCDDisplay class
     lcd_display.clear()  # Clear display before starting
 
     # Display multiple lines (some static, some scrolling)

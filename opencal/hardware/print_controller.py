@@ -1,21 +1,22 @@
 import time
+from typing import final
 from .hardware_controller import HardwareController
 import threading
-import time
 
 
+@final
 class PrintController:
-    def __init__(self, hardware: HardwareController | None = None):
-        self.hardware = hardware or HardwareController()
+    def __init__(self):
+        self.hardware = HardwareController()
         if not self.hardware.healthy:
             print("not all peripherals connected, some functionality may not work")
         self.running = False
 
-    def start_print_job(self, video_file):
+    def start_print_job(self, video_file: str):
         """Start the print job in a new thread."""
         threading.Thread(target=self.print, args=(video_file,)).start()
 
-    def print(self, video_file):
+    def print(self, video_file: str):
         print(f"Starting print job... {video_file}")
         self.running = True
 

@@ -1,31 +1,25 @@
 import time
 import threading
+from typing import Any, final
 from gpiozero import OutputDevice
 
 import json
 from pathlib import Path
 
+from opencal.utils.config import StepperConfig
 
+
+@final
 class StepperMotor:
-    def __init__(self, config_file: Path | None = None):
+    def __init__(self, config: StepperConfig):
         """Initialize GPIO communication with the stepper motor driver (Step/Dir mode)."""
 
         # Load configuration from the specified JSON file
-        with open(config_file) as f:
-            config = json.load(f)
-
-        print('inside stepper init')
 
         # Set up GPIO pins for step, direction, and enable
-        self.step_pin: int = config["stepper_motor"].get(
-            "step_pin", 18
-        )  # Default to GPIO18
-        self.dir_pin: int = config["stepper_motor"].get(
-            "dir_pin", 23
-        )  # Default to GPIO23
-        self.enable_pin: int = config["stepper_motor"].get(
-            "enable_pin", 27
-        )  # Optional enable pin
+        self.step_pin = config.step_pin
+        self.dir_pin = config.dir_pin
+        self.enable_pin = config.enable_pin
 
         # Initialize GPIO output devices for step and direction
         self.step = OutputDevice(self.step_pin)
@@ -34,29 +28,22 @@ class StepperMotor:
         # Enable the driver if an enable pin is specified
         if self.enable_pin:
             self.enable = OutputDevice(self.enable_pin, active_high=False)
-            # NOTE: this used to be `on`, I think `off` makes more sense, but TBD
             self.enable.off()  # Disable the driver by default
 
 
 
         # Load default parameters from the configuration
-        self.default_speed = config["stepper_motor"].get(
-            "default_speed", 20
-        )  # Default speed in RPM
+        self.default_speed = config.default_speed
         self.speed_rpm = self.default_speed  # Current speed in RPM
-        self.default_direction = config["stepper_motor"].get(
-            "default_direction", "CW"
-        )  # Default direction
-        self.default_steps = config["stepper_motor"].get(
-            "default_steps", 1600
-        )  # Default number of steps
+        self.default_direction = config.default_direction
+        self.default_steps = config.default_steps
 
         # Calculate the delay between steps based on speed and steps per revolution
         self.step_delay = 60.00 / (self.default_speed * self.default_steps)
         self._rotation_thread = None  # Reference to the thread for continuous rotation
         self._running = False  # Flag to control whether the motor is currently running
 
-    def set_speed(self, rpm=None):
+    def set_speed(self, rpm: int | None = None):
         """Set the stepper motor speed in RPM (frequency of step pulses)."""
         rpm = rpm or self.default_speed  # Use default speed if no RPM is provided
         self.speed_rpm = rpm  # Update the current speed
@@ -65,7 +52,7 @@ class StepperMotor:
         )  # Recalculate step delay
         print(f"Speed set to {self.speed_rpm} RPM")  # Log the new speed
 
-    def rotate_steps(self, steps=None, direction=None):
+    def rotate_steps(self, steps: int | None = None, direction: str | None = None):
         """
         Rotate the stepper motor for a specified number of steps.
         - steps: Number of steps to move.
@@ -128,7 +115,6 @@ class StepperMotor:
     def _rotate_motor(self):
         """Internal method to handle continuous rotation of the motor."""
         next_time = time.perf_counter()  # Initialize the next time for scheduling
-        print(self.enable.value)
         while self._running:  # Continue while the motor is running
             self.step.on()  # Activate the step pin
             self.step.off()  # Deactivate the step pin
@@ -160,7 +146,9 @@ class StepperMotor:
 
 # Example usage (remove or modify during integration)
 if __name__ == "__main__":
-    motor = StepperMotor()  # Create an instance of the StepperMotor class
+    from opencal.utils.config import Config
+    cfg = Config()
+    motor = StepperMotor(cfg.stepper)  # Create an instance of the StepperMotor class
     motor.set_speed(20)  # Set the motor speed to the default (20 RPM)
     motor.start_rotation()  # Start continuous rotation
     time.sleep(30.0)  # Run for 60 seconds

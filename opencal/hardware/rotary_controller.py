@@ -1,31 +1,23 @@
+from typing import final
 from gpiozero import RotaryEncoder, Button
 import json
 from pathlib import Path
 
+from opencal.utils.config import RotaryConfig
 
+@final
 class RotaryEncoderHandler:
-    def __init__(self, config_file: Path | None = None):
+    def __init__(self, config: RotaryConfig):
         """
         Rotary Encoder Driver using GPIOZero
         :param config_file: Path to the configuration JSON file
         """
         # Load configuration from the specified JSON file
-        if config_file:
-            with open(config_file) as f:
-                config = json.load(f)
-        else:
-            config = {}
 
         # Retrieve GPIO pin assignments from the configuration
-        self.clk_pin = config["rotary_encoder"].get(
-            "clk_pin"
-        )  # GPIO pin for the encoder CLK signal
-        self.dt_pin = config["rotary_encoder"].get(
-            "dt_pin"
-        )  # GPIO pin for the encoder DT signal
-        self.btn_pin = config["rotary_encoder"].get(
-            "btn_pin"
-        )  # GPIO pin for the encoder push button (optional)
+        self.clk_pin = config.clk_pin
+        self.dt_pin = config.dt_pin
+        self.btn_pin = config.btn_pin
 
         # Initialize the rotary encoder and button
         self.encoder = RotaryEncoder(
@@ -65,7 +57,9 @@ class RotaryEncoderHandler:
 
 if __name__ == "__main__":
     # Example usage
-    encoder = RotaryEncoderHandler()  # Create an instance of the RotaryEncoderHandler
+    from opencal.utils.config import Config
+    cfg = Config()
+    encoder = RotaryEncoderHandler(cfg.rotary_encoder)  # Create an instance of the RotaryEncoderHandler
     try:
         print("Rotary Encoder Test. Press Ctrl+C to exit.")
         while True:

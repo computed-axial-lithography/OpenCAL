@@ -1,2 +1,2 @@
-from . import gui
-from . import hardware
+from . import gui as gui
+from . import hardware as hardware

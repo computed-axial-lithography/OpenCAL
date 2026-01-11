@@ -4,6 +4,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
 import cv2
 
@@ -19,13 +20,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
 class LCDGui:
-    def __init__(self, pc=None):
-        if pc is None:
-            pc = PrintController()
-        self.pc = pc
+    def __init__(self):
+        self.pc: PrintController = PrintController()
         self.print_start_time = None
 
-        self.menu_dict = {
+        self.menu_dict: dict[str, list[str]] = {
             "main": ["Print from USB", "Manual Control", "Settings", "Power Options"],
             "Print from USB": ["back"] + self.pc.hardware.usb_device.get_file_names(),
             "Manual Control": [
@@ -52,7 +51,7 @@ class LCDGui:
             "calibration": ["stop"],
             "change camera": ["back", "rpi", "usb"],
         }
-        self.menu_callbacks = {
+        self.menu_callbacks: dict[str, Any] = {
             "Turn on LEDs": lambda: self.pc.hardware.led_array.set_led((255, 0, 0)),
             "Turn off LEDs": self.pc.hardware.led_array.clear_leds,
             "start stepper": lambda: self.pc.hardware.stepper.start_rotation(),
@@ -93,8 +92,8 @@ class LCDGui:
             "save to default": lambda: (self.save_defaults()),
         }
 
-        self.menu_stack = []  # Stack to keep track of menu navigation
-        self.current_menu = "main"  # Currently displayed menu
+        self.menu_stack: list[str] = []  # Stack to keep track of menu navigation
+        self.current_menu: str | None = "main"  # Currently displayed menu
         self.return_menu = "main"
         self.current_index = 0  # Index of selected menu item
         self.view_start = 0  # Tracks the start of the visible menu slice
@@ -133,7 +132,7 @@ class LCDGui:
         self.pc.hardware.lcd.write_message("FOR THE COMMUNITY".center(20), 2, 0)
         time.sleep(1)
 
-    def show_menu(self, menu):
+    def show_menu(self, menu: str):
         """Display a given menu on the LCD."""
         if menu != self.current_menu:
             self.current_index = 0
@@ -172,7 +171,7 @@ class LCDGui:
 
         self.splash("Defaults saved!", self.current_menu, 1.2)
 
-    def splash(self, message="Saved", next_menu="main", duration=1.0):
+    def splash(self, message: str = "Saved", next_menu: str | None = "main", duration: float=1.0):
         """
         Show a one-off message centered on the LCD, wait 'duration' seconds,
         then display 'next_menu'.
@@ -187,10 +186,10 @@ class LCDGui:
 
     def navigate(self):
         """Handle menu navigation based on rotary encoder movement with scrolling."""
-        if self.pc.hardware.rotary is not None:
-            position = self.pc.hardware.rotary.get_position()
-        else:
-            position = self.last_rotary_position
+        position = self.pc.hardware.rotary.get_position()
+
+        if self.current_menu is None:
+            raise ValueError("Current menu is None")
 
         menu_list = self.menu_dict[self.current_menu]
         menu_length = len(menu_list)
@@ -220,7 +219,9 @@ class LCDGui:
 
     def select_option(self):
         """Handle menu selection."""
-        option = self.menu_dict.get(self.current_menu, [])[self.current_index]
+        if self.current_menu is None:
+            raise ValueError("No Menu Selected")
+        option: str = self.menu_dict[self.current_menu][self.current_index]
 
         if option == "back":
             if self.menu_stack:
@@ -253,8 +254,8 @@ class LCDGui:
         time.sleep(0.05)
 
     def enter_variable_adjustment(
-        self, variable_name, current_value, update_function=None
-    ):
+        self, variable_name: str, current_value: Any, update_function=None
+    ) -> None:
         """Enter variable adjustment mode and allow the user to adjust any variable.
         A callback (if provided) is stored and called after the adjustment is complete.
         """
