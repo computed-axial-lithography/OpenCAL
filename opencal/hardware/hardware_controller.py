@@ -11,11 +11,12 @@ from pathlib import Path
 from pprint import pprint
 from typing import final
 
+
 @final
 class HardwareController:
     def __init__(self):
         # Resolve the path to the configuration file
-        here = Path(__file__).resolve().parent       
+        here = Path(__file__).resolve().parent
         config_file = here.parent / "utils" / "config.json"
 
         # Check if the configuration file exists
@@ -36,11 +37,10 @@ class HardwareController:
     def initialize_hardware(self, config_file: Path):
         """Initialize all hardware components and handle any errors."""
 
-
         config = Config(config_file)
         # TODO: All this error checking needs to actually do something
         try:
-            print('initializing stepper')
+            print("initializing stepper")
             self.stepper = StepperMotor(config.stepper)
         except Exception as e:
             self.errors.append(f"StepperMotor failed: {e}")
@@ -55,12 +55,11 @@ class HardwareController:
         try:
             self.lcd = LCDDisplay(config.lcd_display)
         except Exception as e:
-            raise e
             self.errors.append(f"LCDDisplay failed: {e}")
             self.healthy = False
 
         try:
-            self.rotary = RotaryEncoderHandler(config.rotary_encoder)   
+            self.rotary = RotaryEncoderHandler(config.rotary_encoder)
         except Exception as e:
             self.errors.append(f"RotaryEncoderHandler failed: {e}")
             self.healthy = False
@@ -68,7 +67,7 @@ class HardwareController:
         try:
             self.projector = Projector(config.projector)
         except Exception as e:
-            print(f"Projector failed: {e}") 
+            print(f"Projector failed: {e}")
             self.errors.append(f"Projector failed: {e}")
             self.healthy = False
 
@@ -79,8 +78,9 @@ class HardwareController:
             self.healthy = False
 
         try:
-            self.camera = CameraController(config.camera)  # Initialize camera controller
+            self.camera = CameraController(
+                config.camera
+            )  # Initialize camera controller
         except Exception as e:
             self.errors.append(f"CameraController failed: {e}")
             self.healthy = False
-

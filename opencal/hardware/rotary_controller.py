@@ -1,9 +1,8 @@
 from typing import final
 from gpiozero import RotaryEncoder, Button
-import json
-from pathlib import Path
 
 from opencal.utils.config import RotaryConfig
+
 
 @final
 class RotaryEncoderHandler:
@@ -50,16 +49,18 @@ class RotaryEncoderHandler:
 
     def was_button_pressed(self):
         """Check if button was pressed (for polling-based use)"""
-        return (
-            self.button.is_pressed if self.button else False
-        )  # Return the button state if it exists
+        # self.button.is_pressed
+        self.button.is_active
 
 
 if __name__ == "__main__":
     # Example usage
     from opencal.utils.config import Config
+
     cfg = Config()
-    encoder = RotaryEncoderHandler(cfg.rotary_encoder)  # Create an instance of the RotaryEncoderHandler
+    encoder = RotaryEncoderHandler(
+        cfg.rotary_encoder
+    )  # Create an instance of the RotaryEncoderHandler
     try:
         print("Rotary Encoder Test. Press Ctrl+C to exit.")
         while True:

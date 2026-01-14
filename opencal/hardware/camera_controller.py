@@ -1,12 +1,11 @@
-from typing import final
-import cv2
-import time
-import json
-import threading
 import glob
-import subprocess
 import os
-from pathlib import Path
+import subprocess
+import threading
+import time
+from typing import final
+
+import cv2
 
 from opencal.utils.config import CameraConfig
 
@@ -15,26 +14,26 @@ from opencal.utils.config import CameraConfig
 class CameraController:
     def __init__(self, config: CameraConfig):
         """Initialize the CameraController with configuration from a JSON file.
-        
+
         Args:
             config_file (str): Path to the JSON configuration file.
         """
         # Camera configuration parameters
 
-        self.cam_type     = config.type
+        self.cam_type = config.type
         self.camera_index = config.index
-        self.save_path    = config.save_path
+        self.save_path = config.save_path
 
         # Initialize camera state variables
-        self.capture       = None
+        self.capture = None
         self.stream_thread = None
-        self.streaming     = False
+        self.streaming = False
         self.record_thread = None
-        self.recording     = False
-        self.writer        = None
-        self.record_file   = None
-        self._proc         = None
-        self._raw_file     = None
+        self.recording = False
+        self.writer = None
+        self.record_file = None
+        self._proc = None
+        self._raw_file = None
         self.fps = 20
 
     def set_type(self, type: str):
@@ -44,8 +43,14 @@ class CameraController:
     def _open_usb_camera(self):
         """Open the first available USB camera."""
         devices = glob.glob("/dev/video*")  # List all video devices
-        indices = sorted({int(d.replace("/dev/video", "")) for d in devices if d.replace("/dev/video", "").isdigit()})
-        
+        indices = sorted(
+            {
+                int(d.replace("/dev/video", ""))
+                for d in devices
+                if d.replace("/dev/video", "").isdigit()
+            }
+        )
+
         for idx in indices:
             cap = cv2.VideoCapture(idx, cv2.CAP_V4L2)  # Open the camera
             time.sleep(0.1)  # Allow time for the camera to initialize
@@ -55,12 +60,14 @@ class CameraController:
                 print(f"Opened /dev/video{idx}")  # Log the opened camera
                 return
             cap.release()
-        
-        raise IOError("No usable V4L2 camera found")  # Raise error if no camera is found
+
+        raise IOError(
+            "No usable V4L2 camera found"
+        )  # Raise error if no camera is found
 
     def start_camera(self, preview: bool = True):
         """Start the camera and begin streaming if requested.
-        
+
         Args:
             preview (bool): Whether to show a preview of the camera feed.
         """
@@ -82,14 +89,19 @@ class CameraController:
                 time.sleep(0.1)  # Wait if frame reading fails
                 continue
             cv2.imshow("Camera Feed", frame)  # Display the camera feed
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(1) & 0xFF == ord("q"):
                 self.stop_all()  # Stop all operations if 'q' is pressed
                 break
         cv2.destroyAllWindows()  # Close all OpenCV windows
 
-    def start_record(self, filename: str | None = None, frame_size: tuple[int, int] = (640,480), preview: bool = False):
+    def start_record(
+        self,
+        filename: str | None = None,
+        frame_size: tuple[int, int] = (640, 480),
+        preview: bool = False,
+    ):
         """Start recording video from the camera.
-        
+
         Args:
             filename (str): Name of the file to save the recording.
             fps (float): Frames per second for the recording.
@@ -102,18 +114,23 @@ class CameraController:
                 ts = time.strftime("%Y%m%d-%H%M%S")  # Timestamp for filename
                 filename = f"{self.save_path}/{ts}.h264"
             self._raw_file = filename
-            self.record_file = os.path.splitext(filename)[0] + ".mp4"  # Output MP4 filename
+            self.record_file = (
+                os.path.splitext(filename)[0] + ".mp4"
+            )  # Output MP4 filename
             cmd = [
                 "/usr/bin/libcamera-vid",
-                "--timeout", "0",
+                "--timeout",
+                "0",
                 "--inline",
-                "--width", str(frame_size[0]),
-                "--height", str(frame_size[1]),
-                "--framerate", str(self.fps)
-                
+                "--width",
+                str(frame_size[0]),
+                "--height",
+                str(frame_size[1]),
+                "--framerate",
+                str(self.fps),
             ]
             if not preview:
-                cmd += ["--nopreview"]        # or ["--preview", "none"]
+                cmd += ["--nopreview"]  # or ["--preview", "none"]
             cmd += ["-o", filename]
             self._proc = subprocess.Popen(cmd)  # Start the recording process
             print(f"🔴 RPi recording (raw H264) → {filename}")
@@ -128,8 +145,10 @@ class CameraController:
         self.record_file = filename
         w = int(self.capture.get(cv2.CAP_PROP_FRAME_WIDTH))  # Get frame width
         h = int(self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT))  # Get frame height
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Codec for MP4
-        self.writer = cv2.VideoWriter(filename, fourcc, self.fps, (w, h))  # Initialize video writer
+        fourcc = cv2.VideoWriter.fourcc(*"mp4v")  # Codec for MP4
+        self.writer = cv2.VideoWriter(
+            filename, fourcc, self.fps, (w, h)
+        )  # Initialize video writer
         self.recording = True
         self.record_thread = threading.Thread(target=self._record_loop, daemon=True)
         self.record_thread.start()  # Start the recording thread
@@ -155,16 +174,25 @@ class CameraController:
             # requires MP4Box (GPAC)\
             cmd = [
                 "/usr/bin/ffmpeg",
-                "-fflags", "+genpts",
-                "-f", "h264",
-                "-r", "20",
-                "-i", raw,
-                "-r", "20",
-                "-c:v", "libx264",
-                "-preset", "veryfast",
-                "-crf", "23",
-                "-movflags", "+faststart",
-                mp4
+                "-fflags",
+                "+genpts",
+                "-f",
+                "h264",
+                "-r",
+                "20",
+                "-i",
+                raw,
+                "-r",
+                "20",
+                "-c:v",
+                "libx264",
+                "-preset",
+                "veryfast",
+                "-crf",
+                "23",
+                "-movflags",
+                "+faststart",
+                mp4,
             ]
             try:
                 subprocess.run(cmd, check=True)
@@ -174,7 +202,6 @@ class CameraController:
                 print("Command:", e.cmd)
                 print("Output:", e.output)
 
-            
             print(f"💾 Saved RPi recording to {mp4}")
             self._proc = None
             self._raw_file = None
@@ -204,8 +231,10 @@ class CameraController:
         self.stop_record()  # Stop recording
         self.stop_camera()  # Stop camera streaming
 
+
 if __name__ == "__main__":
     from opencal.utils.config import Config
+
     cfg = Config()
     cam = CameraController(cfg.camera)  # Create an instance of the CameraController
     cam.cam_type = "rpi"  # Set camera type to Raspberry Pi (or "usb")

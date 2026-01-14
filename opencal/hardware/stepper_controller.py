@@ -1,10 +1,8 @@
 import time
 import threading
-from typing import Any, final
+from typing import final
 from gpiozero import OutputDevice
 
-import json
-from pathlib import Path
 
 from opencal.utils.config import StepperConfig
 
@@ -29,8 +27,6 @@ class StepperMotor:
         if self.enable_pin:
             self.enable = OutputDevice(self.enable_pin, active_high=False)
             self.enable.off()  # Disable the driver by default
-
-
 
         # Load default parameters from the configuration
         self.default_speed = config.default_speed
@@ -103,7 +99,7 @@ class StepperMotor:
         if not self._running:
             print("Starting a new thread for rotation")
             self._running = True
-            
+
             if self.enable_pin:
                 self.enable.on()
 
@@ -147,6 +143,7 @@ class StepperMotor:
 # Example usage (remove or modify during integration)
 if __name__ == "__main__":
     from opencal.utils.config import Config
+
     cfg = Config()
     motor = StepperMotor(cfg.stepper)  # Create an instance of the StepperMotor class
     motor.set_speed(20)  # Set the motor speed to the default (20 RPM)

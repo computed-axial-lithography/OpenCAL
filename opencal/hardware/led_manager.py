@@ -1,10 +1,10 @@
-import json
 import time
-from typing import Any, final
+from typing import final
+
 from pi5neo import Pi5Neo
-from pathlib import Path
 
 from opencal.utils.config import LedArrayConfig
+
 
 @final
 class LEDArray:
@@ -22,12 +22,14 @@ class LEDArray:
         self.default_color = config.default_color
 
         # Initialize communication with the Pi5Neo library
-        self.neo: Pi5Neo = Pi5Neo("/dev/spidev0.0", self.num_led, 799)  # Using SPI interface
+        self.neo: Pi5Neo = Pi5Neo(
+            "/dev/spidev0.0", self.num_led, 799
+        )  # Using SPI interface
 
     def set_led(self, color: tuple[int, int, int], led_index: list[int] | None = None):
         """
         Set the specified LEDs to a given RGB color.
-        
+
         :param color: (G, R, B)
         :param led_index: List of indices to update (or all LEDs if not specified)
         """
@@ -54,6 +56,7 @@ class LEDArray:
 
 if __name__ == "__main__":
     from opencal.utils.config import Config
+
     cfg = Config()
     led_array = LEDArray(cfg.led_array)
 

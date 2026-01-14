@@ -10,7 +10,7 @@ import cv2
 
 from opencal.hardware import PrintController
 
-CONFIG_PATH = Path(__file__).parent / 'utils/config.json'
+CONFIG_PATH = Path(__file__).parent / "utils/config.json"
 
 
 # Add the parent directory of 'gui' to sys.path
@@ -25,7 +25,7 @@ class LCDGui:
         self.print_start_time = None
 
         self.menu_dict: dict[str, list[str]] = {
-            "main": ["Print from USB", "Manual Control", "Settings", "Power Options"],
+            "main": ["Print from USB", "Manual Control", "Settings", "Power Options", "Really long option name test blah blah 1 2 3"],
             "Print from USB": ["back"] + self.pc.hardware.usb_device.get_file_names(),
             "Manual Control": [
                 "back",
@@ -46,7 +46,7 @@ class LCDGui:
                 "back",
                 "Kill GUI",
                 "Power Off",
-            ],  
+            ],
             "Print menu": ["stop"],
             "calibration": ["stop"],
             "change camera": ["back", "rpi", "usb"],
@@ -171,7 +171,12 @@ class LCDGui:
 
         self.splash("Defaults saved!", self.current_menu, 1.2)
 
-    def splash(self, message: str = "Saved", next_menu: str | None = "main", duration: float=1.0):
+    def splash(
+        self,
+        message: str = "Saved",
+        next_menu: str | None = "main",
+        duration: float = 1.0,
+    ):
         """
         Show a one-off message centered on the LCD, wait 'duration' seconds,
         then display 'next_menu'.
@@ -294,7 +299,10 @@ class LCDGui:
         )
         # self.pc.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
         # self.pc.hardware.lcd.write_message("Click to set", 2, 0)
-        if self.selected_video_filename is not None:
+        if (
+            self.selected_video_filename is not None
+            and self.video_filename_short is not None
+        ):
             self.pc.hardware.lcd.write_message(self.video_filename_short, 3, 0)
         self.last_rotary_position = position
 

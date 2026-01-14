@@ -1,7 +1,6 @@
 import os
 import subprocess
 import threading
-import json
 from typing import final
 
 from opencal.utils.config import ProjectorConfig
@@ -146,7 +145,10 @@ class Projector:
 
 def main():
     # Example test for playback on projector:
-    projector = Projector()
+    from opencal.utils.config import Config
+
+    cfg = Config()
+    projector = Projector(cfg.projector)
     projector.resize(100)
     # Start video playback in a new thread.
     projector.play_video_with_mpv()  # include video path here

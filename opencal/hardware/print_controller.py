@@ -1,7 +1,8 @@
+import threading
 import time
 from typing import final
+
 from .hardware_controller import HardwareController
-import threading
 
 
 @final
