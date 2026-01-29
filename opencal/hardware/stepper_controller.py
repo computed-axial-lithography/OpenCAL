@@ -1,7 +1,7 @@
 import time
 import threading
 from typing import final
-from gpiozero import OutputDevice
+from gpiozero import OutputDevice, RotaryEncoder
 
 
 from opencal.utils.config import StepperConfig
@@ -22,6 +22,7 @@ class StepperMotor:
         # Initialize GPIO output devices for step and direction
         self.step = OutputDevice(self.step_pin)
         self.direction = OutputDevice(self.dir_pin)
+        self.encoder = StepperEncoder(config)
 
         # Enable the driver if an enable pin is specified
         if self.enable_pin:
@@ -77,6 +78,10 @@ class StepperMotor:
                 time.sleep(time_to_sleep)  # Sleep for the remaining time
             self.step.off()  # Deactivate the step pin
             start_time = time.perf_counter()  # Reset the start time for the next pulse
+
+    def get_motor_position(self) -> int:
+        _steps = self.encoder.encoder.steps
+        raise NotImplementedError("Need to check motor encoder specifications")
 
     def start_rotation(self, direction: str | None = None):
         """
@@ -138,6 +143,12 @@ class StepperMotor:
         """Cleanup GPIO resources."""
         print("Closing motor connection.")  # Log the cleanup command
         # gpiozero handles cleanup automatically, no need to explicitly call GPIO.cleanup()
+
+
+class StepperEncoder:
+    def __init__(self, config: StepperConfig):
+        # TODO: determine necessary values for `max_steps` and `wrap` based on motor encoder specs
+        self.encoder = RotaryEncoder(config.encoder_a_pin, config.encoder_b_pin)
 
 
 # Example usage (remove or modify during integration)

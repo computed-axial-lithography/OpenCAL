@@ -2,6 +2,8 @@
   "stepper_motor": {
     "step_pin": 18,
     "dir_pin": 23,
+    "A_pin": 12,
+    "B_pin": 13,
     "enable_pin": 27,
     "default_speed": 10,
     "default_direction": "CW",
