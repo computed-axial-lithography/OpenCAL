@@ -25,25 +25,21 @@ class RotaryEncoderHandler:
         self.button = Button(self.btn_pin)
 
         # Set up event handlers for the encoder and button
-        self.encoder.when_rotated = (
-            self._rotate_callback
-        )  # Callback for rotation events
+
         if self.button:
-            self.button.when_pressed = (
-                self._button_callback
-            )  # Callback for button press events
+            # Callback for button press events
+            self.button.when_pressed = self._button_callback
 
     def _rotate_callback(self):
         """Callback for rotary encoder rotation"""
-        print(
-            f"Rotary Encoder Position: {self.encoder.steps}"
-        )  # Log the current position of the encoder
+        # Log the current position of the encoder
+        print(f"Rotary Encoder Position: {self.encoder.steps}")
 
     def _button_callback(self):
         """Callback for encoder push button press"""
         print("Encoder Button Pressed!")  # Log when the button is pressed
 
-    def get_position(self):
+    def get_steps(self):
         """Get current encoder position"""
         return self.encoder.steps  # Return the current position of the encoder
 
