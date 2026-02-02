@@ -19,34 +19,16 @@ class RotaryEncoderHandler:
         self.btn_pin = config.btn_pin
 
         # Initialize the rotary encoder and button
-        self.encoder = RotaryEncoder(
-            self.clk_pin, self.dt_pin, wrap=True, max_steps=1000
-        )
-        self.button = Button(self.btn_pin)
+        self.encoder = RotaryEncoder(self.clk_pin, self.dt_pin)
+        self.button = Button(self.btn_pin, bounce_time=0.05)
 
-        # Set up event handlers for the encoder and button
-
-        if self.button:
-            # Callback for button press events
-            self.button.when_pressed = self._button_callback
-
-    def _rotate_callback(self):
-        """Callback for rotary encoder rotation"""
-        # Log the current position of the encoder
-        print(f"Rotary Encoder Position: {self.encoder.steps}")
-
-    def _button_callback(self):
-        """Callback for encoder push button press"""
-        print("Encoder Button Pressed!")  # Log when the button is pressed
-
-    def get_steps(self):
+    def get_steps(self) -> int:
         """Get current encoder position"""
         return self.encoder.steps  # Return the current position of the encoder
 
-    def was_button_pressed(self):
+    def was_button_pressed(self) -> bool:
         """Check if button was pressed (for polling-based use)"""
-        # self.button.is_pressed
-        self.button.is_active
+        return self.button.is_active
 
 
 if __name__ == "__main__":
@@ -54,9 +36,7 @@ if __name__ == "__main__":
     from opencal.utils.config import Config
 
     cfg = Config()
-    encoder = RotaryEncoderHandler(
-        cfg.rotary_encoder
-    )  # Create an instance of the RotaryEncoderHandler
+    encoder = RotaryEncoderHandler(cfg.rotary_encoder)
     try:
         print("Rotary Encoder Test. Press Ctrl+C to exit.")
         while True:

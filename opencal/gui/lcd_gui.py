@@ -30,7 +30,6 @@ class LCDGui:
                 "Manual Control",
                 "Settings",
                 "Power Options",
-                "Really long option name test blah blah 1 2 3",
             ],
             "Print from USB": ["back"] + self.pc.hardware.usb_device.get_file_names(),
             "Manual Control": [
@@ -99,19 +98,14 @@ class LCDGui:
         }
 
         self.menu_stack: list[str] = []  # Stack to keep track of menu navigation
-        self.current_menu: str | None = "main"  # Currently displayed menu
-        self.return_menu = "main"
-        # FIXME: clean this up after reworking
-        self.current_menu_index = 0  # Index of selected menu item
-        # Index of menu after accounting for rotary updates
-        self.target_menu_index = 0
+        self.current_menu: str | None = None  # Currently displayed menu
+        self.return_menu: str | None = None
+
+        self.current_menu_index: int = 0  # Index of selected menu item
+        self.target_menu_index: int = 0
         self.view_start = 0  # Tracks the start of the visible menu slice
         self.VIEW_SIZE = 4  # Number of menu items visible at once
 
-        self.last_rotary_position = self.pc.hardware.rotary.get_steps()
-
-        # FIXME: incorporate button debouncing using the gpiozero builtin method
-        self.last_button_press_time = 0  # For button debouncing
         self.running = True  # Flag to control the execution of the main loop
 
         self.adjusting_variable = False  # Flag to track if a variable is being adjusted
@@ -139,17 +133,13 @@ class LCDGui:
         self.pc.hardware.lcd.write_message("FOR THE COMMUNITY".center(20), 2, 0)
         time.sleep(1)
 
-    def show_menu(self, menu: str):
+    def show_menu(self, menu: str | None):
         """Display a given menu on the LCD."""
         if menu != self.current_menu:
             self.current_menu_index = 0
+            self.target_menu_index = 0
             self.current_menu = menu
-            self.pc.hardware.lcd.clear()  # Clear the display before showing a new menu
-            menu_list = self.menu_dict.get(menu, [])
-            for idx in range(len(menu_list)):
-                if idx < 4:
-                    self.pc.hardware.lcd.write_message(menu_list[idx], idx, 1)
-            time.sleep(0.05)
+            self.navigate()
 
     def save_defaults(self):
         """
@@ -181,7 +171,7 @@ class LCDGui:
     def splash(
         self,
         message: str = "Saved",
-        next_menu: str | None = "main",
+        _next_menu: str | None = "main",
         duration: float = 1.0,
     ):
         """
@@ -218,15 +208,17 @@ class LCDGui:
             if menu_idx < menu_len:
                 prefix = ">" if menu_idx == self.current_menu_index else " "
                 line = f"{prefix}{menu_list[menu_idx]}".ljust(20)
-                self.pc.hardware.lcd.write_message(line, view_idx, 0)
+            else:
+                line = " " * 20
+            self.pc.hardware.lcd.write_message(line, view_idx, 0)
+            
 
     def select_option(self):
         """Handle menu selection."""
-        print("DEBUG: `select_option")
 
         if self.current_menu is None:
             raise ValueError("No Menu Selected")
-        option: str = self.menu_dict[self.current_menu][self.current_menu_index]
+        option = self.menu_dict[self.current_menu][self.current_menu_index]
 
         if option == "back":
             if self.menu_stack:
@@ -234,6 +226,7 @@ class LCDGui:
             else:
                 self.show_menu("main")
         elif option in self.menu_dict:
+            # Update USB file list options
             self.menu_dict["Print from USB"] = [
                 "back"
             ] + self.pc.hardware.usb_device.get_file_names()
@@ -252,14 +245,15 @@ class LCDGui:
                 self.pc.hardware.stepper.set_speed,
             )
 
-        if self.adjusting_variable:
-            self.adjust_variable()
-        else:
-            self.navigate()
-        time.sleep(0.05)
+        # TODO: Remove when sure this works
+
+        # if self.adjusting_variable:
+        #     self.adjust_variable()
+        # else:
+        #     self.navigate()
 
     def enter_variable_adjustment(
-        self, variable_name: str, current_value: Any, update_function=None
+        self, variable_name: str, current_value: int, update_function=None
     ) -> None:
         """Enter variable adjustment mode and allow the user to adjust any variable.
         A callback (if provided) is stored and called after the adjustment is complete.
@@ -268,6 +262,8 @@ class LCDGui:
         self.current_menu = None
         self.variable_name = variable_name
         self.current_var_value = current_value
+        self.target_var_value = current_value
+
         self.update_function = update_function
         self.pc.hardware.lcd.clear()
         self.pc.hardware.lcd.write_message(
@@ -276,6 +272,7 @@ class LCDGui:
         self.pc.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
         self.pc.hardware.lcd.write_message("Click to set", 2, 0)
         self.adjusting_variable = True
+        self.adjust_variable()
 
     def adjust_variable(self):
         self.current_var_value = self.target_var_value
@@ -287,29 +284,24 @@ class LCDGui:
             self.pc.hardware.lcd.write_message(self.video_filename_short, 3, 0)
 
     def button_press_handler(self):
-        """Handles button press and debouncing."""
-        current_time = time.time()
-        if current_time - self.last_button_press_time > 1:
-            if self.adjusting_variable and self.selected_video_filename is None:
-                self.update_function(self.current_var_value)
-                self.adjusting_variable = False
-                self.show_menu(self.return_menu)
-                self.navigate()
-
-            elif self.selected_video_filename is not None:
-                self.update_function(self.current_var_value)
-                self.adjusting_variable = False
-                self.print_start_time = time.time()
-                self.menu_callbacks["print"](self.selected_video_filename)
-                self.selected_video_filename = None
-                self.video_filename_short = None
-                self.show_menu(
-                    "Print menu"
-                )  # Switch to print menu after starting the print job\
-                self.navigate()
-            else:
-                self.select_option()
-            self.last_button_press_time = current_time
+        if self.adjusting_variable and self.selected_video_filename is None:
+            # Pressing btn while adjusting variable returns to prev menu
+            self.update_function(self.current_var_value)
+            self.adjusting_variable = False
+            self.show_menu(self.return_menu)
+        elif self.selected_video_filename is not None:
+            # Pressing btn to start print job
+            self.update_function(self.current_var_value)
+            self.adjusting_variable = False
+            self.print_start_time = time.time()
+            self.menu_callbacks["print"](self.selected_video_filename)
+            self.selected_video_filename = None
+            self.video_filename_short = None
+            # Switch to print menu after starting the print job\
+            self.show_menu("Print menu")
+        else:
+            # Otherwise selecting menu option
+            self.select_option()
 
     def restart_pi(self):
         """Restart the Raspberry Pi."""
@@ -358,14 +350,11 @@ class LCDGui:
         """Main method to run the GUI."""
         self.show_startup_screen()
         self.show_menu("main")
-        self.navigate()
 
-        self.pc.hardware.rotary.encoder.when_rotated_clockwise = (
-            lambda: self.handle_rotary_rotation(1)
-        )
-        self.pc.hardware.rotary.encoder.when_rotated_counter_clockwise = (
-            lambda: self.handle_rotary_rotation(-1)
-        )
+        encoder = self.pc.hardware.rotary.encoder
+        encoder.when_rotated_clockwise = lambda: self.handle_rotary_rotation(1)
+        encoder.when_rotated_counter_clockwise = lambda: self.handle_rotary_rotation(-1)
+        self.pc.hardware.rotary.button.when_pressed = self.button_press_handler
 
         while self.running:
             if self.print_start_time is not None:
@@ -383,9 +372,8 @@ class LCDGui:
             else:
                 if self.current_menu_index != self.target_menu_index:
                     self.navigate()
-            self.pc.hardware.rotary.button.when_pressed = self.button_press_handler
-            print(f"{self.target_menu_index=}")
 
+            # Control the GUI refresh rate here
             time.sleep(0.05)
 
         time.sleep(0.5)
