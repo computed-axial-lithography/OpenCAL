@@ -25,7 +25,7 @@ class StepperMotor:
         # Initialize GPIO output devices for step and direction
         self.step = OutputDevice(self.step_pin)
         self.direction = OutputDevice(self.dir_pin)
-        self.encoder = RotaryEncoder(config.encoder_a_pin, config.encoder_b_pin)
+        self.encoder = RotaryEncoder(config.encoder_a_pin, config.encoder_b_pin, max_steps=0)
 
         # Enable the driver if an enable pin is specified
         if self.enable_pin:
