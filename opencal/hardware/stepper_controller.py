@@ -7,7 +7,7 @@ from gpiozero import OutputDevice, RotaryEncoder
 from opencal.utils.config import StepperConfig
 
 
-ENCODER_CPR = 4000
+ENCODER_CPR = 1000
 
 
 @final
@@ -81,13 +81,14 @@ class StepperMotor:
                 time.sleep(time_to_sleep)  # Sleep for the remaining time
             self.step.off()  # Deactivate the step pin
             start_time = time.perf_counter()  # Reset the start time for the next pulse
+    
+    def angle_in_steps(self) -> int:
+        return self.encoder.steps % ENCODER_CPR
 
-    def get_motor_angle(self) -> float:
+
+    def angle_in_degrees(self) -> float:
         """Returns the motor angle in degrees from it's angle at startup."""
-        steps = self.encoder.steps
-        angle = (steps % ENCODER_CPR) / ENCODER_CPR * 360
-        print(f"Motor angle: {angle:.2f}")
-        return angle
+        return self.angle_in_steps() / ENCODER_CPR * 360
 
 
     def start_rotation(self, direction: str | None = None):
