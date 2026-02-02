@@ -7,6 +7,9 @@ from gpiozero import OutputDevice, RotaryEncoder
 from opencal.utils.config import StepperConfig
 
 
+ENCODER_CPR = 4000
+
+
 @final
 class StepperMotor:
     def __init__(self, config: StepperConfig):
@@ -22,7 +25,7 @@ class StepperMotor:
         # Initialize GPIO output devices for step and direction
         self.step = OutputDevice(self.step_pin)
         self.direction = OutputDevice(self.dir_pin)
-        self.encoder = StepperEncoder(config)
+        self.encoder = RotaryEncoder(config.encoder_a_pin, config.encoder_b_pin)
 
         # Enable the driver if an enable pin is specified
         if self.enable_pin:
@@ -79,9 +82,13 @@ class StepperMotor:
             self.step.off()  # Deactivate the step pin
             start_time = time.perf_counter()  # Reset the start time for the next pulse
 
-    def get_motor_position(self) -> int:
-        _steps = self.encoder.encoder.steps
-        raise NotImplementedError("Need to check motor encoder specifications")
+    def get_motor_angle(self) -> float:
+        """Returns the motor angle in degrees from it's angle at startup."""
+        steps = self.encoder.steps
+        angle = (steps % ENCODER_CPR) / ENCODER_CPR * 360
+        print(f"Motor angle: {angle:.2f}")
+        return angle
+
 
     def start_rotation(self, direction: str | None = None):
         """
@@ -143,12 +150,6 @@ class StepperMotor:
         """Cleanup GPIO resources."""
         print("Closing motor connection.")  # Log the cleanup command
         # gpiozero handles cleanup automatically, no need to explicitly call GPIO.cleanup()
-
-
-class StepperEncoder:
-    def __init__(self, config: StepperConfig):
-        # TODO: determine necessary values for `max_steps` and `wrap` based on motor encoder specs
-        self.encoder = RotaryEncoder(config.encoder_a_pin, config.encoder_b_pin)
 
 
 # Example usage (remove or modify during integration)

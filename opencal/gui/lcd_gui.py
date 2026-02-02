@@ -374,6 +374,7 @@ class LCDGui:
                     self.navigate()
 
             # Control the GUI refresh rate here
+            _angle = self.pc.hardware.stepper.get_motor_angle()
             time.sleep(0.05)
 
         time.sleep(0.5)
