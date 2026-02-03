@@ -3,6 +3,7 @@
 # Ignore Python virtual environment
 venv/
 .env/
+.venv/
 
 # ignore RTD build results
 docs/build/
@@ -13,3 +14,5 @@ docs/build/
 __pycache__/
 *.pyc
 *.log
+*.egg
+*.egg-info/
