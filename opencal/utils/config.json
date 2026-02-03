@@ -5,9 +5,9 @@
     "A_pin": 12,
     "B_pin": 13,
     "enable_pin": 27,
-    "default_speed": 10,
+    "default_rpm": 10,
     "default_direction": "CW",
-    "default_steps": 1600
+    "default_steps": 1000
   },
   "camera": {
     "type": "rpi",
