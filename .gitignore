@@ -4,6 +4,7 @@
 venv/
 .env/
 .venv/
+uv.lock
 
 # ignore RTD build results
 docs/build/
