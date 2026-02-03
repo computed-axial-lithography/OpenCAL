@@ -4,7 +4,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import cv2
 
@@ -65,7 +65,7 @@ class LCDGui:
             "Set Step RPM": lambda: self.enter_variable_adjustment(
                 "RPM",
                 self.pc.hardware.stepper.speed_rpm,
-                self.pc.hardware.stepper.set_rpm,
+                lambda rpm: self.pc.hardware.stepper.set_rpm(rpm, ramp_time=1),
             ),
             "Restart": lambda: self.restart_pi(),
             "Power Off": lambda: self.power_off_pi(),
@@ -211,7 +211,6 @@ class LCDGui:
             else:
                 line = " " * 20
             self.pc.hardware.lcd.write_message(line, view_idx, 0)
-            
 
     def select_option(self):
         """Handle menu selection."""
@@ -245,15 +244,11 @@ class LCDGui:
                 self.pc.hardware.stepper.set_rpm,
             )
 
-        # TODO: Remove when sure this works
-
-        # if self.adjusting_variable:
-        #     self.adjust_variable()
-        # else:
-        #     self.navigate()
-
     def enter_variable_adjustment(
-        self, variable_name: str, current_value: int, update_function=None
+        self,
+        variable_name: str,
+        current_value: float,
+        update_function: Callable[[int | float], None] | None = None,
     ) -> None:
         """Enter variable adjustment mode and allow the user to adjust any variable.
         A callback (if provided) is stored and called after the adjustment is complete.
@@ -267,7 +262,9 @@ class LCDGui:
         self.update_function = update_function
         self.pc.hardware.lcd.clear()
         self.pc.hardware.lcd.write_message(
-            f"Current {self.variable_name}: {self.current_var_value}".ljust(20), 0, 0
+            f"Current {self.variable_name}: {int(self.current_var_value)}".ljust(20),
+            0,
+            0,
         )
         self.pc.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
         self.pc.hardware.lcd.write_message("Click to set", 2, 0)
@@ -286,12 +283,20 @@ class LCDGui:
     def button_press_handler(self):
         if self.adjusting_variable and self.selected_video_filename is None:
             # Pressing btn while adjusting variable returns to prev menu
-            self.update_function(self.current_var_value)
+            if self.update_function is not None:
+                self.update_function(self.current_var_value)
+            else:
+                raise ValueError("No update function")
+
             self.adjusting_variable = False
             self.show_menu(self.return_menu)
         elif self.selected_video_filename is not None:
             # Pressing btn to start print job
-            self.update_function(self.current_var_value)
+            if self.update_function is not None:
+                self.update_function(self.current_var_value)
+            else:
+                raise ValueError("No update function")
+
             self.adjusting_variable = False
             self.print_start_time = time.time()
             self.menu_callbacks["print"](self.selected_video_filename)

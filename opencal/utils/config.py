@@ -26,7 +26,7 @@ class StepperConfig:
         self.enable_pin: int = config["enable_pin"]
         self.encoder_a_pin: int = config["A_pin"]
         self.encoder_b_pin: int = config["B_pin"]
-        self.default_rpm: int = config["default_rpm"]
+        self.default_rpm: float = config["default_rpm"]
         self.default_direction: str = config["default_direction"]
         self.default_steps: int = config["default_steps"]
 

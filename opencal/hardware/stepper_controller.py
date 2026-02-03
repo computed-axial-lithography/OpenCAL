@@ -117,9 +117,7 @@ class StepperMotor:
 
         :param direction: "CW" for clockwise, "CCW" for counterclockwise.
         """
-        direction = (
-            direction or self.default_direction
-        )  # Use default direction if not provided
+        direction = direction or self.default_direction
         print(f"Starting continuous rotation {direction}")  # Log the start of rotation
 
         # Set the direction of rotation
