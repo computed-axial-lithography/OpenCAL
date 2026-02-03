@@ -65,7 +65,7 @@ class LCDGui:
             "Set Step RPM": lambda: self.enter_variable_adjustment(
                 "RPM",
                 self.pc.hardware.stepper.speed_rpm,
-                self.pc.hardware.stepper.set_speed,
+                self.pc.hardware.stepper.set_rpm,
             ),
             "Restart": lambda: self.restart_pi(),
             "Power Off": lambda: self.power_off_pi(),
@@ -242,7 +242,7 @@ class LCDGui:
             self.enter_variable_adjustment(
                 "RPM",
                 self.pc.hardware.stepper.speed_rpm,
-                self.pc.hardware.stepper.set_speed,
+                self.pc.hardware.stepper.set_rpm,
             )
 
         # TODO: Remove when sure this works

@@ -25,7 +25,9 @@ class StepperMotor:
         # Initialize GPIO output devices for step and direction
         self.step = OutputDevice(self.step_pin)
         self.direction = OutputDevice(self.dir_pin)
-        self.encoder = RotaryEncoder(config.encoder_a_pin, config.encoder_b_pin, max_steps=0)
+        self.encoder = RotaryEncoder(
+            config.encoder_a_pin, config.encoder_b_pin, max_steps=0
+        )
 
         # Enable the driver if an enable pin is specified
         if self.enable_pin:
@@ -33,64 +35,81 @@ class StepperMotor:
             self.enable.off()  # Disable the driver by default
 
         # Load default parameters from the configuration
-        self.default_speed = config.default_speed
-        self.speed_rpm = self.default_speed  # Current speed in RPM
+        self.default_rpm = config.default_rpm
+        self.speed_rpm = self.default_rpm  # Current speed in RPM
         self.default_direction = config.default_direction
         self.default_steps = config.default_steps
 
         # Calculate the delay between steps based on speed and steps per revolution
-        self.step_delay = 60.00 / (self.default_speed * self.default_steps)
+        # FIXME: I think self.default_steps should be 1000, not 1600
+        self.step_delay = 60.00 / (self.default_rpm * self.default_steps)
         self._rotation_thread = None  # Reference to the thread for continuous rotation
         self._finish_event = threading.Event()
         self._running = False  # Flag to control whether the motor is currently running
 
-    def set_speed(self, rpm: int | None = None):
+    def set_rpm(self, rpm: float | None = None, ramp_time: float = 0):
         """Set the stepper motor speed in RPM (frequency of step pulses)."""
-        rpm = rpm or self.default_speed  # Use default speed if no RPM is provided
-        self.speed_rpm = rpm  # Update the current speed
-        self.step_delay = 60.00 / (
-            self.speed_rpm * self.default_steps
-        )  # Recalculate step delay
-        print(f"Speed set to {self.speed_rpm} RPM")  # Log the new speed
+        rpm = rpm or self.default_rpm  # Use default speed if no RPM is provided
+        if ramp_time == 0:
+            self.speed_rpm = rpm
+            # Recalculate step delay
+            self.step_delay = 60.0 / (self.speed_rpm * self.default_steps)
+            print(f"Speed set to {self.speed_rpm} RPM")  # Log the new speed
+        else:
+            thread = threading.Thread(target=self._ramp_rpm, args=(rpm, ramp_time))
+            thread.start()
 
-    def rotate_steps(self, steps: int | None = None, direction: str | None = None):
+    def _ramp_rpm(self, target: float, ramp_time: float):
+        if ramp_time <= 0:
+            raise ValueError("ramp time must be positive")
+
+        # Discretize into approximately sized intervals and increment RPM
+        TIMESTEPS = 100
+        dt = ramp_time / TIMESTEPS
+        start_rpm = self.speed_rpm
+
+        for i in range(TIMESTEPS):
+            self.speed_rpm = start_rpm + (target - start_rpm) * ((i + 1) / TIMESTEPS)
+            self.step_delay = 60.0 / (self.speed_rpm * self.default_steps)
+            time.sleep(dt)
+        # Set finally to ensure exact value achieved
+        self.speed_rpm = target
+        self.step_delay = 60.0 / (self.speed_rpm * self.default_steps)
+
+    def rotate_steps(self, steps: int, direction: str | None = None):
         """
         Rotate the stepper motor for a specified number of steps.
         - steps: Number of steps to move.
         - direction: "CW" for clockwise, "CCW" for counterclockwise.
         """
-        steps = steps or self.default_steps  # Use default steps if not provided
-        direction = (
-            direction or self.default_direction
-        )  # Use default direction if not provided
-        print(f"Rotating {steps} steps {direction}")  # Log the rotation command
+        direction = direction or self.default_direction
+        print(f"Rotating {steps} steps {direction}")
 
         # Set the direction of rotation
         if direction == "CW":
-            self.direction.on()  # Set direction to clockwise
+            self.direction.on()
         else:
-            self.direction.off()  # Set direction to counterclockwise
+            self.direction.off()
 
         # Generate step pulses for the specified number of steps
-        start_time = time.perf_counter()  # Record the start time
+        prev_time = time.perf_counter()  # Record the start time
         for _ in range(steps):
             self.step.on()  # Activate the step pin
             # Calculate the elapsed time and determine how long to sleep
-            elapsed_time = time.perf_counter() - start_time
+            elapsed_time = time.perf_counter() - prev_time
             time_to_sleep = self.step_delay - elapsed_time
             if time_to_sleep > 0:
                 time.sleep(time_to_sleep)  # Sleep for the remaining time
+            # FIXME: Should this be immediately after setting to high?
             self.step.off()  # Deactivate the step pin
-            start_time = time.perf_counter()  # Reset the start time for the next pulse
-    
+            prev_time = time.perf_counter()  # Reset the start time for the next pulse
+
     def angle_in_steps(self) -> int:
         return self.encoder.steps % ENCODER_CPR
-
 
     def angle_in_degrees(self) -> float:
         """Returns the motor angle in degrees from it's angle at startup."""
         return self.angle_in_steps() / ENCODER_CPR * 360
-
 
     def start_rotation(self, direction: str | None = None):
         """
@@ -157,7 +176,7 @@ if __name__ == "__main__":
 
     cfg = Config()
     motor = StepperMotor(cfg.stepper)  # Create an instance of the StepperMotor class
-    motor.set_speed(20)  # Set the motor speed to the default (20 RPM)
+    motor.set_rpm(20)  # Set the motor speed to the default (20 RPM)
     motor.start_rotation()  # Start continuous rotation
     time.sleep(30.0)  # Run for 60 seconds
     # motor.rotate_steps(15, "CCW")  # Example of rotating a specific number of steps
