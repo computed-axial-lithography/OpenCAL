@@ -41,6 +41,7 @@ class StepperMotor:
         # Calculate the delay between steps based on speed and steps per revolution
         self.step_delay = 60.00 / (self.default_speed * self.default_steps)
         self._rotation_thread = None  # Reference to the thread for continuous rotation
+        self._finish_event = threading.Event()
         self._running = False  # Flag to control whether the motor is currently running
 
     def set_speed(self, rpm: int | None = None):
@@ -124,7 +125,7 @@ class StepperMotor:
     def _rotate_motor(self):
         """Internal method to handle continuous rotation of the motor."""
         next_time = time.perf_counter()  # Initialize the next time for scheduling
-        while self._running:  # Continue while the motor is running
+        while not self._finish_event.is_set():  # Continue while the motor is running
             self.step.on()  # Activate the step pin
             self.step.off()  # Deactivate the step pin
 
@@ -140,17 +141,14 @@ class StepperMotor:
     def stop(self):
         """Stop the rotation of the motor."""
         print("Stopping the motor.")  # Log the stop command
-        self._running = False  # Set the flag to stop the rotation
+        self._finish_event.set()
+
         if self._rotation_thread is not None:
             self._rotation_thread.join()  # Wait for the thread to finish cleanly
+
         self.step.off()  # Deactivate the step pin
         if self.enable_pin:
             self.enable.off()  # Disable the motor if an enable pin is used
-
-    def close(self):
-        """Cleanup GPIO resources."""
-        print("Closing motor connection.")  # Log the cleanup command
-        # gpiozero handles cleanup automatically, no need to explicitly call GPIO.cleanup()
 
 
 # Example usage (remove or modify during integration)
@@ -165,4 +163,3 @@ if __name__ == "__main__":
     # motor.rotate_steps(15, "CCW")  # Example of rotating a specific number of steps
     # time.sleep(2)  # Wait 2 seconds
     motor.stop()  # Stop the motor
-    motor.close()  # Cleanup GPIO resources

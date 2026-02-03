@@ -376,7 +376,7 @@ class LCDGui:
             # Control the GUI refresh rate here
             steps = self.pc.hardware.stepper.angle_in_steps()
             angle = self.pc.hardware.stepper.angle_in_degrees()
-            print(f"{steps=} {angle=}")
+            # print(f"{steps=} {angle=}")
             time.sleep(0.05)
 
         time.sleep(0.5)
