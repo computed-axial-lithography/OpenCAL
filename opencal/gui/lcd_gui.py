@@ -227,9 +227,7 @@ class LCDGui:
             self.menu_callbacks[option]()
         elif self.current_menu == "Print from USB":
             self.video_filename_short = option
-            self.selected_video_filename = self.pc.hardware.usb_device.get_full_path(
-                option
-            )
+            self.selected_video_filename = self.pc.hardware.usb_device.get_full_path(option)
             self.enter_variable_adjustment(
                 "RPM",
                 self.pc.hardware.stepper.speed_rpm,
@@ -339,9 +337,7 @@ class LCDGui:
             if self.current_menu is None:
                 raise ValueError("Menu is None")
             menu_len = len(self.menu_dict[self.current_menu])
-            self.target_menu_index = max(
-                0, min(menu_len - 1, self.target_menu_index + delta)
-            )
+            self.target_menu_index = max(0, min(menu_len - 1, self.target_menu_index + delta))
 
     def run(self):
         """Main method to run the GUI."""
@@ -360,9 +356,7 @@ class LCDGui:
                 minutes, seconds = divmod(int(elapsed), 60)
                 elapsed_formatted = f"{minutes:02d}:{seconds:02d}"
                 # Write the elapsed time to a fixed line on the LCD (line 3)
-                self.pc.hardware.lcd.write_message(
-                    f"Elapsed: {elapsed_formatted}", 3, 0
-                )
+                self.pc.hardware.lcd.write_message(f"Elapsed: {elapsed_formatted}", 3, 0)
             if self.adjusting_variable:
                 if self.current_var_value != self.target_var_value:
                     self.adjust_variable()
@@ -370,10 +364,11 @@ class LCDGui:
                 if self.current_menu_index != self.target_menu_index:
                     self.navigate()
 
-            # Control the GUI refresh rate here
             steps = self.pc.hardware.stepper.angle_in_steps()
             angle = self.pc.hardware.stepper.angle_in_degrees()
             # print(f"{steps=} {angle=}")
+
+            # Control the GUI refresh rate here
             time.sleep(0.05)
 
         time.sleep(0.5)

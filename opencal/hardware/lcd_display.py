@@ -121,9 +121,7 @@ if __name__ == "__main__":
     from opencal.utils.config import Config
 
     cfg = Config()
-    lcd_display = LCDDisplay(
-        cfg.lcd_display
-    )  # Create an instance of the LCDDisplay class
+    lcd_display = LCDDisplay(cfg.lcd_display)  # Create an instance of the LCDDisplay class
     lcd_display.clear()  # Clear display before starting
 
     # Display multiple lines (some static, some scrolling)

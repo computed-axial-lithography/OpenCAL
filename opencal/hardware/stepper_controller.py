@@ -1,6 +1,5 @@
 import time
 import threading
-from typing import final
 from gpiozero import OutputDevice, RotaryEncoder
 
 from opencal.utils.config import StepperConfig
@@ -15,9 +14,7 @@ class StepperMotor:
         # Initialize GPIO output devices for step and direction
         self.step = OutputDevice(config.step_pin)
         self.direction = OutputDevice(config.dir_pin)
-        self.encoder = RotaryEncoder(
-            config.encoder_a_pin, config.encoder_b_pin, max_steps=0
-        )
+        self.encoder = RotaryEncoder(config.encoder_a_pin, config.encoder_b_pin, max_steps=0)
 
         self.enable = OutputDevice(config.enable_pin, active_high=False)
         self.enable.off()
@@ -124,9 +121,7 @@ class StepperMotor:
 
             self.enable.on()
 
-            self._rotation_thread = threading.Thread(
-                target=self._rotate_motor, daemon=True
-            )
+            self._rotation_thread = threading.Thread(target=self._rotate_motor, daemon=True)
             self._rotation_thread.start()
 
     def _rotate_motor(self):

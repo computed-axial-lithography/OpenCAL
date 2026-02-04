@@ -13,3 +13,7 @@ dependencies = [
     "rplcd>=1.4.0",
     "smbus2>=0.6.0",
 ]
+
+
+[tool.ruff]
+line-length = 100

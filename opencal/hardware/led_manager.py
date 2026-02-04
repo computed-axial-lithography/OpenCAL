@@ -22,9 +22,8 @@ class LEDArray:
         self.default_color = config.default_color
 
         # Initialize communication with the Pi5Neo library
-        self.neo: Pi5Neo = Pi5Neo(
-            "/dev/spidev0.0", self.num_led, 799
-        )  # Using SPI interface
+        # TODO: verify 799 value
+        self.neo: Pi5Neo = Pi5Neo("/dev/spidev0.0", self.num_led, 799)
 
     def set_led(self, color: tuple[int, int, int], led_index: list[int] | None = None):
         """
@@ -40,9 +39,7 @@ class LEDArray:
         else:
             print(f"Turning on LEDs at indices: {led_index}")
             for idx in led_index:
-                _ = self.neo.set_led_color(
-                    idx, *color
-                )  # Set the color for specified indices
+                _ = self.neo.set_led_color(idx, *color)  # Set the color for specified indices
 
         self.neo.update_strip()  # Update the LED strip to apply changes
         print("LEDs updated.")

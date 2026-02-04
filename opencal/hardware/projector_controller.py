@@ -1,12 +1,10 @@
 import os
 import subprocess
 import threading
-from typing import final
 
 from opencal.utils.config import ProjectorConfig
 
 
-@final
 class Projector:
     def __init__(self, config: ProjectorConfig):
         # Initialize the process attribute to keep track of the playback process.
@@ -37,9 +35,7 @@ class Projector:
         try:
             width, height = map(int, output.split("x"))
         except Exception as e:
-            raise ValueError(
-                f"Unable to parse video dimensions from output: {output}"
-            ) from e
+            raise ValueError(f"Unable to parse video dimensions from output: {output}") from e
         return width, height
 
     def play_video_with_mpv(self, video_path=None):
@@ -100,9 +96,7 @@ class Projector:
             raise ValueError("start_video_thread() requires a `video_path` argument")
 
         # Create a new thread for playing the video.
-        self.thread = threading.Thread(
-            target=self.play_video_with_mpv, args=(video_path,)
-        )
+        self.thread = threading.Thread(target=self.play_video_with_mpv, args=(video_path,))
         self.thread.start()
 
     def display_image(self, image_path=None):
@@ -137,9 +131,7 @@ class Projector:
         """
         Same as display_image(), but in a background thread.
         """
-        self.thread = threading.Thread(
-            target=self.display_image, args=(image_path,), daemon=True
-        )
+        self.thread = threading.Thread(target=self.display_image, args=(image_path,), daemon=True)
         self.thread.start()
 
 

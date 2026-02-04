@@ -1,9 +1,4 @@
-import glob
-import os
-import subprocess
 import time
-import threading
-import cv2
 from typing import final
 from pathlib import Path
 from picamera2 import Picamera2
@@ -65,9 +60,7 @@ class CameraController:
 
     def set_focus(self, diopters: float):
         """Turns off autofocus and sets a manual focal distance in diopters (m^-1)"""
-        self.picam.set_controls(
-            {"AfMode": controls.AfModeEnum.Manual, "LensPosition": diopters}
-        )
+        self.picam.set_controls({"AfMode": controls.AfModeEnum.Manual, "LensPosition": diopters})
 
     def activate_autofocus(self):
         self.picam.set_controls({"AfMode": controls.AfModeEnum.Continuous})

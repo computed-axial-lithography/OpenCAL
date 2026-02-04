@@ -1,11 +1,9 @@
 import threading
 import time
-from typing import final
 
 from .hardware_controller import HardwareController
 
 
-@final
 class PrintController:
     def __init__(self):
         self.hardware = HardwareController()
@@ -32,7 +30,7 @@ class PrintController:
         # Handle camera operations if a camera is available
         if self.hardware.camera:
             self.hardware.camera.start_camera(preview=False)  # Start the camera
-            self.hardware.camera.start_record()  # Start recording
+            # self.hardware.camera.start_record()  # Start recording
 
         try:
             # Keep the job running until self.running is set to False externally.

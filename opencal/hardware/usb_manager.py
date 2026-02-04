@@ -1,41 +1,36 @@
-import os
+from pathlib import Path
 
 
 class MP4Driver:
-    def __init__(self, mount_point: str = "/media/opencal"):
-        # Initialize the MP4Driver with a specified mount point for the USB storage
-        # TODO: use Path
-        self.mount_point: str = mount_point
+    def __init__(self, mount_point: Path = Path("/media/opencal/")):
+        self.mount_point = mount_point
 
-    def list_mp4_files(self) -> list[str]:
+    def list_mp4_files(self) -> list[Path]:
         """
         List all MP4 files in the USB storage device directory.
         Returns a list of file names (strings).
         """
 
-        # TODO: Use Path
-        mp4_files: list[str] = []
-        # Check if the mount point exists
-        if not os.path.exists(self.mount_point):
-            raise FileNotFoundError(f"Mount point {self.mount_point} not found.")
+        mp4_paths = []
 
-        # Walk through the directory and find mp4 files
-        for root, _dirs, files in os.walk(self.mount_point):
+        if not self.mount_point.exists():
+            raise FileNotFoundError(f"USB mount point {self.mount_point} does not exist")
+
+        for dir_path, _dirs, files in self.mount_point.walk():
             for file in files:
-                # Case-insensitive check for .mp4 file extension
-                if file.lower().endswith(".mp4"):
-                    # Append the full path of the file to the list
-                    mp4_files.append(os.path.join(root, file))
+                file_path = dir_path / file
+                if file_path.suffix == ".mp4":
+                    mp4_paths.append(file_path)
 
-        return mp4_files
+        return mp4_paths
 
-    def get_file_names(self):
+    def get_file_names(self) -> list[str]:
         """
         Return only the file names (without paths).
         """
         # Get the list of full MP4 file paths and extract just the file names
-        mp4_files = self.list_mp4_files()
-        return [os.path.basename(file) for file in mp4_files]
+        mp4_paths = self.list_mp4_files()
+        return [path.name for path in mp4_paths]
 
     def print_mp4_files(self):
         """
@@ -51,16 +46,15 @@ class MP4Driver:
             for file in mp4_files:
                 print(file)
 
-    def get_full_path(self, filename: str) -> str:
+    def get_full_path(self, filename: str) -> Path:
         """
         Given a filename (as returned by get_file_names), return the full path to the file.
         Raises FileNotFoundError if the file is not found.
         """
-        # TODO: Use Path?
 
         # Search for the full path of the specified file name
         for full_path in self.list_mp4_files():
-            if os.path.basename(full_path) == filename:
+            if full_path.name == filename:
                 return full_path
         raise FileNotFoundError(f"File {filename} not found in {self.mount_point}")
 
@@ -68,7 +62,7 @@ class MP4Driver:
 # Example Usage:
 if __name__ == "__main__":
     # Create an MP4Driver instance with the USB mount point
-    driver = MP4Driver(mount_point="/media/opencal")
+    driver = MP4Driver()
 
     # List MP4 file names
     mp4_files = driver.get_file_names()
