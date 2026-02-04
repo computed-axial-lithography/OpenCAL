@@ -38,14 +38,14 @@ class LCDGui:
                 "Turn off LEDs",
                 "start stepper",
                 "stop stepper",
+                "capture image",
             ],
             "Settings": [
                 "back",
                 "save as default",
                 "Resize Print",
-                "Set Step RPM",
+                "Set Stepper RPM",
                 "Calibration img",
-                "change camera",
             ],  # Options for adjusting variables
             "Power Options": [
                 "back",
@@ -54,15 +54,15 @@ class LCDGui:
             ],
             "Print menu": ["stop"],
             "calibration": ["stop"],
-            "change camera": ["back", "rpi", "usb"],
         }
         self.menu_callbacks: dict[str, Any] = {
             "Turn on LEDs": lambda: self.pc.hardware.led_array.set_led((255, 0, 0)),
             "Turn off LEDs": self.pc.hardware.led_array.clear_leds,
             "start stepper": lambda: self.pc.hardware.stepper.start_rotation(),
             "stop stepper": lambda: self.pc.hardware.stepper.stop(),
+            "capture image": lambda: self.pc.hardware.camera.capture_image("test.jpeg"),
             "Kill GUI": lambda: self.kill_gui(),
-            "Set Step RPM": lambda: self.enter_variable_adjustment(
+            "Set Stepper RPM": lambda: self.enter_variable_adjustment(
                 "RPM",
                 self.pc.hardware.stepper.speed_rpm,
                 lambda rpm: self.pc.hardware.stepper.set_rpm(rpm, ramp_time=1),
@@ -85,14 +85,6 @@ class LCDGui:
             "Calibration img": lambda: (
                 self.pc.hardware.projector.display_image(),
                 self.show_menu("calibration"),
-            ),
-            "usb": lambda: (
-                self.pc.hardware.camera.set_type("usb"),
-                self.splash("usb camera", self.current_menu),
-            ),
-            "rpi": lambda: (
-                self.pc.hardware.camera.set_type("rpi"),
-                self.splash("rpi camera", self.current_menu),
             ),
             "save to default": lambda: (self.save_defaults()),
         }

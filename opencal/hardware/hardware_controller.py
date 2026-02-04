@@ -78,9 +78,7 @@ class HardwareController:
             self.healthy = False
 
         try:
-            self.camera = CameraController(
-                config.camera
-            )  # Initialize camera controller
+            self.camera = CameraController(config.camera)
         except Exception as e:
             self.errors.append(f"CameraController failed: {e}")
             self.healthy = False
