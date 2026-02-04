@@ -13,13 +13,9 @@ from opencal.utils.config import CameraConfig
 @final
 class CameraController:
     def __init__(self, config: CameraConfig):
-        """Initialize the CameraController with configuration from a JSON file.
+        """Initialize the CameraController with configuration from a JSON file."""
 
-        Args:
-            config_file (str): Path to the JSON configuration file.
-        """
-        # Camera configuration parameters
-
+        # TODO: remove unneccessary config
         self.cam_type = config.type
         self.camera_index = config.index
         self.save_path = config.save_path

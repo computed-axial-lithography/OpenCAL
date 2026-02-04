@@ -11,6 +11,9 @@ docs/build/
 
 #Ignore video files
 *.mp4
+*.jpg
+*.jpeg
+*.png
 
 __pycache__/
 *.pyc
