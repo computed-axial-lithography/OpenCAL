@@ -28,7 +28,8 @@ class StepperConfig:
         self.encoder_b_pin: int = config["B_pin"]
         self.default_rpm: float = config["default_rpm"]
         self.default_direction: str = config["default_direction"]
-        self.default_steps: int = config["default_steps"]
+        self.steps_per_revolution: int = config["steps_per_revolution"]
+        self.encoder_cpr: int = config["encoder_cpr"]
 
 
 class CameraConfig:

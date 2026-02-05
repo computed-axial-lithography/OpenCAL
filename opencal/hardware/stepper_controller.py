@@ -23,11 +23,11 @@ class StepperMotor:
         self.default_rpm = config.default_rpm
         self.speed_rpm = self.default_rpm
         self.default_direction = config.default_direction
-        self.encoder_cpr = config.default_steps
+        self.steps_per_rev = config.steps_per_revolution
+        self.encoder_cpr = config.encoder_cpr
 
         # Calculate the delay between steps based on speed and steps per revolution
-        # NOTE: I think self.default_steps should be 1000, not 1600
-        self.step_delay = 60.0 / (self.default_rpm * self.encoder_cpr)
+        self.step_delay = 60.0 / (self.default_rpm * self.steps_per_rev)
         self._rotation_thread: threading.Thread | None = None
         self._finish_event = threading.Event()
 
@@ -45,7 +45,7 @@ class StepperMotor:
         if ramp_time == 0:
             self.speed_rpm = rpm
             # Recalculate step delay
-            self.step_delay = 60.0 / (self.speed_rpm * self.encoder_cpr)
+            self.step_delay = 60.0 / (self.speed_rpm * self.steps_per_rev)
         else:
             # FIXME: make sure this gets stopped if the motor is stopped before the ramp time completes
             thread = threading.Thread(target=self._ramp_rpm, args=(rpm, ramp_time))
@@ -65,11 +65,11 @@ class StepperMotor:
         for i in range(TIMESTEPS):
             # LERP between current and target RPMs
             self.speed_rpm = start_rpm + (target - start_rpm) * ((i + 1) / TIMESTEPS)
-            self.step_delay = 60.0 / (self.speed_rpm * self.encoder_cpr)
+            self.step_delay = 60.0 / (self.speed_rpm * self.steps_per_rev)
             time.sleep(dt)
         # Set finally to ensure exact value achieved
         self.speed_rpm = target
-        self.step_delay = 60.0 / (self.speed_rpm * self.encoder_cpr)
+        self.step_delay = 60.0 / (self.speed_rpm * self.steps_per_rev)
 
     def rotate_steps(self, steps: int, direction: str | None = None):
         """
@@ -142,13 +142,16 @@ class StepperMotor:
         """Internal method to handle continuous rotation of the motor."""
 
         next_time = time.perf_counter()  # Initialize the next time for scheduling
+        steps_taken = 0
         while not self._finish_event.is_set():  # Continue while the motor is running
             self.step.on()  # Activate the step pin
             self.step.off()  # Deactivate the step pin
+            steps_taken += 1
 
             # Schedule the next step based on the step delay
             next_time += self.step_delay
             sleep_time = next_time - time.perf_counter()  # Calculate how long to sleep
+
             if sleep_time > 0:
                 time.sleep(sleep_time)  # Sleep for the calculated time
             else:
