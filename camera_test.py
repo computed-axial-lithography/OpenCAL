@@ -5,7 +5,7 @@ def main():
     cam = Picamera2()
     camera_config = cam.create_preview_configuration()
     cam.configure(camera_config)
-    cam.start_preview(Preview.DRM)
+    cam.start_preview(Preview.QT)
     cam.start()
     time.sleep(2)
     cam.capture_file('test.jpg')

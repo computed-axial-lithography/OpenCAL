@@ -10,9 +10,6 @@ uv.lock
 docs/build/
 
 #Ignore video files
-*.jpg
-*.jpeg
-*.png
 *.mp4
 *.jpg
 *.jpeg

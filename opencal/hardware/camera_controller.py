@@ -1,7 +1,7 @@
 import time
 from typing import final
 from pathlib import Path
-from picamera2 import Picamera2
+from picamera2 import Picamera2, Preview
 from libcamera import controls  # pyright: ignore
 
 from opencal.utils.config import CameraConfig
@@ -33,30 +33,32 @@ class CameraController:
         self.still_config = self.picam.create_still_configuration(buffer_count=2)
         self.video_config = self.picam.create_still_configuration({})
         self.picam.configure(self.still_config)
+        self.set_focus(15)
 
-    def start_camera(self, preview: bool = True):
+    def start_camera(self, preview: bool = False):
         """Start the camera and begin streaming if requested.
 
         Args:
             preview (bool): Whether to show a preview of the camera feed.
         """
+        if self.picam.started:
+            return
+        
+        if preview:
+            config = self.picam.create_preview_configuration()
+            self.picam.configure(config)
+            self.picam.start_preview(Preview.QT)
+
         self.picam.start()
+        
 
-        # TODO: remove if necessary
-
-        # if preview and self.capture and not self.streaming:
-        #     self.streaming = True
-        #     self._stream_thread = threading.Thread(
-        #         target=self._stream_loop, daemon=True
-        #     )
-        #     self._stream_thread.start()
 
     def capture_image(self, filename: str):
         if not self.picam.started:
-            self.start_camera()
+            self.start_camera(True)
 
         save_path = Path.cwd() / "output/images" / filename
-        self.picam.capture_file(save_path)
+        self.picam.switch_mode_and_capture_file(self.still_config, save_path)
 
     def set_focus(self, diopters: float):
         """Turns off autofocus and sets a manual focal distance in diopters (m^-1)"""
