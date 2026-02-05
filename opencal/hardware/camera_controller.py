@@ -43,19 +43,18 @@ class CameraController:
         """
         if self.picam.started:
             return
-        
+
         if preview:
             config = self.picam.create_preview_configuration()
             self.picam.configure(config)
             self.picam.start_preview(Preview.QT)
 
         self.picam.start()
-        
-
 
     def capture_image(self, filename: str):
         if not self.picam.started:
-            self.start_camera(True)
+            # TODO: remove this
+            self.start_camera(preview=True)
 
         save_path = Path.cwd() / "output/images" / filename
         self.picam.switch_mode_and_capture_file(self.still_config, save_path)

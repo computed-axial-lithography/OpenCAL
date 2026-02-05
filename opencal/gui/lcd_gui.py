@@ -6,8 +6,6 @@ import time
 from pathlib import Path
 from typing import Any, Callable
 
-import cv2
-
 from opencal.hardware import PrintController
 
 CONFIG_PATH = Path(__file__).parent / "utils/config.json"
@@ -58,9 +56,7 @@ class LCDGui:
         self.menu_callbacks: dict[str, Any] = {
             "Turn on LEDs": lambda: self.pc.hardware.led_array.set_led((255, 0, 0)),
             "Turn off LEDs": self.pc.hardware.led_array.clear_leds,
-            "start stepper": lambda: self.pc.hardware.stepper.start_rotation(
-                ramp_time=1
-            ),
+            "start stepper": lambda: self.pc.hardware.stepper.start_rotation(ramp_time=1),
             "stop stepper": lambda: self.pc.hardware.stepper.stop(),
             "capture image": lambda: self.pc.hardware.camera.capture_image("test.jpeg"),
             "Kill GUI": lambda: self.kill_gui(),
@@ -323,7 +319,6 @@ class LCDGui:
     def kill_gui(self):
         """Handles the kill GUI action."""
         # self.camera.stop_camera()
-        cv2.destroyAllWindows()
         # TODO: add threading Events?
         self.running = False
 
