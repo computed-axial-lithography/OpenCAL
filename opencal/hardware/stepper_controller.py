@@ -39,13 +39,18 @@ class StepperMotor:
 
     def set_rpm(self, rpm: float | None = None, ramp_time: float = 0):
         """Set the stepper motor speed in RPM (frequency of step pulses)."""
+        print(f"INFO: Changing rpm from {self.speed_rpm} to {rpm} in {ramp_time} sec.")
+
         rpm = rpm or self.default_rpm  # Use default speed if no RPM is provided
+        if rpm <= 0:
+            raise ValueError("RPM must be positive. Use stop() to halt the stepper.)")
+
         if ramp_time == 0:
             self.speed_rpm = rpm
             # Recalculate step delay
             self.step_delay = 60.0 / (self.speed_rpm * self.encoder_cpr)
-            print(f"Speed set to {self.speed_rpm} RPM")  # Log the new speed
         else:
+            # FIXME: make sure this gets stopped if the motor is stopped before the ramp time completes
             thread = threading.Thread(target=self._ramp_rpm, args=(rpm, ramp_time))
             thread.start()
 
@@ -56,7 +61,9 @@ class StepperMotor:
         # Discretize into approximately sized intervals and increment RPM
         TIMESTEPS = 100
         dt = ramp_time / TIMESTEPS
-        start_rpm = self.speed_rpm
+        start_rpm = max(
+            self.speed_rpm, 1
+        )  # Ensure minimum start RPM to not have long first delay(s)
 
         for i in range(TIMESTEPS):
             # LERP between current and target RPMs
@@ -74,7 +81,7 @@ class StepperMotor:
         - direction: "CW" for clockwise, "CCW" for counterclockwise.
         """
         direction = direction or self.default_direction
-        print(f"Rotating {steps} steps {direction}")
+        print(f"INFO: Rotating {steps} steps {direction}")
 
         # Set the direction of rotation
         if direction == "CW":
@@ -102,14 +109,14 @@ class StepperMotor:
         """Returns the motor angle in degrees from it's angle at startup."""
         return self.angle_in_steps() / self.encoder_cpr * 360
 
-    def start_rotation(self, direction: str | None = None):
+    def start_rotation(self, direction: str | None = None, ramp_time: float = 0):
         """
         Start rotating the stepper motor continuously at the set speed.
 
         :param direction: "CW" for clockwise, "CCW" for counterclockwise.
         """
         direction = direction or self.default_direction
-        print(f"Starting continuous rotation {direction}")
+        print(f"INFO: Starting continuous rotation {direction}")
 
         # Set the direction of rotation
         if direction == "CW":
@@ -118,19 +125,25 @@ class StepperMotor:
             self.direction.off()
 
         # Start a new thread for continuous rotation if not already running
-        if not self.is_running():
-            print("Starting a new thread for rotation")
-            self._running = True
+        if self.is_running():
+            print("WARNING: Stepper already running")
+            return
 
-            self.enable.on()
+        # TODO: remove _running at some point
+        self._running = True
+        self.enable.on()
 
-            self._rotation_thread = threading.Thread(
-                target=self._rotate_motor, daemon=True
-            )
-            self._rotation_thread.start()
+        if ramp_time > 0:
+            target_rpm, self.speed_rpm = self.speed_rpm, 0
+            self.set_rpm(target_rpm, ramp_time)
+
+        self._finish_event.clear()
+        self._rotation_thread = threading.Thread(target=self._rotate_motor, daemon=True)
+        self._rotation_thread.start()
 
     def _rotate_motor(self):
         """Internal method to handle continuous rotation of the motor."""
+
         next_time = time.perf_counter()  # Initialize the next time for scheduling
         while not self._finish_event.is_set():  # Continue while the motor is running
             self.step.on()  # Activate the step pin
@@ -147,11 +160,13 @@ class StepperMotor:
 
     def stop(self):
         """Stop the rotation of the motor."""
-        print("Stopping the motor.")
+        print("INFO: Stopping the motor.")
         self._finish_event.set()
 
         if self._rotation_thread is not None:
             self._rotation_thread.join()  # Wait for the thread to finish cleanly
+
+        # FIXME: Really we should only be updating one of these values, it's bad logic to have both be independent
 
         self.step.off()  # Deactivate the step pin
         self.enable.off()  # Disable the motor if an enable pin is used
