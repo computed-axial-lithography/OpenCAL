@@ -58,7 +58,9 @@ class LCDGui:
         self.menu_callbacks: dict[str, Any] = {
             "Turn on LEDs": lambda: self.pc.hardware.led_array.set_led((255, 0, 0)),
             "Turn off LEDs": self.pc.hardware.led_array.clear_leds,
-            "start stepper": lambda: self.pc.hardware.stepper.start_rotation(),
+            "start stepper": lambda: self.pc.hardware.stepper.start_rotation(
+                ramp_time=1
+            ),
             "stop stepper": lambda: self.pc.hardware.stepper.stop(),
             "capture image": lambda: self.pc.hardware.camera.capture_image("test.jpeg"),
             "Kill GUI": lambda: self.kill_gui(),
