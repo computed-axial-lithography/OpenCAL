@@ -1,6 +1,7 @@
 import os
 import subprocess
 import threading
+from pathlib import Path
 
 from opencal.utils.config import ProjectorConfig
 
@@ -10,11 +11,12 @@ class Projector:
         # Initialize the process attribute to keep track of the playback process.
         self.size = config.default_print_size
         self.calibration_img_path = config.calibration_img_path
+        self.calibration_dir_path = Path(config.calibration_dir_path)
 
         self.process = None
         self.thread = None  # We'll use this to keep track of the playback thread.
 
-    def get_video_dimensions(self, video_path: str):
+    def get_video_dimensions(self, video_path: Path):
         """
         Uses ffprobe to retrieve the video dimensions (width and height) dynamically.
         Expects ffprobe to output a single line like: widthxheight (e.g., 1920x1080).
@@ -29,7 +31,7 @@ class Projector:
             "stream=width,height",
             "-of",
             "csv=p=0:s=x",
-            video_path,
+            str(video_path),
         ]
         output = subprocess.check_output(cmd).decode().strip()
         try:
@@ -38,7 +40,7 @@ class Projector:
             raise ValueError(f"Unable to parse video dimensions from output: {output}") from e
         return width, height
 
-    def play_video_with_mpv(self, video_path=None):
+    def play_video_with_mpv(self, video_path: Path | None = None):
         """
         Play the video using cvlc (VLC command-line interface) with the window positioned
         at x=1920 and y=0, and loop the video indefinitely.
@@ -60,7 +62,7 @@ class Projector:
 
         # Set up the environment for the video
         env = os.environ.copy()
-        # env["DISPLAY"] = ":0"
+        env["DISPLAY"] = ":0"
         # env["XAUTHORITY"] = "/home/opencal/.Xauthority"
 
         # Construct the mpv command to play the video
@@ -69,12 +71,23 @@ class Projector:
             "--fs",  # Fullscreen mode
             "--loop",  # Loop the video
             f"--vf=lavfi=[{crop_filter}]",  # Apply the crop filter for zoom
-            video_path,
+            str(video_path),
         ]
 
         self.process = subprocess.Popen(command, env=env)
         print("Video playback started.")
 
+    def get_calibration_file_names(self) -> list[str]:
+        print(self.calibration_dir_path)
+        print(self.calibration_dir_path.exists())
+
+        for path, _, _ in self.calibration_dir_path.walk():
+            print(path)
+        files = [path.name for path, _, _ in self.calibration_dir_path.walk() if path.suffix == '.png']
+        # TODO: remove
+        print(files)
+        return files
+        
     def resize(self, size_new):
         self.size = size_new
 
@@ -88,7 +101,7 @@ class Projector:
             self.process = None
             print("Video playback stopped.")
 
-    def start_video_thread(self, video_path=None):
+    def start_video_thread(self, video_path: Path | None = None):
         """
         Start the video playback in a new thread.
         """

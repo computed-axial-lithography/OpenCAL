@@ -47,7 +47,7 @@ class CameraController:
         if preview:
             config = self.picam.create_preview_configuration()
             self.picam.configure(config)
-            self.picam.start_preview(Preview.QT)
+            # self.picam.start_preview(Preview.QT)
 
         self.picam.start()
 

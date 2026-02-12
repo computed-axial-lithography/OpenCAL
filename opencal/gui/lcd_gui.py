@@ -43,15 +43,16 @@ class LCDGui:
                 "save as default",
                 "Resize Print",
                 "Set Stepper RPM",
-                "Calibration img",
-            ],  # Options for adjusting variables
+                "Calibration",
+            ],
+            "Calibration": ["back"] + self.pc.hardware.projector.get_calibration_file_names(),
+            "Calibrating": ["back"],
             "Power Options": [
                 "back",
                 "Kill GUI",
                 "Power Off",
             ],
             "Print menu": ["stop"],
-            "calibration": ["stop"],
         }
         self.menu_callbacks: dict[str, Any] = {
             "Turn on LEDs": lambda: self.pc.hardware.led_array.set_led((255, 0, 0)),
@@ -80,10 +81,6 @@ class LCDGui:
                 self.pc.hardware.projector.size,
                 self.pc.hardware.projector.resize,
             ),  # Resize Print option callback
-            "Calibration img": lambda: (
-                self.pc.hardware.projector.display_image(),
-                self.show_menu("calibration"),
-            ),
             "save to default": lambda: (self.save_defaults()),
         }
 
@@ -103,7 +100,8 @@ class LCDGui:
         self.target_var_value = 0
         self.variable_name = ""  # Name of the variable being adjusted
 
-        # For our two-stage process:
+        self.showing_calibration_image = False
+
         self.selected_video_filename = None
         self.video_filename_short = None
 
@@ -219,6 +217,9 @@ class LCDGui:
             self.menu_dict["Print from USB"] = [
                 "back"
             ] + self.pc.hardware.usb_device.get_file_names()
+            self.menu_dict["Calibration"] = [
+                "back"
+            ] + self.pc.hardware.projector.get_calibration_file_names()
             self.menu_stack.append(self.current_menu)
             self.show_menu(option)
         elif option in self.menu_callbacks:
@@ -231,6 +232,8 @@ class LCDGui:
                 self.pc.hardware.stepper.speed_rpm,
                 self.pc.hardware.stepper.set_rpm,
             )
+        elif self.current_menu == "Calibration":
+            self.show_calibration_image(option)
 
     def enter_variable_adjustment(
         self,
@@ -267,6 +270,15 @@ class LCDGui:
         # TODO: Feel like this is too specific to be here
         if self.video_filename_short is not None:
             self.pc.hardware.lcd.write_message(self.video_filename_short, 3, 0)
+
+    def show_calibration_image(self, file_name: str):
+        self.showing_calibration_image = True
+        self.adjusting_variable = False
+
+        projector = self.pc.hardware.projector
+        path = projector.calibration_dir_path / file_name
+        projector.display_image(path)
+        self.show_menu("Calibrating")
 
     def button_press_handler(self):
         if self.adjusting_variable and self.selected_video_filename is None:
