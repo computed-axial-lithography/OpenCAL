@@ -78,14 +78,9 @@ class Projector:
         print("Video playback started.")
 
     def get_calibration_file_names(self) -> list[str]:
-        print(self.calibration_dir_path)
         print(self.calibration_dir_path.exists())
 
-        for path, _, _ in self.calibration_dir_path.walk():
-            print(path)
-        files = [path.name for path, _, _ in self.calibration_dir_path.walk() if path.suffix == '.png']
-        # TODO: remove
-        print(files)
+        files = [path.name for path in self.calibration_dir_path.glob("*.png")]
         return files
         
     def resize(self, size_new):
