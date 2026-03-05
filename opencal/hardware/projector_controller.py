@@ -78,9 +78,8 @@ class Projector:
         print("Video playback started.")
 
     def get_calibration_file_names(self) -> list[str]:
-        print(self.calibration_dir_path.exists())
 
-        files = [path.name for path in self.calibration_dir_path.glob("*.png")]
+        files = sorted(path.name for path in self.calibration_dir_path.glob("*.png"))
         return files
         
     def resize(self, size_new):

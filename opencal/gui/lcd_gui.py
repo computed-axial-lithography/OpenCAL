@@ -68,9 +68,7 @@ class LCDGui:
             ),
             "Restart": lambda: self.restart_pi(),
             "Power Off": lambda: self.power_off_pi(),
-            "print": lambda arg: self.pc.start_print_job(
-                arg
-            ),  # Start print job, camera handling is now in PrintController
+            "print": lambda arg: self.pc.start_print_job(arg),
             "stop": lambda: (
                 self.pc.stop(),
                 self.clear_timer(),

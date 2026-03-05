@@ -2,6 +2,7 @@ import threading
 import time
 
 from .hardware_controller import HardwareController
+from pathlib import Path
 
 
 class PrintController:
@@ -9,6 +10,7 @@ class PrintController:
         self.hardware = HardwareController()
         if not self.hardware.healthy:
             print("not all peripherals connected, some functionality may not work")
+        # TODO: Use threading event
         self.running = False
 
     def start_print_job(self, video_file: str):
@@ -24,13 +26,9 @@ class PrintController:
         self.hardware.led_array.set_led((255, 0, 0))
 
         # Start video playback.
-        # self.hardware.projector.stop_video()
         self.hardware.projector.play_video_with_mpv(video_file)
 
-        # Handle camera operations if a camera is available
-        if self.hardware.camera:
-            self.hardware.camera.start_camera(preview=False)  # Start the camera
-            # self.hardware.camera.start_record()  # Start recording
+        self.hardware.camera.start_recording(Path.home() / "OpenCAL/output/videos/print.h264")
 
         try:
             # Keep the job running until self.running is set to False externally.
@@ -52,7 +50,7 @@ class PrintController:
         self.hardware.led_array.clear_leds()
 
         # Stop camera operations if a camera is available
-        if self.hardware.camera:
-            self.hardware.camera.stop_all()  # Stop all camera operations
+        self.hardware.camera.stop_recording()
+        self.hardware.camera.stop_all()  # Stop all camera operations
 
         print("Print job stopped and cleanup complete.")

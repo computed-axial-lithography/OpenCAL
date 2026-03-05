@@ -2,6 +2,7 @@ import time
 from typing import final
 from pathlib import Path
 from picamera2 import Picamera2, Preview
+from picamera2.encoders import H264Encoder
 from libcamera import controls  # pyright: ignore
 
 from opencal.utils.config import CameraConfig
@@ -29,7 +30,6 @@ class CameraController:
         self.fps = 20
 
         self.picam = Picamera2()
-        print(self.picam)
         self.still_config = self.picam.create_still_configuration(buffer_count=2)
         self.video_config = self.picam.create_still_configuration({})
         self.picam.configure(self.still_config)
@@ -66,19 +66,31 @@ class CameraController:
     def activate_autofocus(self):
         self.picam.set_controls({"AfMode": controls.AfModeEnum.Continuous})
 
-    def _stream_loop(self):
-        """Continuously read frames from the camera and display them."""
-        pass
-        # while self.streaming:
-        #     ok, frame = self.capture.read()  # Read a frame from the camera
-        #     if not ok:
-        #         time.sleep(0.1)  # Wait if frame reading fails
-        #         continue
-        #     cv2.imshow("Camera Feed", frame)  # Display the camera feed
-        #     if cv2.waitKey(1) & 0xFF == ord("q"):
-        #         self.stop_all()  # Stop all operations if 'q' is pressed
-        #         break
-        # cv2.destroyAllWindows()  # Close all OpenCV windows
+    def start_recording(self, file: Path):
+        if self.picam.started:
+            self.picam.stop()
+        self.picam.configure(self.picam.create_video_configuration())
+        encoder = H264Encoder()
+        self.picam.start_recording(encoder=encoder, output=str(file))
+
+    def stop_recording(self):
+        self.picam.stop_recording()
+
+
+
+    # def _stream_loop(self):
+    #     """Continuously read frames from the camera and display them."""
+    #     pass
+    # while self.streaming:
+    #     ok, frame = self.capture.read()  # Read a frame from the camera
+    #     if not ok:
+    #         time.sleep(0.1)  # Wait if frame reading fails
+    #         continue
+    #     cv2.imshow("Camera Feed", frame)  # Display the camera feed
+    #     if cv2.waitKey(1) & 0xFF == ord("q"):
+    #         self.stop_all()  # Stop all operations if 'q' is pressed
+    #         break
+    # cv2.destroyAllWindows()  # Close all OpenCV windows
 
     # def start_record(
     #     self,
