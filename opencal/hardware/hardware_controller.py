@@ -1,6 +1,6 @@
 from .camera_controller import CameraController
 from .stepper_controller import StepperMotor
-from .led_manager import LEDArray
+from .led_manager import LEDManager
 from .lcd_display import LCDDisplay
 from .rotary_controller import RotaryEncoderHandler
 from .projector_controller import Projector
@@ -47,7 +47,7 @@ class HardwareController:
             self.healthy = False
 
         try:
-            self.led_array = LEDArray(config.led_array)
+            self.led_array = LEDManager(config.led_array)
         except Exception as e:
             self.errors.append(f"LEDArray failed: {e}")
             self.healthy = False

@@ -1,10 +1,11 @@
 import threading
 import time
+from typing import final
 
 from .hardware_controller import HardwareController
 from pathlib import Path
 
-
+@final
 class PrintController:
     def __init__(self):
         self.hardware = HardwareController()
@@ -26,7 +27,7 @@ class PrintController:
         self.hardware.led_array.set_led((255, 0, 0))
 
         # Start video playback.
-        self.hardware.projector.play_video_with_mpv(video_file)
+        self.hardware.projector.play_video_with_mpv(Path(video_file))
 
         self.hardware.camera.start_recording(Path.home() / "OpenCAL/output/videos/print.h264")
 

@@ -5,7 +5,7 @@ import sys
 from threading import Thread
 import time
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, final
 from enum import Enum
 
 from opencal.hardware import PrintController
@@ -24,6 +24,7 @@ class Mode(Enum):
     VIAL_WIDTH_FINDER = 2
 
 
+@final
 class LCDGui:
     def __init__(self):
         self.pc: PrintController = PrintController()
@@ -63,8 +64,8 @@ class LCDGui:
             "Print menu": ["stop"],
         }
         self.menu_callbacks: dict[str, Any] = {
-            "Turn on LEDs": lambda: self.pc.hardware.led_array.set_led((255, 0, 0)),
-            "Turn off LEDs": self.pc.hardware.led_array.clear_leds,
+            "Turn on LEDs": lambda: self.pc.hardware.led_manager.set_led((255, 0, 0)),
+            "Turn off LEDs": self.pc.hardware.led_manager.clear_leds,
             "start stepper": lambda: self.pc.hardware.stepper.start_rotation(ramp_time=1),
             "stop stepper": lambda: self.pc.hardware.stepper.stop(),
             "capture image": lambda: self.pc.hardware.camera.capture_image("test.jpeg"),
@@ -92,7 +93,7 @@ class LCDGui:
                 self.pc.hardware.projector.size,
                 self.pc.hardware.projector.resize,
             ),  # Resize Print option callback
-            "save to default": lambda: (self.save_defaults()),
+            "save to default": lambda: self.save_defaults(),
         }
 
         self.menu_stack: list[str] = []  # Stack to keep track of menu navigation

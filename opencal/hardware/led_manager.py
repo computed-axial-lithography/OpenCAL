@@ -1,5 +1,6 @@
 import time
 from typing import final
+from time import sleep
 
 from pi5neo.pi5neo import Pi5Neo, EPixelType
 
@@ -7,7 +8,7 @@ from opencal.utils.config import LedArrayConfig
 
 
 @final
-class LEDArray:
+class LEDManager:
     def __init__(self, config: LedArrayConfig):
         """
         Initialize the LED array using configuration from a JSON file.
@@ -15,7 +16,7 @@ class LEDArray:
         """
         # Load configuration from the specified JSON file
 
-        self.num_led: int = config.num_led # Number of LEDs in the array
+        self.num_led: int = config.num_led  # Number of LEDs in the array
 
         # Retrieve the pin values and indices for the LED ring from the configuration
         self.ring_indices = config.ring_indices
@@ -80,7 +81,7 @@ if __name__ == "__main__":
     from opencal.utils.config import Config
 
     cfg = Config()
-    led_array = LEDArray(cfg.led_array)
+    led_array = LEDManager(cfg.led_array)
 
     try:
         led_array.clear_leds()
