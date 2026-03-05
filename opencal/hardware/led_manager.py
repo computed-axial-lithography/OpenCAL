@@ -15,7 +15,7 @@ class LEDArray:
         """
         # Load configuration from the specified JSON file
 
-        self.num_led: int = config.num_led  # Number of LEDs in the array
+        self.num_led: int = config.num_led # Number of LEDs in the array
 
         # Retrieve the pin values and indices for the LED ring from the configuration
         self.ring_indices = config.ring_indices
