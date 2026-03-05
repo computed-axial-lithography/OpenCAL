@@ -47,7 +47,7 @@ class HardwareController:
             self.healthy = False
 
         try:
-            self.led_array = LEDManager(config.led_array)
+            self.led_manager = LEDManager(config.led_array)
         except Exception as e:
             self.errors.append(f"LEDArray failed: {e}")
             self.healthy = False

@@ -2,17 +2,20 @@ import os
 import subprocess
 import threading
 from pathlib import Path
-from PIL import Image
+from typing import final
+
 import numpy as np
+from PIL import Image
 
 from opencal.utils.config import ProjectorConfig
 
 
+@final
 class Projector:
     def __init__(self, config: ProjectorConfig):
         # Initialize the process attribute to keep track of the playback process.
         self.size = config.default_print_size
-        self.calibration_img_path = config.calibration_img_path
+        self.calibration_img_path = Path(config.calibration_img_path)
         self.calibration_dir_path = Path(config.calibration_dir_path)
         # FIXME: Figure out where to put vial width config
         self.vial_width = 384 # Measured for small vial
@@ -85,7 +88,8 @@ class Projector:
         files = sorted(path.name for path in self.calibration_dir_path.glob("*.png"))
         return files
 
-    def resize(self, size_new):
+    def resize(self, size_new: int):
+        """Set print size scaling as a percent"""
         self.size = size_new
 
     def stop_video(self):
@@ -94,7 +98,7 @@ class Projector:
         """
         if self.process is not None:
             self.process.terminate()
-            self.process.wait()
+            _ = self.process.wait()
             self.process = None
             print("Video playback stopped.")
 
@@ -109,7 +113,7 @@ class Projector:
         self.thread = threading.Thread(target=self.play_video_with_mpv, args=(video_path,))
         self.thread.start()
 
-    def show_vial_width(self, width):
+    def show_vial_width(self, width: int):
         """
         Display a rectangle to calibrate the vial width.
         """
@@ -124,7 +128,7 @@ class Projector:
         im.save(p)
         self.display_image(p)
 
-    def display_image(self, image_path=None):
+    def display_image(self, image_path: Path | None = None):
         """
         Display a still image fullscreen until stop_video() is called.
         Uses mpv with infinite loop on the single frame.
@@ -152,7 +156,7 @@ class Projector:
         self.process = subprocess.Popen(command, env=env)
         print(f"Image displayed: {image_path}")
 
-    def start_image_thread_for_image(self, image_path):
+    def start_image_thread_for_image(self, image_path: Path):
         """
         Same as display_image(), but in a background thread.
         """
@@ -171,7 +175,7 @@ def main():
     projector.play_video_with_mpv()  # include video path here
 
     # Wait for user input to stop the video.
-    input("Press Enter to stop video playback...")
+    _ = input("Press Enter to stop video playback...")
     projector.stop_video()
 
     # Optionally, wait for the video thread to finish.
