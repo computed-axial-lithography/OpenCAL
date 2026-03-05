@@ -5,6 +5,7 @@ import sys
 import time
 from pathlib import Path
 from typing import Any, Callable
+from enum import Enum
 
 from opencal.hardware import PrintController
 
@@ -14,7 +15,12 @@ CONFIG_PATH = Path(__file__).parent / "utils/config.json"
 # Add the parent directory of 'gui' to sys.path
 # TODO: This is probably unnecessary
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-# from hardware import HardwareController
+
+
+class Mode(Enum):
+    MENU = 1
+    VAR_ADJUST = 1
+    VIAL_WIDTH_FINDER = 2
 
 
 class LCDGui:
@@ -44,6 +50,7 @@ class LCDGui:
                 "Resize Print",
                 "Set Stepper RPM",
                 "Calibration",
+                "Find Vial Width",
             ],
             "Calibration": ["back"] + self.pc.hardware.projector.get_calibration_file_names(),
             "Calibrating": ["back"],
@@ -65,6 +72,11 @@ class LCDGui:
                 "RPM",
                 self.pc.hardware.stepper.speed_rpm,
                 lambda rpm: self.pc.hardware.stepper.set_rpm(rpm, ramp_time=1),
+            ),
+            "Find Vial Width": lambda: self.enter_variable_adjustment(
+                "Vial Width",
+                self.pc.hardware.projector.vial_width,
+                lambda width: self.pc.hardware.projector.show_vial_width(width),
             ),
             "Restart": lambda: self.restart_pi(),
             "Power Off": lambda: self.power_off_pi(),
@@ -102,6 +114,9 @@ class LCDGui:
 
         self.selected_video_filename = None
         self.video_filename_short = None
+
+        # TODO: Rework everything to be state-based
+        self.mode = Mode.MENU
 
     def clear_timer(self):
         # Reset the timer attribute

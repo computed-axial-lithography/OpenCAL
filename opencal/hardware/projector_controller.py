@@ -2,6 +2,8 @@ import os
 import subprocess
 import threading
 from pathlib import Path
+from PIL import Image
+import numpy as np
 
 from opencal.utils.config import ProjectorConfig
 
@@ -12,6 +14,8 @@ class Projector:
         self.size = config.default_print_size
         self.calibration_img_path = config.calibration_img_path
         self.calibration_dir_path = Path(config.calibration_dir_path)
+        # FIXME: Figure out where to put vial width config
+        self.vial_width = 390 # Measured for small vial
 
         self.process = None
         self.thread = None  # We'll use this to keep track of the playback thread.
@@ -78,10 +82,9 @@ class Projector:
         print("Video playback started.")
 
     def get_calibration_file_names(self) -> list[str]:
-
         files = sorted(path.name for path in self.calibration_dir_path.glob("*.png"))
         return files
-        
+
     def resize(self, size_new):
         self.size = size_new
 
@@ -105,6 +108,21 @@ class Projector:
         # Create a new thread for playing the video.
         self.thread = threading.Thread(target=self.play_video_with_mpv, args=(video_path,))
         self.thread.start()
+
+    def show_vial_width(self, width):
+        """
+        Display a rectangle to calibrate the vial width.
+        """
+        self.vial_width = width
+        w, h = 1920, 1080  # FIXME: Make this automated/dynamic
+        arr = np.zeros((h, w), dtype=np.uint8)
+        cx, cy = w // 2, h // 2
+        dy, dx = self.vial_width // 2, 400
+        arr[cy - dy : cy + dy, cx - dx : cx + dx] = 255
+        im = Image.fromarray(arr, "L")
+        p = Path.cwd() / "opencal/utils/calibration/vial_width.png"
+        im.save(p)
+        self.display_image(p)
 
     def display_image(self, image_path=None):
         """
