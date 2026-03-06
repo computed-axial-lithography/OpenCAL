@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import sys
+from threading import Thread
 import time
 from pathlib import Path
 from typing import Any, Callable
@@ -126,6 +127,9 @@ class LCDGui:
 
     def show_startup_screen(self):
         """Display the startup screen with 'Hello User!'."""
+        f = self.pc.hardware.led_array.run_start_animation
+        Thread(target=f).start()
+
         self.pc.hardware.lcd.clear()
         self.pc.hardware.lcd.write_message("Open   ".center(20), 1, 0)
         time.sleep(1)

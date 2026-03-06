@@ -16,10 +16,10 @@
     "save_path": "/home/opencal/opencal/OpenCAL/utils/prints"
   },
   "led_array": {
-    "num_led": 37,
+    "num_led": 64,
     "default_color": [
-      255,
       0,
+      255,
       0
     ],
     "ring_indices": {
