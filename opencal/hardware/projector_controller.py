@@ -15,7 +15,7 @@ class Projector:
         self.calibration_img_path = config.calibration_img_path
         self.calibration_dir_path = Path(config.calibration_dir_path)
         # FIXME: Figure out where to put vial width config
-        self.vial_width = 390 # Measured for small vial
+        self.vial_width = 384 # Measured for small vial
 
         self.process = None
         self.thread = None  # We'll use this to keep track of the playback thread.

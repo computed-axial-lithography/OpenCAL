@@ -274,7 +274,7 @@ class LCDGui:
         self.update_function = update_function
         self.pc.hardware.lcd.clear()
         self.pc.hardware.lcd.write_message(
-            f"Current {self.variable_name}: {int(self.current_var_value)}".ljust(20),
+            f"{self.variable_name}: {int(self.current_var_value)}".ljust(20),
             0,
             0,
         )
@@ -394,8 +394,8 @@ class LCDGui:
                 if self.current_menu_index != self.target_menu_index:
                     self.navigate()
 
-            steps = self.pc.hardware.stepper.angle_in_steps()
-            angle = self.pc.hardware.stepper.angle_in_degrees()
+            _steps = self.pc.hardware.stepper.angle_in_steps()
+            _angle = self.pc.hardware.stepper.angle_in_degrees()
             # print(f"{steps=} {angle=}")
 
             # Control the GUI refresh rate here
