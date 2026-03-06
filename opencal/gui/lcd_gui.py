@@ -240,6 +240,10 @@ class LCDGui:
         elif self.current_menu == "Print from USB":
             self.video_filename_short = option
             self.selected_video_filename = self.pc.hardware.usb_device.get_full_path(option)
+            # Black out screen to allow loading vial
+            self.pc.hardware.projector.display_image(
+                Path.cwd() / "opencal/utils/calibration/dark.png"
+            )
             self.enter_variable_adjustment(
                 "RPM",
                 self.pc.hardware.stepper.speed_rpm,
