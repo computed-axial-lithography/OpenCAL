@@ -39,13 +39,14 @@ jobs:
       - name: Build Image
         working-directory: rpi-image-gen
         run: |
-          ./rpi-image-gen build -S projects/OpenCAL -c config.yaml
-          mv deploy/*.img.xz ../OpenCAL-image.img.xz
+          ./rpi-image-gen build -S projects/OpenCAL -c config.yaml -- \
+            IGconf_sys_outputdir=${{ github.workspace }}/output \
+            IGconf_sys_deploydir=${{ github.workspace }}/deploy
 
       - name: Release Image
         uses: softprops/action-gh-release@v2
         with:
-          files: OpenCAL-image.img.xz
+          files: ${{ github.workspace }}/deploy/*.img.xz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
