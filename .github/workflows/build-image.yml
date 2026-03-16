@@ -5,11 +5,11 @@ on:
       - 'v*'
 
   workflow_dispatch:
-  inputs:
-    debug_mode:
-      description: 'Run in debug mode?'
-      required: false
-      default: 'false'
+    inputs:
+      debug_mode:
+        description: 'Run in debug mode?'
+        required: false
+        default: 'false'
 
 jobs:
   build:
