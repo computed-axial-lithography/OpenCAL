@@ -1,0 +1,45 @@
+name: Build Raspberry Pi Image
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm64
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Project Repo
+        uses: actions/checkout@v4
+        with:
+          repository: computed-axial-lithography/OpenCAL
+          path: OpenCAL
+     
+      - name: Checkout rpi-image-gen
+        uses: actions/checkout@v4
+        with:
+          repository: raspberrypi/rpi-image-gen
+          path: rpi-image-gen
+
+      - name: Prepare Project Folder
+        run: |
+          rpi-image-gen/install-deps.sh
+          mkdir -p rpi-image-gen/projects/OpenCAL
+          cp -r OpenCAL/.builder/* rpi-image-gen/projects/OpenCAL
+
+      - name: Build Image
+        working-directory: rpi-image-gen
+        run: |
+          ./rpi-image-gen build -S projects/OpenCAL -c config.yaml
+          mv deploy/*.img.xz ../OpenCAL-image.img.xz
+
+      - name: Release Image
+        uses: softprops/action-gh-release@v2
+        with:
+          files: OpenCAL-image.img.xz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
