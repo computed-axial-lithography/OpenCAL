@@ -34,6 +34,15 @@ jobs:
         working-directory: rpi-image-gen
         run: sudo ./install_deps.sh
 
+      - name: Install keyrings
+        run: |
+          sudo apt-get install -y debian-archive-keyring
+          
+          sudo mkdir -p /usr/share/keyrings
+          curl -fsSL https://archive.raspberrypi.com/debian/raspberrypi.gpg.key \
+            | gpg --dearmor \
+            | sudo tee /usr/share/keyrings/raspberrypi-archive-keyring.gpg > /dev/null
+
       - name: Prepare project folder
         run: |
           mkdir -p rpi-image-gen/projects/OpenCAL
