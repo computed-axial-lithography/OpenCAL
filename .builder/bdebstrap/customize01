@@ -32,4 +32,4 @@ EOF
 
 systemctl --root="$1" enable opencal-startup.service
 
-
+chroot "$1" passwd --expire opencal
