@@ -55,8 +55,8 @@ jobs:
             -S projects/OpenCAL \
             -c projects/OpenCAL/config.yaml \
             -- \
-            IGconf_sys_outputdir=${{ github.workspace }}/output \
-            IGconf_sys_deploydir=${{ github.workspace }}/deploy
+            IGconf_deploy_dir=${{ github.workspace }}/deploy \
+            IGconf_image_outputdir=${{ github.workspace }}/output
 
       - name: Compress image
         run: |
