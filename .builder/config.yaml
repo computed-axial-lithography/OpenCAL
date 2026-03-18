@@ -6,6 +6,9 @@ device:
   user1sudo: y
   ssh: y
 
+ssh:
+  pubkey_only: n
+
 image:
   layer: image-rpios
   name: opencal-v0.1
