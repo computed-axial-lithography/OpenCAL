@@ -1,20 +1,19 @@
 #!/bin/sh
-
 set -e
 
 REPO_PATH="$1/home/opencal/OpenCAL"
 
+# Clone the repo
+git clone https://github.com/computed-axial-lithography/OpenCAL.git "$REPO_PATH"
 
-git clone https://github.com/computed-axial-lithography/OpenCAL.git $REPO_PATH
+# Run setup.sh inside the chroot as root
+chmod +x "$REPO_PATH/setup.sh"
+chroot "$1" /bin/sh /home/opencal/OpenCAL/setup.sh
 
-cd $REPO_PATH
-chmod +x setup.sh
-sudo -u opencal ./setup.sh
+# Fix ownership of the repo to opencal
+chroot "$1" chown -R opencal:opencal /home/opencal/OpenCAL
 
-# System Settings
-
-
-# Startup Script
+# Startup service
 cat <<EOF > "$1/etc/systemd/system/opencal-startup.service"
 [Unit]
 Description=Opencal Startup Script
@@ -34,4 +33,5 @@ EOF
 
 systemctl --root="$1" enable opencal-startup.service
 
+# Always last
 chroot "$1" passwd --expire opencal
