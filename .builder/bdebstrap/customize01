@@ -1,6 +1,8 @@
 #!/bin/sh
 
-REPO_PATH="$1/home/opencal/OpeCAL"
+set -e
+
+REPO_PATH="$1/home/opencal/OpenCAL"
 
 
 git clone https://github.com/computed-axial-lithography/OpenCAL.git $REPO_PATH
