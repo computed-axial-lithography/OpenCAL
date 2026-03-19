@@ -3,6 +3,7 @@ device:
   hostname: opencal
   user1: opencal
   user1passhash: '$6$1uzTVCykHwpOKc8.$y7u5R4Xi81M5SRL9BjtSWLIQElmYdKFmFrXeeGA8o5Rkz5DQk6FG749Deg6NlMuhBL2XgzWxakWrPiBIUGfUx/'
+  user1groups: i2c,spi
   ssh: y
 
 ssh:

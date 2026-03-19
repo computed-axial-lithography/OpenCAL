@@ -9,6 +9,7 @@ if [ -f "apt-requirements.txt" ]; then
   grep -v '^#' apt-requirements.txt | xargs sudo apt-get install -y
 else
   echo "apt-requirements.txt not found, skipping system packages."
+fi
 
 sudo apt-get install -y python3-venv python3-pip
 
