@@ -289,7 +289,7 @@ class LCDGui:
     def adjust_variable(self):
         self.current_var_value = self.target_var_value
 
-        line = f"Current {self.variable_name}: {self.current_var_value}".ljust(20)
+        line = f"{self.variable_name}: {self.current_var_value}".ljust(20)
         self.pc.hardware.lcd.write_message(line, 0, 0)
         # TODO: Feel like this is too specific to be here
         if self.video_filename_short is not None:
