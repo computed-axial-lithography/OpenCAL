@@ -65,3 +65,4 @@ class ProjectorConfig:
     def __init__(self, config: dict[str, Any]):
         self.default_print_size: int = config["default_print_size"]
         self.calibration_img_path: str = config["calibration_img_path"]
+        self.calibration_dir_path: str = config["calibration_dir_path"]

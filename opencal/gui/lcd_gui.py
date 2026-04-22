@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import sys
+from threading import Thread
 import time
 from pathlib import Path
 from typing import Any, Callable
@@ -14,7 +15,12 @@ CONFIG_PATH = Path(__file__).parent / "utils/config.json"
 # Add the parent directory of 'gui' to sys.path
 # TODO: This is probably unnecessary
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-# from hardware import HardwareController
+
+
+class Mode(Enum):
+    MENU = 1
+    VAR_ADJUST = 1
+    VIAL_WIDTH_FINDER = 2
 
 
 class LCDGui:
@@ -43,15 +49,17 @@ class LCDGui:
                 "save as default",
                 "Resize Print",
                 "Set Stepper RPM",
-                "Calibration img",
-            ],  # Options for adjusting variables
+                "Calibration",
+                "Find Vial Width",
+            ],
+            "Calibration": ["back"] + self.pc.hardware.projector.get_calibration_file_names(),
+            "Calibrating": ["back"],
             "Power Options": [
                 "back",
                 "Kill GUI",
                 "Power Off",
             ],
             "Print menu": ["stop"],
-            "calibration": ["stop"],
         }
         self.menu_callbacks: dict[str, Any] = {
             "Turn on LEDs": lambda: self.pc.hardware.led_array.set_led((255, 0, 0)),
@@ -65,11 +73,14 @@ class LCDGui:
                 self.pc.hardware.stepper.speed_rpm,
                 lambda rpm: self.pc.hardware.stepper.set_rpm(rpm, ramp_time=1),
             ),
+            "Find Vial Width": lambda: self.enter_variable_adjustment(
+                "Vial Width",
+                self.pc.hardware.projector.vial_width,
+                lambda width: self.pc.hardware.projector.show_vial_width(width),
+            ),
             "Restart": lambda: self.restart_pi(),
             "Power Off": lambda: self.power_off_pi(),
-            "print": lambda arg: self.pc.start_print_job(
-                arg
-            ),  # Start print job, camera handling is now in PrintController
+            "print": lambda arg: self.pc.start_print_job(arg),
             "stop": lambda: (
                 self.pc.stop(),
                 self.clear_timer(),
@@ -80,10 +91,6 @@ class LCDGui:
                 self.pc.hardware.projector.size,
                 self.pc.hardware.projector.resize,
             ),  # Resize Print option callback
-            "Calibration img": lambda: (
-                self.pc.hardware.projector.display_image(),
-                self.show_menu("calibration"),
-            ),
             "save to default": lambda: (self.save_defaults()),
         }
 
@@ -103,9 +110,13 @@ class LCDGui:
         self.target_var_value = 0
         self.variable_name = ""  # Name of the variable being adjusted
 
-        # For our two-stage process:
+        self.showing_calibration_image = False
+
         self.selected_video_filename = None
         self.video_filename_short = None
+
+        # TODO: Rework everything to be state-based
+        self.mode = Mode.MENU
 
     def clear_timer(self):
         # Reset the timer attribute
@@ -115,6 +126,9 @@ class LCDGui:
 
     def show_startup_screen(self):
         """Display the startup screen with 'Hello User!'."""
+        f = self.pc.hardware.led_array.run_start_animation
+        Thread(target=f).start()
+
         self.pc.hardware.lcd.clear()
         self.pc.hardware.lcd.write_message("Open   ".center(20), 1, 0)
         time.sleep(1)
@@ -219,6 +233,9 @@ class LCDGui:
             self.menu_dict["Print from USB"] = [
                 "back"
             ] + self.pc.hardware.usb_device.get_file_names()
+            self.menu_dict["Calibration"] = [
+                "back"
+            ] + self.pc.hardware.projector.get_calibration_file_names()
             self.menu_stack.append(self.current_menu)
             self.show_menu(option)
         elif option in self.menu_callbacks:
@@ -226,11 +243,17 @@ class LCDGui:
         elif self.current_menu == "Print from USB":
             self.video_filename_short = option
             self.selected_video_filename = self.pc.hardware.usb_device.get_full_path(option)
+            # Black out screen to allow loading vial
+            self.pc.hardware.projector.display_image(
+                Path.cwd() / "opencal/utils/calibration/dark.png"
+            )
             self.enter_variable_adjustment(
                 "RPM",
                 self.pc.hardware.stepper.speed_rpm,
                 self.pc.hardware.stepper.set_rpm,
             )
+        elif self.current_menu == "Calibration":
+            self.show_calibration_image(option)
 
     def enter_variable_adjustment(
         self,
@@ -250,7 +273,7 @@ class LCDGui:
         self.update_function = update_function
         self.pc.hardware.lcd.clear()
         self.pc.hardware.lcd.write_message(
-            f"Current {self.variable_name}: {int(self.current_var_value)}".ljust(20),
+            f"{self.variable_name}: {int(self.current_var_value)}".ljust(20),
             0,
             0,
         )
@@ -267,6 +290,15 @@ class LCDGui:
         # TODO: Feel like this is too specific to be here
         if self.video_filename_short is not None:
             self.pc.hardware.lcd.write_message(self.video_filename_short, 3, 0)
+
+    def show_calibration_image(self, file_name: str):
+        self.showing_calibration_image = True
+        self.adjusting_variable = False
+
+        projector = self.pc.hardware.projector
+        path = projector.calibration_dir_path / file_name
+        projector.display_image(path)
+        self.show_menu("Calibrating")
 
     def button_press_handler(self):
         if self.adjusting_variable and self.selected_video_filename is None:
@@ -361,8 +393,8 @@ class LCDGui:
                 if self.current_menu_index != self.target_menu_index:
                     self.navigate()
 
-            steps = self.pc.hardware.stepper.angle_in_steps()
-            angle = self.pc.hardware.stepper.angle_in_degrees()
+            _steps = self.pc.hardware.stepper.angle_in_steps()
+            _angle = self.pc.hardware.stepper.angle_in_degrees()
             # print(f"{steps=} {angle=}")
 
             # Control the GUI refresh rate here

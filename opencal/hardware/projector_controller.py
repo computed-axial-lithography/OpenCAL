@@ -1,6 +1,9 @@
 import os
 import subprocess
 import threading
+from pathlib import Path
+from PIL import Image
+import numpy as np
 
 from opencal.utils.config import ProjectorConfig
 
@@ -10,11 +13,14 @@ class Projector:
         # Initialize the process attribute to keep track of the playback process.
         self.size = config.default_print_size
         self.calibration_img_path = config.calibration_img_path
+        self.calibration_dir_path = Path(config.calibration_dir_path)
+        # FIXME: Figure out where to put vial width config
+        self.vial_width = 384 # Measured for small vial
 
         self.process = None
         self.thread = None  # We'll use this to keep track of the playback thread.
 
-    def get_video_dimensions(self, video_path: str):
+    def get_video_dimensions(self, video_path: Path):
         """
         Uses ffprobe to retrieve the video dimensions (width and height) dynamically.
         Expects ffprobe to output a single line like: widthxheight (e.g., 1920x1080).
@@ -29,7 +35,7 @@ class Projector:
             "stream=width,height",
             "-of",
             "csv=p=0:s=x",
-            video_path,
+            str(video_path),
         ]
         output = subprocess.check_output(cmd).decode().strip()
         try:
@@ -38,7 +44,7 @@ class Projector:
             raise ValueError(f"Unable to parse video dimensions from output: {output}") from e
         return width, height
 
-    def play_video_with_mpv(self, video_path=None):
+    def play_video_with_mpv(self, video_path: Path | None = None):
         """
         Play the video using cvlc (VLC command-line interface) with the window positioned
         at x=1920 and y=0, and loop the video indefinitely.
@@ -60,7 +66,7 @@ class Projector:
 
         # Set up the environment for the video
         env = os.environ.copy()
-        # env["DISPLAY"] = ":0"
+        env["DISPLAY"] = ":0"
         # env["XAUTHORITY"] = "/home/opencal/.Xauthority"
 
         # Construct the mpv command to play the video
@@ -69,11 +75,15 @@ class Projector:
             "--fs",  # Fullscreen mode
             "--loop",  # Loop the video
             f"--vf=lavfi=[{crop_filter}]",  # Apply the crop filter for zoom
-            video_path,
+            str(video_path),
         ]
 
         self.process = subprocess.Popen(command, env=env)
         print("Video playback started.")
+
+    def get_calibration_file_names(self) -> list[str]:
+        files = sorted(path.name for path in self.calibration_dir_path.glob("*.png"))
+        return files
 
     def resize(self, size_new):
         self.size = size_new
@@ -88,7 +98,7 @@ class Projector:
             self.process = None
             print("Video playback stopped.")
 
-    def start_video_thread(self, video_path=None):
+    def start_video_thread(self, video_path: Path | None = None):
         """
         Start the video playback in a new thread.
         """
@@ -98,6 +108,21 @@ class Projector:
         # Create a new thread for playing the video.
         self.thread = threading.Thread(target=self.play_video_with_mpv, args=(video_path,))
         self.thread.start()
+
+    def show_vial_width(self, width):
+        """
+        Display a rectangle to calibrate the vial width.
+        """
+        self.vial_width = width
+        w, h = 1920, 1080  # FIXME: Make this automated/dynamic
+        arr = np.zeros((h, w), dtype=np.uint8)
+        cx, cy = w // 2, h // 2
+        dy, dx = self.vial_width // 2, 400
+        arr[cy - dy : cy + dy, cx - dx : cx + dx] = 255
+        im = Image.fromarray(arr, "L")
+        p = Path.cwd() / "opencal/utils/calibration/vial_width.png"
+        im.save(p)
+        self.display_image(p)
 
     def display_image(self, image_path=None):
         """

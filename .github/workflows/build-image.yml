@@ -1,0 +1,67 @@
+name: Build Raspberry Pi Image
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      debug_mode:
+        description: 'Run in debug mode?'
+        required: false
+        default: 'false'
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Project Repo
+        uses: actions/checkout@v4
+        with:
+          repository: computed-axial-lithography/OpenCAL
+          path: OpenCAL
+
+      - name: Checkout rpi-image-gen
+        uses: actions/checkout@v4
+        with:
+          repository: raspberrypi/rpi-image-gen
+          path: rpi-image-gen
+
+      - name: Install dependencies
+        working-directory: rpi-image-gen
+        run: sudo ./install_deps.sh
+
+      - name: Install keyrings
+        run: |
+          sudo apt-get install -y debian-archive-keyring
+          
+          sudo mkdir -p /usr/share/keyrings
+          curl -fsSL https://archive.raspberrypi.com/debian/raspberrypi.gpg.key \
+            | gpg --dearmor \
+            | sudo tee /usr/share/keyrings/raspberrypi-archive-keyring.gpg > /dev/null
+
+      - name: Prepare project folder
+        run: |
+          mkdir -p rpi-image-gen/projects/OpenCAL
+          cp -r OpenCAL/.builder/* rpi-image-gen/projects/OpenCAL/
+
+      - name: Build image
+        working-directory: rpi-image-gen
+        run: |
+          ./rpi-image-gen build \
+            -S projects/OpenCAL \
+            -c projects/OpenCAL/config.yaml \
+            -- \
+            IGconf_sys_outputdir=${{ github.workspace }}/output \
+            IGconf_sys_deploydir=${{ github.workspace }}/deploy
+
+      - name: Release image
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: ${{ github.workspace }}/deploy/*.img.xz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
