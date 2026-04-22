@@ -5,7 +5,8 @@ import sys
 from threading import Thread
 import time
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, final
+from enum import Enum
 
 from opencal.hardware import PrintController
 
@@ -23,6 +24,7 @@ class Mode(Enum):
     VIAL_WIDTH_FINDER = 2
 
 
+@final
 class LCDGui:
     def __init__(self):
         self.pc: PrintController = PrintController()
@@ -61,9 +63,9 @@ class LCDGui:
             ],
             "Print menu": ["stop"],
         }
-        self.menu_callbacks: dict[str, Any] = {
-            "Turn on LEDs": lambda: self.pc.hardware.led_array.set_led((255, 0, 0)),
-            "Turn off LEDs": self.pc.hardware.led_array.clear_leds,
+        self.menu_callbacks: dict[str, Any] = {  # pyright: ignore[reportExplicitAny]
+            "Turn on LEDs": lambda: self.pc.hardware.led_manager.set_led((255, 0, 0)),
+            "Turn off LEDs": self.pc.hardware.led_manager.clear_leds,
             "start stepper": lambda: self.pc.hardware.stepper.start_rotation(ramp_time=1),
             "stop stepper": lambda: self.pc.hardware.stepper.stop(),
             "capture image": lambda: self.pc.hardware.camera.capture_image("test.jpeg"),
@@ -76,11 +78,11 @@ class LCDGui:
             "Find Vial Width": lambda: self.enter_variable_adjustment(
                 "Vial Width",
                 self.pc.hardware.projector.vial_width,
-                lambda width: self.pc.hardware.projector.show_vial_width(width),
+                lambda width: self.pc.hardware.projector.show_vial_width(int(width)),
             ),
             "Restart": lambda: self.restart_pi(),
             "Power Off": lambda: self.power_off_pi(),
-            "print": lambda arg: self.pc.start_print_job(arg),
+            "print": self.pc.start_print_job,
             "stop": lambda: (
                 self.pc.stop(),
                 self.clear_timer(),
@@ -89,9 +91,10 @@ class LCDGui:
             "Resize Print": lambda: self.enter_variable_adjustment(
                 "size %",
                 self.pc.hardware.projector.size,
-                self.pc.hardware.projector.resize,
+                # FIXME: Fix typing issues here
+                lambda x: self.pc.hardware.projector.resize(int(x)),
             ),  # Resize Print option callback
-            "save to default": lambda: (self.save_defaults()),
+            "save to default": lambda: self.save_defaults(),
         }
 
         self.menu_stack: list[str] = []  # Stack to keep track of menu navigation
@@ -109,6 +112,7 @@ class LCDGui:
         self.current_var_value = 0  # The current value of the variable being adjusted
         self.target_var_value = 0
         self.variable_name = ""  # Name of the variable being adjusted
+        self.update_function = None
 
         self.showing_calibration_image = False
 
@@ -153,7 +157,7 @@ class LCDGui:
         # 1) load whatever’s there already (or start fresh)
         if os.path.exists(CONFIG_PATH):
             with open(CONFIG_PATH, "r") as f:
-                cfg = json.load(f)
+                cfg = json.load(f)  # pyright: ignore[reportAny]
         else:
             cfg = {}
 
@@ -285,7 +289,7 @@ class LCDGui:
     def adjust_variable(self):
         self.current_var_value = self.target_var_value
 
-        line = f"Current {self.variable_name}: {self.current_var_value}".ljust(20)
+        line = f"{self.variable_name}: {self.current_var_value}".ljust(20)
         self.pc.hardware.lcd.write_message(line, 0, 0)
         # TODO: Feel like this is too specific to be here
         if self.video_filename_short is not None:
@@ -333,7 +337,7 @@ class LCDGui:
         self.pc.hardware.lcd.clear()
         self.pc.hardware.lcd.write_message("Restarting...", 1, 0)
         time.sleep(2)
-        os.system("sudo reboot")
+        _res = os.system("sudo reboot")
         result = subprocess.run(["sudo", "reboot"], capture_output=True)
         if result.returncode != 0:
             print("fail!")

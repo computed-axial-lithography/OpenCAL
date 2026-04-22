@@ -1,10 +1,11 @@
 import threading
 import time
+from typing import final
 
 from .hardware_controller import HardwareController
 from pathlib import Path
 
-
+@final
 class PrintController:
     def __init__(self):
         self.hardware = HardwareController()
@@ -23,10 +24,10 @@ class PrintController:
 
         # Start motor rotation and LED color change.
         self.hardware.stepper.start_rotation("CCW")
-        self.hardware.led_array.set_led((255, 0, 0))
+        self.hardware.led_manager.set_led((255, 0, 0))
 
         # Start video playback.
-        self.hardware.projector.play_video_with_mpv(video_file)
+        self.hardware.projector.play_video_with_mpv(Path(video_file))
 
         self.hardware.camera.start_recording(Path.home() / "OpenCAL/output/videos/print.h264")
 
@@ -47,7 +48,7 @@ class PrintController:
         # Stop the video, motor, and clear LEDs.
         self.hardware.projector.stop_video()
         self.hardware.stepper.stop()
-        self.hardware.led_array.clear_leds()
+        self.hardware.led_manager.clear_leds()
 
         # Stop camera operations if a camera is available
         self.hardware.camera.stop_recording()
