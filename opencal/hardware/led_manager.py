@@ -1,6 +1,5 @@
 import time
 from typing import final
-from time import sleep
 
 from pi5neo.pi5neo import Pi5Neo, EPixelType
 

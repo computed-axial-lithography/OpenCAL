@@ -130,7 +130,7 @@ class LCDGui:
 
     def show_startup_screen(self):
         """Display the startup screen with 'Hello User!'."""
-        f = self.pc.hardware.led_array.run_start_animation
+        f = self.pc.hardware.led_manager.run_start_animation
         Thread(target=f).start()
 
         self.pc.hardware.lcd.clear()
