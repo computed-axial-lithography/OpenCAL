@@ -29,11 +29,15 @@ class CameraController:
         self._raw_file = None
         self.fps = 20
 
-        self.picam = Picamera2()
-        self.still_config = self.picam.create_still_configuration(buffer_count=2)
-        self.video_config = self.picam.create_still_configuration({})
-        self.picam.configure(self.still_config)
-        self.set_focus(15)
+        try:
+            self.picam = Picamera2()
+            self.still_config = self.picam.create_still_configuration(buffer_count=2)
+            self.video_config = self.picam.create_video_configuration()
+            self.picam.configure(self.still_config)
+            self.set_focus(15)
+        except RuntimeError:
+            self.picam = None
+            print("WARNING: No camera connected, camera functionality disabled.")
 
     def start_camera(self, preview: bool = False):
         """Start the camera and begin streaming if requested.
@@ -41,6 +45,9 @@ class CameraController:
         Args:
             preview (bool): Whether to show a preview of the camera feed.
         """
+        if not self.picam:
+            print("WARNING: No camera connected, cannot start camera.")
+            return
         if self.picam.started:
             return
 
@@ -52,6 +59,10 @@ class CameraController:
         self.picam.start()
 
     def capture_image(self, filename: str):
+        if not self.picam:
+            print("WARNING: No camera connected, cannot start camera.")
+            return
+
         if not self.picam.started:
             # TODO: remove this
             self.start_camera(preview=True)
@@ -61,12 +72,21 @@ class CameraController:
 
     def set_focus(self, diopters: float):
         """Turns off autofocus and sets a manual focal distance in diopters (m^-1)"""
+        if not self.picam:
+            print("WARNING: No camera connected, cannot start camera.")
+            return
         self.picam.set_controls({"AfMode": controls.AfModeEnum.Manual, "LensPosition": diopters})
 
     def activate_autofocus(self):
+        if not self.picam:
+            print("WARNING: No camera connected, cannot start camera.")
+            return
         self.picam.set_controls({"AfMode": controls.AfModeEnum.Continuous})
 
     def start_recording(self, file: Path):
+        if not self.picam:
+            print("WARNING: No camera connected, cannot start camera.")
+            return
         if self.picam.started:
             self.picam.stop()
         self.picam.configure(self.picam.create_video_configuration())
@@ -74,148 +94,14 @@ class CameraController:
         self.picam.start_recording(encoder=encoder, output=str(file))
 
     def stop_recording(self):
+        if not self.picam:
+            return
         self.picam.stop_recording()
-
-
-
-    # def _stream_loop(self):
-    #     """Continuously read frames from the camera and display them."""
-    #     pass
-    # while self.streaming:
-    #     ok, frame = self.capture.read()  # Read a frame from the camera
-    #     if not ok:
-    #         time.sleep(0.1)  # Wait if frame reading fails
-    #         continue
-    #     cv2.imshow("Camera Feed", frame)  # Display the camera feed
-    #     if cv2.waitKey(1) & 0xFF == ord("q"):
-    #         self.stop_all()  # Stop all operations if 'q' is pressed
-    #         break
-    # cv2.destroyAllWindows()  # Close all OpenCV windows
-
-    # def start_record(
-    #     self,
-    #     filename: Path | None = None,
-    #     frame_size: tuple[int, int] = (640, 480),
-    #     preview: bool = False,
-    # ):
-    #     """Start recording video from the camera.
-    #
-    #     Args:
-    #         filename (str): Name of the file to save the recording.
-    #         fps (float): Frames per second for the recording.
-    #         frame_size (tuple): Size of the video frames.
-    #         preview (bool): Whether to show a preview while recording.
-    #     """
-    #     if self.cam_type == "rpi":
-    #         # Prepare raw .h264 file for Raspberry Pi
-    #         if filename is None:
-    #             ts = time.strftime("%Y%m%d-%H%M%S")  # Timestamp for filename
-    #             filename = f"{self.save_path}/{ts}.h264"
-    #         self._raw_file = filename
-    #         self.record_file = (
-    #             os.path.splitext(filename)[0] + ".mp4"
-    #         )  # Output MP4 filename
-    #         cmd = [
-    #             "/usr/bin/libcamera-vid",
-    #             "--timeout",
-    #             "0",
-    #             "--inline",
-    #             "--width",
-    #             str(frame_size[0]),
-    #             "--height",
-    #             str(frame_size[1]),
-    #             "--framerate",
-    #             str(self.fps),
-    #         ]
-    #         if not preview:
-    #             cmd += ["--nopreview"]  # or ["--preview", "none"]
-    #         cmd += ["-o", filename]
-    #         self._proc = subprocess.Popen(cmd)  # Start the recording process
-    #         print(f"🔴 RPi recording (raw H264) → {filename}")
-    #         return
-    #
-    #     # USB path
-    #     if not self.capture:
-    #         self._open_usb_camera()  # Open USB camera if not already opened
-    #     if filename is None:
-    #         ts = time.strftime("%Y%m%d-%H%M%S")  # Timestamp for filename
-    #         filename = f"{self.save_path}/{ts}.mp4"
-    #     self.record_file = filename
-    #     w = int(self.capture.get(cv2.CAP_PROP_FRAME_WIDTH))  # Get frame width
-    #     h = int(self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT))  # Get frame height
-    #     fourcc = cv2.VideoWriter.fourcc(*"mp4v")  # Codec for MP4
-    #     self.writer = cv2.VideoWriter(
-    #         filename, fourcc, self.fps, (w, h)
-    #     )  # Initialize video writer
-    #     self.recording = True
-    #     self._record_thread = threading.Thread(target=self._record_loop, daemon=True)
-    #     self._record_thread.start()  # Start the recording thread
-    #     print(f"🔴 Recording to {filename}…")
-    #
-    # def _record_loop(self):
-    #     """Continuously read frames from the camera and write them to the video file."""
-    #     while self.recording:
-    #         ok, frame = self.capture.read()  # Read a frame from the camera
-    #         if not ok:
-    #             time.sleep(0.1)  # Wait if frame reading fails
-    #             continue
-    #         self.writer.write(frame)  # Write the frame to the video file
-    #
-    # def stop_record(self):
-    #     if self._proc:
-    #         # stop libcamera-vid
-    #         self._proc.send_signal(subprocess.signal.SIGINT)
-    #         self._proc.wait()
-    #         # wrap raw h264 into mp4 container
-    #         raw = self._raw_file
-    #         mp4 = self.record_file
-    #         # requires MP4Box (GPAC)\
-    #         cmd = [
-    #             "/usr/bin/ffmpeg",
-    #             "-fflags",
-    #             "+genpts",
-    #             "-f",
-    #             "h264",
-    #             "-r",
-    #             "20",
-    #             "-i",
-    #             raw,
-    #             "-r",
-    #             "20",
-    #             "-c:v",
-    #             "libx264",
-    #             "-preset",
-    #             "veryfast",
-    #             "-crf",
-    #             "23",
-    #             "-movflags",
-    #             "+faststart",
-    #             mp4,
-    #         ]
-    #         try:
-    #             subprocess.run(cmd, check=True)
-    #             os.remove(raw)
-    #         except subprocess.CalledProcessError as e:
-    #             print("FFmpeg failed with exit code:", e.returncode)
-    #             print("Command:", e.cmd)
-    #             print("Output:", e.output)
-    #
-    #         print(f"💾 Saved RPi recording to {mp4}")
-    #         self._proc = None
-    #         self._raw_file = None
-    #         return
-    #
-    #     # USB stop
-    #     self.recording = False
-    #     if self._record_thread:
-    #         self._record_thread.join(1.0)
-    #     if self.writer:
-    #         self.writer.release()
-    #     print(f"💾 Saved recording to {self.record_file}")
-    #     self.record_file, self.writer = None, None
 
     def stop_camera(self):
         """Stop the camera and release resources."""
+        if not self.picam:
+            return
         self.picam.stop()
 
         # TODO: remove when done
