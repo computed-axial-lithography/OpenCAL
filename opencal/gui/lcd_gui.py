@@ -87,11 +87,12 @@ class LCDGui:
                 self.pc.hardware.stepper.speed_rpm,
                 lambda rpm: self.pc.hardware.stepper.set_rpm(rpm, ramp_time=1),
             ),
-            "Find Vial Width": lambda: self.enter_variable_adjustment(
-                "Vial Width",
-                self.pc.hardware.projector.vial_width,
-                lambda width: self.pc.hardware.projector.show_vial_width(int(width)),
-            ),
+            # "Find Vial Width": lambda: self.enter_variable_adjustment(
+            #     "Vial Width",
+            #     self.pc.hardware.projector.vial_width,
+            #     lambda width: self.pc.hardware.projector.show_vial_width(int(width)),
+            # ),
+            "Find Vial Width": lambda: self.enter_pygame_mode() ,
             "Restart": lambda: self.restart_pi(),
             "Power Off": lambda: self.power_off_pi(),
             "print": self.pc.start_print_job,
@@ -317,7 +318,12 @@ class LCDGui:
         self.show_menu("Calibrating")
 
     def button_press_handler(self):
-        if self.adjusting_variable and self.selected_video_filename is None:
+        if self.pygame_mode_active:
+            # TODO: make a clearer way of exiting pygame mode
+            self.exit_pygame_mode()
+            # TODO: return to the proper menu after
+            self.show_menu('main')
+        elif self.adjusting_variable and self.selected_video_filename is None:
             # Pressing btn while adjusting variable returns to prev menu
             if self.update_function is not None:
                 self.update_function(self.current_var_value)
@@ -373,6 +379,7 @@ class LCDGui:
     def enter_pygame_mode(self):
         """Route encoder input to pygame instead of the LCD menu."""
         self.pygame_mode_active = True
+        self.adjusting_variable = False
 
     def exit_pygame_mode(self):
         """Return encoder input to the LCD menu."""
@@ -406,13 +413,16 @@ class LCDGui:
         self.pc.hardware.rotary.button.when_pressed = self.button_press_handler
 
         while self.running:
+            # Accept values from pygame
             if self.pygame_q is not None:
                 while not self.pygame_q.empty():
                     try:
                         key, value = self.pygame_q.get_nowait()
                         self.pygame_values[key] = value
+                        # TODO: change things based on received values here
                     except queue.Empty:
                         break
+
             if self.print_start_time is not None:
                 elapsed = time.time() - self.print_start_time
                 # Format the elapsed time (e.g., minutes and seconds)
@@ -420,6 +430,7 @@ class LCDGui:
                 elapsed_formatted = f"{minutes:02d}:{seconds:02d}"
                 # Write the elapsed time to a fixed line on the LCD (line 3)
                 self.pc.hardware.lcd.write_message(f"Elapsed: {elapsed_formatted}", 3, 0)
+
             if self.adjusting_variable:
                 if self.current_var_value != self.target_var_value:
                     self.adjust_variable()
