@@ -1,7 +1,9 @@
 import json
 import os
+import queue
 import subprocess
 import sys
+import threading
 from threading import Thread
 import time
 from pathlib import Path
@@ -26,8 +28,18 @@ class Mode(Enum):
 
 @final
 class LCDGui:
-    def __init__(self):
+    def __init__(
+        self,
+        encoder_q: queue.Queue | None = None,
+        pygame_q: queue.Queue | None = None,
+        stop_event: threading.Event | None = None,
+    ):
         self.pc: PrintController = PrintController()
+        self.encoder_q = encoder_q
+        self.pygame_q = pygame_q
+        self.stop_event = stop_event
+        self.pygame_mode_active = False
+        self.pygame_values: dict = {}
         self.print_start_time = None
 
         self.menu_dict: dict[str, list[str]] = {
@@ -354,11 +366,22 @@ class LCDGui:
 
     def kill_gui(self):
         """Handles the kill GUI action."""
-        # self.camera.stop_camera()
-        # TODO: add threading Events?
         self.running = False
+        if self.stop_event is not None:
+            self.stop_event.set()
+
+    def enter_pygame_mode(self):
+        """Route encoder input to pygame instead of the LCD menu."""
+        self.pygame_mode_active = True
+
+    def exit_pygame_mode(self):
+        """Return encoder input to the LCD menu."""
+        self.pygame_mode_active = False
 
     def handle_rotary_rotation(self, delta: int):
+        if self.pygame_mode_active and self.encoder_q is not None:
+            self.encoder_q.put(delta)
+            return
         if self.adjusting_variable:
             if self.variable_name == "size %":
                 self.target_var_value = max(0, min(100, self.target_var_value + delta))
@@ -383,6 +406,13 @@ class LCDGui:
         self.pc.hardware.rotary.button.when_pressed = self.button_press_handler
 
         while self.running:
+            if self.pygame_q is not None:
+                while not self.pygame_q.empty():
+                    try:
+                        key, value = self.pygame_q.get_nowait()
+                        self.pygame_values[key] = value
+                    except queue.Empty:
+                        break
             if self.print_start_time is not None:
                 elapsed = time.time() - self.print_start_time
                 # Format the elapsed time (e.g., minutes and seconds)
