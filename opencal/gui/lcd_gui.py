@@ -376,6 +376,7 @@ class LCDGui:
         """Main method to run the GUI."""
         self.show_startup_screen()
         self.show_menu("main")
+        self.pc.hardware.projector.display_image(Path.cwd() / "opencal/utils/calibration/dark.png")
 
         encoder = self.pc.hardware.rotary.encoder
         encoder.when_rotated_clockwise = lambda: self.handle_rotary_rotation(1)
