@@ -28,6 +28,7 @@ class CameraController:
         self._proc = None
         self._raw_file = None
         self.fps = 20
+        self.recording = False
 
         try:
             self.picam = Picamera2()
@@ -92,27 +93,19 @@ class CameraController:
         self.picam.configure(self.picam.create_video_configuration())
         encoder = H264Encoder()
         self.picam.start_recording(encoder=encoder, output=str(file))
+        self.recording = True
 
     def stop_recording(self):
         if not self.picam:
             return
-        self.picam.stop_recording()
+        if self.recording:
+            self.picam.stop_recording()
 
     def stop_camera(self):
         """Stop the camera and release resources."""
         if not self.picam:
             return
         self.picam.stop()
-
-        # TODO: remove when done
-
-        # self.streaming = False
-        # if self._stream_thread:
-        #     self._stream_thread.join(1.0)  # Wait for the streaming thread to finish
-        # if self.capture:
-        #     self.capture.release()  # Release the camera
-        #     self.capture = None
-        # cv2.destroyAllWindows()  # Close all OpenCV windows
 
     def stop_all(self):
         """Stop both recording and camera streaming."""
