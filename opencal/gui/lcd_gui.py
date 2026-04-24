@@ -22,7 +22,7 @@ import sys
 import threading
 import time
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Optional
 from enum import Enum
 
 from opencal.hardware import PrintController
@@ -48,7 +48,7 @@ class MenuBase:
     """Abstract base class for all menu items."""
 
     title: str = ""
-    _gui: "LCDGui" | None = None
+    _gui: Optional["LCDGui"] = None
 
     def on_enter(self, gui: "LCDGui") -> None:
         """Called when this menu is pushed onto the stack."""

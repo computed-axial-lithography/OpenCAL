@@ -47,7 +47,7 @@ class PrintLaunchItem(MenuBase):
         self.title = filename
         self._filename = filename
         self._pc = pc
-        self._gui_ref: "LCDGui | None" = None
+        self._gui_ref: Optional"LCDGui"] = None
 
     def on_activate(self, gui: "LCDGui") -> None:
         self._gui_ref = gui
