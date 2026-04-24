@@ -7,7 +7,7 @@ MultiSelectMenu / PyGameMenu / DynamicNavigationMenu instances.
 """
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from opencal.hardware import PrintController
 from opencal.gui.lcd_gui import (
@@ -47,7 +47,7 @@ class PrintLaunchItem(MenuBase):
         self.title = filename
         self._filename = filename
         self._pc = pc
-        self._gui_ref: Optional"LCDGui"] = None
+        self._gui_ref: Optional["LCDGui"] = None
 
     def on_activate(self, gui: "LCDGui") -> None:
         self._gui_ref = gui
