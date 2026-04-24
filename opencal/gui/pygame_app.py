@@ -53,16 +53,23 @@ class PygameApp:
 
     def on_frame(self, surf: pygame.Surface):
         """Called once per frame. Override to draw visuals."""
-        rect = surf.get_bounding_rect()
-        
+
         rect_width = 1000
         left = self.width / 2 - rect_width / 2
         top = self.height / 2 - self.rect_height / 2
-        pygame.draw.rect(surf, 'white', (left, top, rect_width, self.rect_height))
+        pygame.draw.rect(surf, "white", (left, top, rect_width, self.rect_height))
 
     def send_to_gui(self, key: str, value):
-        """Publish a key-value pair to the GUI thread (stored in LCDGui.pygame_values)."""
+        """Publish a key-value pair to the GUI thread."""
         self.pygame_q.put((key, value))
+
+    def signal_done(self, result: dict | None = None):
+        """Signal LCDGui that this pygame screen is finished.
+
+        LCDGui will call the PyGameMenu's on_exit_callback with result, then
+        pop the PyGameMenu off the stack, returning control to the LCD menu.
+        """
+        self.pygame_q.put(("done", result or {}))
 
     def stop(self):
         self._running = False

@@ -44,6 +44,9 @@ There are no automated tests — only manual hardware test scripts: `camera_test
 opencal/
 ├── __main__.py               # Entry point: starts LCDGui in a daemon thread
 ├── gui/lcd_gui.py            # LCDGui — state-machine menu controller
+├── gui/
+│   ├── lcd_gui.py  # LCDGui - state-machine menu controller for 20x4 LCD.
+│   ├── pygame_app.py     # PygameApp - manages projector display for more precise interactive visuals.
 ├── hardware/
 │   ├── hardware_controller.py  # Initializes all hardware; tracks degraded state
 │   ├── print_controller.py     # Orchestrates a full print job (motor + LED + projector + camera)
@@ -65,6 +68,7 @@ opencal/
 - `PrintController` owns and orchestrates `HardwareController`, coordinating motor, LEDs, projector, and camera in a single print thread.
 - `HardwareController` initializes every component at startup; failures are logged and the system continues in degraded mode rather than crashing.
 - All GPIO pins, I2C addresses, LED counts, and print defaults are set in `opencal/utils/config.json` and loaded into typed dataclasses (`StepperConfig`, `CameraConfig`, `LedArrayConfig`, etc.).
+- `PygameApp` and `LCDGui` commuincate via thread-safe queues to transfer focus and user inputs from hardware.
 
 ### Print Job Flow
 
