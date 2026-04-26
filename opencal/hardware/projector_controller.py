@@ -118,7 +118,11 @@ class Projector:
         Display a rectangle to calibrate the vial width.
         """
         self.vial_width = width
-        w, h = 1920, 1080  # FIXME: Make this automated/dynamic
+        # FIXME: Screen dimensions are hardcoded. Query them dynamically using
+        # e.g. `xrandr --query` (X11) or `wlr-randr` (Wayland) so the
+        # calibration rectangle scales correctly on any projector resolution.
+        # See wayfire.ini in rootfs-overlay for display configuration notes.
+        w, h = 1920, 1080
         arr = np.zeros((h, w), dtype=np.uint8)
         cx, cy = w // 2, h // 2
         dy, dx = self.vial_width // 2, 400

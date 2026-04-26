@@ -2,21 +2,16 @@ device:
   layer: rpi5
   hostname: opencal
   user1: opencal
+  user1pass: OpenCAL1!
+  user1sudo: nopasswd
 
 image:
   layer: image-rpios
-  name: opencal-v0.1
+  name: opencal
   boot_part_size: 512M
   root_part_size: 4G
   compression: zstd
 
-sys:
-  mirrors: >-
-    deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
-    deb http://deb.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
-    deb http://deb.debian.org/debian bookworm-updates main contrib non-free non-free-firmware
-    deb http://archive.raspberrpi.com/debian/ bookworm main
-
 layer:
   base: bookworm-minbase
-
+  app: opencal
