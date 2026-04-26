@@ -3,11 +3,20 @@ import subprocess
 import threading
 from pathlib import Path
 from typing import final
+from enum import Enum
 
 import numpy as np
 from PIL import Image
 
 from opencal.utils.config import ProjectorConfig
+
+
+class ProjectorOrientation(Enum):
+    # FIXME: These values are kinda misleading
+    NORMAL = "normal"
+    LEFT = "left"
+    RIGHT = "right"
+    FLIPPED = "flipped"
 
 
 @final
@@ -18,10 +27,36 @@ class Projector:
         self.calibration_img_path = Path(config.calibration_img_path)
         self.calibration_dir_path = Path(config.calibration_dir_path)
         # FIXME: Figure out where to put vial width config
-        self.vial_width = 384 # Measured for small vial
+        self.vial_width = 384  # Measured for small vial
 
         self.process = None
         self.thread = None  # We'll use this to keep track of the playback thread.
+        self._orientation = ProjectorOrientation.NORMAL
+
+    def get_projector_orientation(self) -> ProjectorOrientation:
+        return self._orientation
+
+    def set_projector_orientation(self, orient: ProjectorOrientation) -> None:
+        if orient == self._orientation:
+            return
+
+        match orient:
+            case ProjectorOrientation.NORMAL:
+                dir = "0"
+            case ProjectorOrientation.LEFT:
+                dir = "90"
+            case ProjectorOrientation.RIGHT:
+                dir = "270"
+            case ProjectorOrientation.FLIPPED:
+                dir = "180"
+
+        cmd = f"wlr-randr --output HDMI-A-1 --transform {dir}"
+        result = subprocess.run(cmd.split(), capture_output=True, text=True)
+
+        if result.returncode != 0:
+            print(f"ERROR failed to rotate display: {result.stderr}")
+        else:
+            self._orientation = orient
 
     def get_video_dimensions(self, video_path: Path):
         """

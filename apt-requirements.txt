@@ -13,3 +13,4 @@ python3-smbus2
 i2c-tools 
 usbutils              
 v4l-utils
+wlr-randr

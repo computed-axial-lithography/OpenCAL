@@ -21,6 +21,7 @@ from opencal.gui.lcd_gui import (
     PrintStatusMenu,
     StaticMenu,
 )
+from opencal.hardware.projector_controller import ProjectorOrientation
 
 if TYPE_CHECKING:
     from opencal.gui.lcd_gui import LCDGui
@@ -158,6 +159,12 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
             step=1,
         ),
         DynamicNavigationMenu("Calibration", refresh=_make_calib_items),
+        MultiSelectMenu(
+            title="Display Orient.",
+            choices=[o.value for o in ProjectorOrientation],
+            get=pc.hardware.projector.get_projector_orientation,
+            set=pc.hardware.projector.set_projector_orientation,
+        ),
     ]
 
     # Only add Find Vial Width if the encoder queue is available.
