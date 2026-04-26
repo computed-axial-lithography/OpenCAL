@@ -130,7 +130,7 @@ class LCDGui:
 
     def show_startup_screen(self):
         """Display the startup screen with 'Hello User!'."""
-        f = self.pc.hardware.led_array.run_start_animation
+        f = self.pc.hardware.led_manager.run_start_animation
         Thread(target=f).start()
 
         self.pc.hardware.lcd.clear()
@@ -289,7 +289,7 @@ class LCDGui:
     def adjust_variable(self):
         self.current_var_value = self.target_var_value
 
-        line = f"Current {self.variable_name}: {self.current_var_value}".ljust(20)
+        line = f"{self.variable_name}: {self.current_var_value}".ljust(20)
         self.pc.hardware.lcd.write_message(line, 0, 0)
         # TODO: Feel like this is too specific to be here
         if self.video_filename_short is not None:
