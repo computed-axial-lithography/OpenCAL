@@ -144,7 +144,7 @@ class Projector:
             "/usr/bin/mpv",
             "--fs",  # Fullscreen mode
             "--loop",  # Loop the video
-            f"--vf=lavfi=[{crop_filter}]",  # Apply the crop filter for zoom
+            f"--vf=lavfi=[{crop_filter}],fps=30",  # Apply the crop filter for zoom
             str(video_path),
         ]
 

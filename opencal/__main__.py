@@ -6,6 +6,7 @@ from opencal.hardware import PrintController
 from opencal.gui.lcd_gui import LCDGui
 from opencal.gui.menus import build_menu_tree
 from opencal.gui.pygame_app import PygameApp
+from opencal.utils.config import load_config
 
 
 def main():
@@ -15,7 +16,8 @@ def main():
     pygame_q: queue.Queue = queue.Queue()
     stop_event = threading.Event()
 
-    pc = PrintController()
+    conf = load_config()
+    pc = PrintController(conf)
     gui = LCDGui(pc=pc, encoder_q=encoder_q, pygame_q=pygame_q, stop_event=stop_event)
     root = build_menu_tree(pc, gui)
     gui.set_root(root)
@@ -23,8 +25,12 @@ def main():
     gui_thread = threading.Thread(target=gui.run, daemon=True)
     gui_thread.start()
 
-    pygame_app = PygameApp(encoder_q=encoder_q, pygame_q=pygame_q, stop_event=stop_event, fps=30)
+    pygame_app = PygameApp(
+        config=conf.pygame, encoder_q=encoder_q, pygame_q=pygame_q, stop_event=stop_event, fps=30
+    )
     pygame_app.run()
+    # Join on GUI thread, so that if PyGame is disabled GUI continues to run
+    gui_thread.join()
 
 
 if __name__ == "__main__":

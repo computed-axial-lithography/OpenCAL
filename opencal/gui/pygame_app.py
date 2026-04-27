@@ -2,16 +2,19 @@ import queue
 import threading
 
 import pygame
+from opencal.utils.config import PygameConfig
 
 
 class PygameApp:
     def __init__(
         self,
+        config: PygameConfig,
         encoder_q: queue.Queue,
         pygame_q: queue.Queue,
         stop_event: threading.Event,
         fps: int = 30,
     ):
+        self.active = config.active
         self.encoder_q = encoder_q
         self.pygame_q = pygame_q
         self.stop_event = stop_event
@@ -22,6 +25,10 @@ class PygameApp:
         self.height = 1080
 
     def run(self):
+        if not self.active:
+            print("WARNING: PyGame deactivated from config, skipping PyGame init.")
+            return
+
         pygame.init()
         screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         self.width, self.height = screen.get_size()

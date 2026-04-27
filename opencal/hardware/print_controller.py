@@ -2,13 +2,15 @@ import threading
 import time
 from typing import final
 
+from opencal.utils.config import Config
+
 from .hardware_controller import HardwareController
 from pathlib import Path
 
 @final
 class PrintController:
-    def __init__(self):
-        self.hardware = HardwareController()
+    def __init__(self, config: Config):
+        self.hardware = HardwareController(config)
         if not self.hardware.healthy:
             print("not all peripherals connected, some functionality may not work")
         # TODO: Use threading event

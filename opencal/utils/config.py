@@ -6,11 +6,16 @@ from typing import Any, final
 CFG_PATH = Path(__file__).with_suffix(".json")
 
 
+def load_config() -> "Config":
+    return Config()
+
+
 @final
 class Config:
     def __init__(self, path: Path = CFG_PATH):
         with open(path) as f:
             config: dict[str, dict[str, Any]] = json.load(f)
+        self.pygame = PygameConfig(config["pygame"])
         self.stepper = StepperConfig(config["stepper_motor"])
         self.camera = CameraConfig(config["camera"])
         self.led_array = LedArrayConfig(config["led_array"])
@@ -18,6 +23,10 @@ class Config:
         self.rotary_encoder = RotaryConfig(config["rotary_encoder"])
         self.projector = ProjectorConfig(config["projector"])
 
+
+class PygameConfig:
+    def __init__(self, config: dict[str, Any]):
+        self.active = config["active"]
 
 class StepperConfig:
     def __init__(self, config: dict[str, Any]):
