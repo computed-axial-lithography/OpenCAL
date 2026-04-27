@@ -1,6 +1,14 @@
 [terminal]
 vt = 1
 
+# initial_session is greetd's autologin mechanism — it runs the full PAM stack
+# (including pam_systemd, which creates /run/user/1000) before starting the
+# compositor. Without this, wayfire starts without XDG_RUNTIME_DIR and crashes.
+[initial_session]
+command = "/usr/bin/wayfire"
+user = "opencal"
+
+# default_session is the fallback if the initial session exits.
 [default_session]
 command = "/usr/bin/wayfire"
 user = "opencal"

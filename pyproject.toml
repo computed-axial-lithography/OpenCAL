@@ -13,8 +13,8 @@ dependencies = [
     "smbus2>=0.6.0",
 ]
 
-[tool.setuptools]
-py-modules = ["opencal"]
+[tool.setuptools.packages.find]
+exclude = ["assets*"]
 
 [tool.ruff]
 line-length = 100
