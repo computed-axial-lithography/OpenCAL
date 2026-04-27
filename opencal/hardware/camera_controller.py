@@ -22,7 +22,7 @@ class CameraController:
         self._stream_thread = None
         self.streaming = False
         self._record_thread = None
-        self.recording = False
+        self._recording = False
         self.writer = None
         self.record_file = None
         self._proc = None
@@ -93,12 +93,14 @@ class CameraController:
         self.picam.configure(self.picam.create_video_configuration())
         encoder = H264Encoder()
         self.picam.start_recording(encoder=encoder, output=str(file))
-        self.recording = True
+        print("DEBUG: starting recording")
+        self._recording = True
 
     def stop_recording(self):
         if not self.picam:
             return
-        if self.recording:
+        if self._recording:
+            print("DEBUG: stopping recording")
             self.picam.stop_recording()
 
     def stop_camera(self):
@@ -106,11 +108,6 @@ class CameraController:
         if not self.picam:
             return
         self.picam.stop()
-
-    def stop_all(self):
-        """Stop both recording and camera streaming."""
-        # self.stop_record()  # Stop recording
-        self.stop_camera()  # Stop camera streaming
 
 
 if __name__ == "__main__":

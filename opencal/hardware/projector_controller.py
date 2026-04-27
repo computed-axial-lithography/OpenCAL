@@ -3,11 +3,45 @@ import subprocess
 import threading
 from pathlib import Path
 from typing import final
+from enum import Enum
+import json
 
 import numpy as np
 from PIL import Image
 
 from opencal.utils.config import ProjectorConfig
+
+
+class ProjectorOrientation(Enum):
+    # FIXME: These values are kinda misleading
+    NORMAL = "normal"
+    LEFT = "left"
+    RIGHT = "right"
+    FLIPPED = "flipped"
+
+    @classmethod
+    def from_wlr_randr(cls, s: str) -> "ProjectorOrientation":
+        if s == "normal":
+            return cls.NORMAL
+        elif s == "90":
+            return cls.LEFT
+        elif s == "180":
+            return cls.FLIPPED
+        elif s == "270":
+            return cls.RIGHT
+        else:
+            raise NotImplementedError(f"Can't parse wlr-randr transform value: {s}")
+
+    def to_wlr_randr(self) -> str:
+        match self:
+            case ProjectorOrientation.NORMAL:
+                return "normal"
+            case ProjectorOrientation.LEFT:
+                return "90"
+            case ProjectorOrientation.RIGHT:
+                return "270"
+            case ProjectorOrientation.FLIPPED:
+                return "180"
 
 
 @final
@@ -18,10 +52,43 @@ class Projector:
         self.calibration_img_path = Path(config.calibration_img_path)
         self.calibration_dir_path = Path(config.calibration_dir_path)
         # FIXME: Figure out where to put vial width config
-        self.vial_width = 384 # Measured for small vial
+        self.vial_width = 384  # Measured for small vial
 
         self.process = None
         self.thread = None  # We'll use this to keep track of the playback thread.
+        self._orientation = None
+
+    def get_projector_orientation(self) -> ProjectorOrientation:
+        """Query display orientation from wlr-randr, so that it cannot silently be changed in the background."""
+
+        result = subprocess.run(
+            ["wlr-randr", "--output", "HDMI-A-1", "--json"], capture_output=True, text=True
+        )
+
+        if result.returncode != 0:
+            print(f"ERROR: Failed to query projector orientation: {result.stderr}")
+            return ProjectorOrientation.NORMAL
+
+        out: dict = json.loads(result.stdout)[0]
+        assert out["name"] == "HDMI-A-1"
+
+        transform: str = out["transform"]
+        orient = ProjectorOrientation.from_wlr_randr(transform)
+
+        return orient
+
+    def set_projector_orientation(self, orient: ProjectorOrientation) -> None:
+        current_orient = self.get_projector_orientation()
+        if orient == current_orient:
+            return
+
+        transform = orient.to_wlr_randr()
+
+        cmd = f"wlr-randr --output HDMI-A-1 --transform {transform}"
+        result = subprocess.run(cmd.split(), capture_output=True, text=True)
+
+        if result.returncode != 0:
+            print(f"ERROR failed to rotate display: {result.stderr}")
 
     def get_video_dimensions(self, video_path: Path):
         """
@@ -64,22 +131,35 @@ class Projector:
         crop_x = int((orig_width) / 2) - new_width / 2
         crop_y = int((orig_height) / 2) - new_height / 2
 
-        # Construct the crop filter argument to center the zoomed video
-        crop_filter = f"crop={new_width}:{new_height}:{crop_x}:{crop_y}"
-
         # Set up the environment for the video
         env = os.environ.copy()
         env["DISPLAY"] = ":0"
         # env["XAUTHORITY"] = "/home/opencal/.Xauthority"
 
-        # Construct the mpv command to play the video
+        # TODO: Remove MPV command:
+
+        # command = [
+        #     "/usr/bin/mpv",
+        #     "--fs",  # Fullscreen mode
+        #     "--loop",  # Loop the video
+        #     f"--vf=crop={new_width}:{new_height}:{crop_x}:{crop_y}",
+        #     str(video_path),
+        # ]
+
+        # VLC command
         command = [
-            "/usr/bin/mpv",
-            "--fs",  # Fullscreen mode
-            "--loop",  # Loop the video
-            f"--vf=lavfi=[{crop_filter}]",  # Apply the crop filter for zoom
+            "/usr/bin/cvlc",
+            "--fullscreen",
+            "--loop",
+            "--no-video-title-show",
+            "--video-filter=croppadd",
+            f"--croppadd-cropleft={int(crop_x)}",
+            f"--croppadd-cropright={int(crop_x)}",
+            f"--croppadd-croptop={int(crop_y)}",
+            f"--croppadd-cropbottom={int(crop_y)}",
             str(video_path),
         ]
+        print(" ".join(command))
 
         self.process = subprocess.Popen(command, env=env)
         print("Video playback started.")

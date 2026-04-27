@@ -1,170 +1,502 @@
+"""
+lcd_gui.py — LCDGui state machine + menu base classes.
+
+Menu types
+----------
+MenuBase              Abstract base for all menu/item types.
+NavigationMenu        Scrollable list of child items; "back" auto-added.
+DynamicNavigationMenu Like NavigationMenu but refreshes its item list on entry.
+ActionItem            Leaf: label + callback, no stack change.
+VariableMenu          Rotate to adjust a float value; click to confirm.
+MultiSelectMenu       Pick one of N string choices from a submenu-style list.
+PyGameMenu            Routes encoder to pygame; waits for ("done", result) signal.
+PrintStatusMenu       Shows print progress; click stops the job.
+StaticMenu            Read-only display; click pops to parent.
+"""
+
 import json
 import os
+import queue
 import subprocess
 import sys
-from threading import Thread
+import threading
 import time
 from pathlib import Path
-from typing import Any, Callable, final
+from typing import Callable, Optional
 from enum import Enum
 
 from opencal.hardware import PrintController
 
-CONFIG_PATH = Path(__file__).parent / "utils/config.json"
+CONFIG_PATH = Path(__file__).parent.parent / "utils" / "config.json"
 
-
-# Add the parent directory of 'gui' to sys.path
-# TODO: This is probably unnecessary
+# Legacy sys.path hack kept for compatibility with any direct-run scripts.
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
 class Mode(Enum):
-    MENU = 1
-    VAR_ADJUST = 1
-    VIAL_WIDTH_FINDER = 2
+    MENU = "menu"
+    PYGAME = "pygame"
+    PRINTING = "printing"
 
 
-@final
+# ---------------------------------------------------------------------------
+# Menu base
+# ---------------------------------------------------------------------------
+
+
+class MenuBase:
+    """Abstract base class for all menu items."""
+
+    title: str = ""
+    _gui: Optional["LCDGui"] = None
+
+    def on_enter(self, gui: "LCDGui") -> None:
+        """Called when this menu is pushed onto the stack."""
+        self._gui = gui
+
+    def on_exit(self) -> None:
+        """Called when this menu is popped off the stack."""
+        pass
+
+    def on_rotate(self, delta: int) -> None:
+        """Called on rotary encoder turn. delta is +1 (CW) or -1 (CCW)."""
+        pass
+
+    def on_click(self) -> None:
+        """Called on rotary encoder button press."""
+        pass
+
+    def on_activate(self, gui: "LCDGui") -> None:
+        """Called by a parent NavigationMenu when this item is selected.
+        Default: push self onto the stack."""
+        gui.push(self)
+
+    def render(self) -> list[str]:
+        """Return exactly 4 strings of up to 20 characters each for the LCD."""
+        return [" " * 20] * 4
+
+
+# ---------------------------------------------------------------------------
+# Internal back-button item
+# ---------------------------------------------------------------------------
+
+
+class _BackItem(MenuBase):
+    title = "back"
+
+    def on_activate(self, gui: "LCDGui") -> None:
+        gui.pop()
+
+
+# ---------------------------------------------------------------------------
+# NavigationMenu
+# ---------------------------------------------------------------------------
+
+
+class NavigationMenu(MenuBase):
+    """Scrollable list of child items. A 'back' entry is prepended automatically
+    unless this is the root menu (nothing else on the stack)."""
+
+    VIEW_SIZE = 4
+
+    def __init__(self, title: str, items: list[MenuBase]):
+        self.title = title
+        self._items = list(items)
+        self._all_items: list[MenuBase] = []
+        self._current_index = 0
+        self._view_start = 0
+
+    def on_enter(self, gui: "LCDGui") -> None:
+        super().on_enter(gui)
+        # Prepend back unless this is the root (stack is empty at push time).
+        if len(gui.stack) > 0:
+            back = _BackItem()
+            back._gui = gui
+            self._all_items = [back] + self._items
+        else:
+            self._all_items = list(self._items)
+        # Pre-populate _gui on children so callbacks work before they're pushed.
+        for item in self._all_items:
+            item._gui = gui
+        self._current_index = 0
+        self._view_start = 0
+
+    def on_rotate(self, delta: int) -> None:
+        new_idx = self._current_index + delta
+        self._current_index = max(0, min(len(self._all_items) - 1, new_idx))
+        # Slide the 4-line viewport to keep selection visible.
+        if self._current_index < self._view_start:
+            self._view_start = self._current_index
+        elif self._current_index >= self._view_start + self.VIEW_SIZE:
+            self._view_start = self._current_index - self.VIEW_SIZE + 1
+
+    def on_click(self) -> None:
+        if not self._all_items or self._gui is None:
+            return
+        item = self._all_items[self._current_index]
+        item.on_activate(self._gui)
+
+    def render(self) -> list[str]:
+        lines: list[str] = []
+        for i in range(self.VIEW_SIZE):
+            idx = i + self._view_start
+            if idx < len(self._all_items):
+                prefix = ">" if idx == self._current_index else " "
+                label = self._all_items[idx].title
+                lines.append(f"{prefix}{label}".ljust(20))
+            else:
+                lines.append(" " * 20)
+        return lines
+
+
+# ---------------------------------------------------------------------------
+# DynamicNavigationMenu
+# ---------------------------------------------------------------------------
+
+
+class DynamicNavigationMenu(NavigationMenu):
+    """Like NavigationMenu but calls refresh() each time the menu is entered
+    to rebuild the item list (e.g. USB file list, calibration files)."""
+
+    def __init__(self, title: str, refresh: Callable[[], list[MenuBase]]):
+        super().__init__(title, [])
+        self._refresh = refresh
+
+    def on_enter(self, gui: "LCDGui") -> None:
+        self._items = self._refresh()
+        super().on_enter(gui)
+
+
+# ---------------------------------------------------------------------------
+# ActionItem
+# ---------------------------------------------------------------------------
+
+
+class ActionItem(MenuBase):
+    """Leaf item: shows a label; executing it calls a callback.
+    Does not push anything onto the stack."""
+
+    def __init__(self, title: str, callback: Callable[[], None]):
+        self.title = title
+        self._callback = callback
+
+    def on_activate(self, gui: "LCDGui") -> None:
+        self._callback()
+
+    def render(self) -> list[str]:
+        return [self.title.ljust(20)] + [" " * 20] * 3
+
+
+# ---------------------------------------------------------------------------
+# VariableMenu
+# ---------------------------------------------------------------------------
+
+
+class VariableMenu(MenuBase):
+    """Rotate to adjust a numeric value within [min_val, max_val].
+    Click to confirm: calls set(value), pops the menu, then fires on_confirm."""
+
+    def __init__(
+        self,
+        title: str,
+        get: Callable[[], float],
+        set: Callable[[float], None],
+        min_val: float,
+        max_val: float,
+        step: float = 1.0,
+        hint: str = "",
+        on_confirm: Callable[[float], None] | None = None,
+    ):
+        self.title = title
+        self._get = get
+        self._set = set
+        self._min = min_val
+        self._max = max_val
+        self._step = step
+        self._hint = hint
+        self.on_confirm = on_confirm
+        self._value: float = 0.0
+
+    def on_enter(self, gui: "LCDGui") -> None:
+        super().on_enter(gui)
+        self._value = self._get()
+
+    def on_rotate(self, delta: int) -> None:
+        self._value = max(self._min, min(self._max, self._value + delta * self._step))
+
+    def on_click(self) -> None:
+        self._set(self._value)
+        if self._gui:
+            self._gui.pop()
+        # Fire on_confirm after pop so it can safely push new menus.
+        if self.on_confirm:
+            self.on_confirm(self._value)
+
+    def render(self) -> list[str]:
+        return [
+            f"{self.title}: {int(self._value)}".ljust(20),
+            "Use rotary to adjust",
+            "Click to set".ljust(20),
+            self._hint[:20].ljust(20),
+        ]
+
+
+# ---------------------------------------------------------------------------
+# MultiSelectMenu
+# ---------------------------------------------------------------------------
+
+
+class MultiSelectMenu(MenuBase):
+    """Pick one string from a list. Renders like a NavigationMenu with (*) on
+    the current selection. Includes a 'back' entry to cancel without changing
+    the value."""
+
+    VIEW_SIZE = 4
+
+    def __init__(
+        self,
+        title: str,
+        choices: list[str],
+        get: Callable[[], str],
+        set: Callable[[str], None],
+    ):
+        self.title = title
+        self._choices = list(choices)
+        self._get = get
+        self._set = set
+        self._items = ["back"] + self._choices
+        self._current_index = 0
+        self._view_start = 0
+
+    def on_enter(self, gui: "LCDGui") -> None:
+        super().on_enter(gui)
+        self._current_index = 0
+        self._view_start = 0
+
+    def on_rotate(self, delta: int) -> None:
+        new_idx = self._current_index + delta
+        self._current_index = max(0, min(len(self._items) - 1, new_idx))
+        if self._current_index < self._view_start:
+            self._view_start = self._current_index
+        elif self._current_index >= self._view_start + self.VIEW_SIZE:
+            self._view_start = self._current_index - self.VIEW_SIZE + 1
+
+    def on_click(self) -> None:
+        if self._gui is None:
+            return
+        label = self._items[self._current_index]
+        if label == "back":
+            self._gui.pop()
+        else:
+            self._set(label)
+            self._gui.pop()
+
+    def render(self) -> list[str]:
+        current_val = self._get()
+        lines: list[str] = []
+        for i in range(self.VIEW_SIZE):
+            idx = i + self._view_start
+            if idx < len(self._items):
+                item = self._items[idx]
+                marker = "   " if item == "back" else ("(*)" if item == current_val else "   ")
+                prefix = ">" if idx == self._current_index else " "
+                line = f"{prefix}{item} {marker}"
+                lines.append(line[:20].ljust(20))
+            else:
+                lines.append(" " * 20)
+        return lines
+
+
+# ---------------------------------------------------------------------------
+# PyGameMenu
+# ---------------------------------------------------------------------------
+
+
+class PyGameMenu(MenuBase):
+    """Hands control of the rotary encoder to PygameApp.
+
+    Queue ownership:
+      encoder_q — LCDGui writes rotary deltas; PygameApp reads.  (unchanged)
+      pygame_q  — PygameApp writes results; LCDGui reads.        (unchanged)
+
+    On rotate: forwards delta to encoder_q so PygameApp receives it.
+    On click:  emergency exit — pops this menu (PygameApp keeps running).
+    Graceful exit: PygameApp calls signal_done(result), which puts
+      ("done", result) on pygame_q; LCDGui calls on_exit_callback then pops.
+    """
+
+    def __init__(
+        self,
+        title: str,
+        encoder_q: queue.Queue,
+        on_exit_callback: Callable[[dict], None] | None = None,
+    ):
+        self.title = title
+        self._encoder_q = encoder_q
+        self.on_exit_callback = on_exit_callback
+
+    def on_rotate(self, delta: int) -> None:
+        self._encoder_q.put(delta)
+
+    def on_click(self) -> None:
+        # Emergency exit: pop without stopping PygameApp.
+        if self._gui:
+            self._gui.pop()
+
+    def render(self) -> list[str]:
+        header = f"-- {self.title} --"[:20].center(20)
+        return [
+            header,
+            "Pygame active".center(20),
+            " " * 20,
+            "Click to exit".center(20),
+        ]
+
+
+# ---------------------------------------------------------------------------
+# PrintStatusMenu
+# ---------------------------------------------------------------------------
+
+
+class PrintStatusMenu(MenuBase):
+    """Displayed while a print job is running. Click stops the job."""
+
+    title = "Printing..."
+
+    def __init__(self, pc: PrintController, video_filename_short: str):
+        self._pc = pc
+        self._filename = video_filename_short[:20]
+        self._start_time: float = 0.0
+
+    def on_enter(self, gui: "LCDGui") -> None:
+        super().on_enter(gui)
+        self._start_time = time.time()
+
+    def on_rotate(self, delta: int) -> None:
+        pass  # no-op while printing
+
+    def on_click(self) -> None:
+        self._pc.stop()
+        if self._gui:
+            self._gui.pop()
+
+    def render(self) -> list[str]:
+        elapsed = time.time() - self._start_time
+        mins, secs = divmod(int(elapsed), 60)
+        return [
+            "-- Printing --".center(20),
+            self._filename.ljust(20),
+            f"Elapsed: {mins:02d}:{secs:02d}".ljust(20),
+            "Click to stop".center(20),
+        ]
+
+
+# ---------------------------------------------------------------------------
+# StaticMenu
+# ---------------------------------------------------------------------------
+
+
+class StaticMenu(MenuBase):
+    """Read-only display of fixed lines. Rotate does nothing; click pops."""
+
+    def __init__(self, title: str, lines: list[str]):
+        self.title = title
+        self._lines = lines
+
+    def on_rotate(self, delta: int) -> None:
+        pass
+
+    def on_click(self) -> None:
+        if self._gui:
+            self._gui.pop()
+
+    def render(self) -> list[str]:
+        result = list(self._lines[:4])
+        while len(result) < 4:
+            result.append("")
+        return [ln[:20].ljust(20) for ln in result]
+
+
+# ---------------------------------------------------------------------------
+# LCDGui
+# ---------------------------------------------------------------------------
+
+
 class LCDGui:
-    def __init__(self):
-        self.pc: PrintController = PrintController()
-        self.print_start_time = None
+    """Thin dispatcher: owns the menu stack and wires hardware inputs to menus.
 
-        self.menu_dict: dict[str, list[str]] = {
-            "main": [
-                "Print from USB",
-                "Manual Control",
-                "Settings",
-                "Power Options",
-            ],
-            "Print from USB": ["back"] + self.pc.hardware.usb_device.get_file_names(),
-            "Manual Control": [
-                "back",
-                "Turn on LEDs",
-                "Turn off LEDs",
-                "start stepper",
-                "stop stepper",
-                "capture image",
-            ],
-            "Settings": [
-                "back",
-                "save as default",
-                "Resize Print",
-                "Set Stepper RPM",
-                "Calibration",
-                "Find Vial Width",
-            ],
-            "Calibration": ["back"] + self.pc.hardware.projector.get_calibration_file_names(),
-            "Calibrating": ["back"],
-            "Power Options": [
-                "back",
-                "Kill GUI",
-                "Power Off",
-            ],
-            "Print menu": ["stop"],
-        }
-        self.menu_callbacks: dict[str, Any] = {  # pyright: ignore[reportExplicitAny]
-            "Turn on LEDs": lambda: self.pc.hardware.led_manager.set_led((255, 0, 0)),
-            "Turn off LEDs": self.pc.hardware.led_manager.clear_leds,
-            "start stepper": lambda: self.pc.hardware.stepper.start_rotation(ramp_time=1),
-            "stop stepper": lambda: self.pc.hardware.stepper.stop(),
-            "capture image": lambda: self.pc.hardware.camera.capture_image("test.jpeg"),
-            "Kill GUI": lambda: self.kill_gui(),
-            "Set Stepper RPM": lambda: self.enter_variable_adjustment(
-                "RPM",
-                self.pc.hardware.stepper.speed_rpm,
-                lambda rpm: self.pc.hardware.stepper.set_rpm(rpm, ramp_time=1),
-            ),
-            "Find Vial Width": lambda: self.enter_variable_adjustment(
-                "Vial Width",
-                self.pc.hardware.projector.vial_width,
-                lambda width: self.pc.hardware.projector.show_vial_width(int(width)),
-            ),
-            "Restart": lambda: self.restart_pi(),
-            "Power Off": lambda: self.power_off_pi(),
-            "print": self.pc.start_print_job,
-            "stop": lambda: (
-                self.pc.stop(),
-                self.clear_timer(),
-                self.show_menu("main"),
-            ),
-            "Resize Print": lambda: self.enter_variable_adjustment(
-                "size %",
-                self.pc.hardware.projector.size,
-                # FIXME: Fix typing issues here
-                lambda x: self.pc.hardware.projector.resize(int(x)),
-            ),  # Resize Print option callback
-            "save to default": lambda: self.save_defaults(),
-        }
+    Construct with a PrintController and optional queues/event, then call
+    set_root(menu) before run().
+    """
 
-        self.menu_stack: list[str] = []  # Stack to keep track of menu navigation
-        self.current_menu: str | None = None  # Currently displayed menu
-        self.return_menu: str | None = None
-
-        self.current_menu_index: int = 0  # Index of selected menu item
-        self.target_menu_index: int = 0
-        self.view_start = 0  # Tracks the start of the visible menu slice
-        self.VIEW_SIZE = 4  # Number of menu items visible at once
-
-        self.running = True  # Flag to control the execution of the main loop
-
-        self.adjusting_variable = False  # Flag to track if a variable is being adjusted
-        self.current_var_value = 0  # The current value of the variable being adjusted
-        self.target_var_value = 0
-        self.variable_name = ""  # Name of the variable being adjusted
-        self.update_function = None
-
-        self.showing_calibration_image = False
-
-        self.selected_video_filename = None
-        self.video_filename_short = None
-
-        # TODO: Rework everything to be state-based
+    def __init__(
+        self,
+        pc: PrintController,
+        encoder_q: queue.Queue,
+        pygame_q: queue.Queue,
+        stop_event: threading.Event,
+        fps: int = 20,
+    ):
+        self.pc = pc
+        self.encoder_q = encoder_q
+        self.pygame_q = pygame_q
+        self.stop_event = stop_event
+        self.running = True
         self.mode = Mode.MENU
+        self.stack: list[MenuBase] = []
+        self._last_rendered: list[str] = []
+        self.fps = fps
 
-    def clear_timer(self):
-        # Reset the timer attribute
-        self.print_start_time = None
-        # Clear the line used for displaying elapsed time (line 3)
-        self.pc.hardware.lcd.write_message(" " * 20, 3, 0)
+    # ── Stack management ──────────────────────────────────────────────────────
 
-    def show_startup_screen(self):
-        """Display the startup screen with 'Hello User!'."""
-        f = self.pc.hardware.led_manager.run_start_animation
-        Thread(target=f).start()
+    def push(self, menu: MenuBase) -> None:
+        """Enter and push a menu onto the stack."""
+        menu.on_enter(self)
+        self.stack.append(menu)
+        self._sync_mode()
 
-        self.pc.hardware.lcd.clear()
-        self.pc.hardware.lcd.write_message("Open   ".center(20), 1, 0)
-        time.sleep(1)
-        self.pc.hardware.lcd.write_message("OpenCAL".center(20), 1, 0)
-        time.sleep(2)
-        self.pc.hardware.lcd.write_message("FOR THE COMMUNITY".center(20), 2, 0)
-        time.sleep(1)
+    def pop(self) -> None:
+        """Exit and remove the top menu; never empties the stack entirely."""
+        if len(self.stack) > 1:
+            self.stack[-1].on_exit()
+            self.stack.pop()
+        self._sync_mode()
 
-    def show_menu(self, menu: str | None):
-        """Display a given menu on the LCD."""
-        if menu != self.current_menu:
-            self.current_menu_index = 0
-            self.target_menu_index = 0
-            self.current_menu = menu
-            self.navigate()
+    def _sync_mode(self) -> None:
+        top = self.stack[-1] if self.stack else None
+        if isinstance(top, PyGameMenu):
+            self.mode = Mode.PYGAME
+        elif isinstance(top, PrintStatusMenu):
+            self.mode = Mode.PRINTING
+        else:
+            self.mode = Mode.MENU
 
-    def save_defaults(self):
-        """
-        Read the existing config.json (or start with an empty one),
-        overwrite the three keys we care about, and write it back out.
-        """
-        # 1) load whatever’s there already (or start fresh)
+    def set_root(self, root: MenuBase) -> None:
+        """Push the root menu, initializing the stack."""
+        self.push(root)
+
+    # ── Hardware input handlers ───────────────────────────────────────────────
+
+    def handle_rotary_rotation(self, delta: int) -> None:
+        if self.stack:
+            self.stack[-1].on_rotate(delta)
+
+    def handle_button_press(self) -> None:
+        if self.stack:
+            self.stack[-1].on_click()
+
+    # ── Utility methods (called from menu callbacks) ──────────────────────────
+
+    def save_defaults(self) -> None:
+        """Persist current RPM, print size, and camera type to config.json."""
         if os.path.exists(CONFIG_PATH):
             with open(CONFIG_PATH, "r") as f:
-                cfg = json.load(f)  # pyright: ignore[reportAny]
+                cfg = json.load(f)
         else:
             cfg = {}
 
         cfg["stepper_motor"]["default_speed"] = self.pc.hardware.stepper.speed_rpm
-
         cfg["projector"]["default_print_size"] = self.pc.hardware.projector.size
-
         cfg["camera"]["type"] = self.pc.hardware.camera.cam_type
 
         try:
@@ -174,237 +506,83 @@ class LCDGui:
             print(f"Error saving defaults: {e}")
             return
 
-        self.splash("Defaults saved!", self.current_menu, 1.2)
+        self.splash("Defaults saved!", 1.2)
 
-    def splash(
-        self,
-        message: str = "Saved",
-        _next_menu: str | None = "main",
-        duration: float = 1.0,
-    ):
-        """
-        Show a one-off message centered on the LCD, wait 'duration' seconds,
-        then display 'next_menu'.
-        """
-        # 1) clear the display
+    def splash(self, message: str, duration: float = 1.0) -> None:
+        """Briefly show a centered message on the LCD, then force a redraw."""
         self.pc.hardware.lcd.clear()
-        # 2) write the message centered on line 1 (you can tweak line/col if you want)
-        centered = message.center(20)
-        self.pc.hardware.lcd.write_message(centered, 1, 0)
-        # 3) hold for a bit
+        self.pc.hardware.lcd.write_message(message.center(20), 1, 0)
         time.sleep(duration)
+        self._last_rendered = []  # force full redraw on next loop tick
 
-    def navigate(self):
-        # Should only occur if a redraw is necessary
-        # TODO: `current_menu` shouldn't be able to be None
-        if self.current_menu is None:
-            raise ValueError("Menu is None")
-
-        menu_list = self.menu_dict[self.current_menu]
-        menu_len = len(menu_list)
-        self.current_menu_index = self.target_menu_index
-
-        # Ensure proper portion of menu will be on screen
-        if self.current_menu_index < self.view_start:
-            self.view_start = self.current_menu_index
-        elif self.current_menu_index >= self.view_start + self.VIEW_SIZE:
-            self.view_start = self.current_menu_index - self.VIEW_SIZE + 1
-
-        # Render the menu
-        for view_idx in range(self.VIEW_SIZE):
-            menu_idx = view_idx + self.view_start
-            if menu_idx < menu_len:
-                prefix = ">" if menu_idx == self.current_menu_index else " "
-                line = f"{prefix}{menu_list[menu_idx]}".ljust(20)
-            else:
-                line = " " * 20
-            self.pc.hardware.lcd.write_message(line, view_idx, 0)
-
-    def select_option(self):
-        """Handle menu selection."""
-
-        if self.current_menu is None:
-            raise ValueError("No Menu Selected")
-        option = self.menu_dict[self.current_menu][self.current_menu_index]
-
-        if option == "back":
-            if self.menu_stack:
-                self.show_menu(self.menu_stack.pop())
-            else:
-                self.show_menu("main")
-        elif option in self.menu_dict:
-            # Update USB file list options
-            self.menu_dict["Print from USB"] = [
-                "back"
-            ] + self.pc.hardware.usb_device.get_file_names()
-            self.menu_dict["Calibration"] = [
-                "back"
-            ] + self.pc.hardware.projector.get_calibration_file_names()
-            self.menu_stack.append(self.current_menu)
-            self.show_menu(option)
-        elif option in self.menu_callbacks:
-            self.menu_callbacks[option]()
-        elif self.current_menu == "Print from USB":
-            self.video_filename_short = option
-            self.selected_video_filename = self.pc.hardware.usb_device.get_full_path(option)
-            # Black out screen to allow loading vial
-            self.pc.hardware.projector.display_image(
-                Path.cwd() / "opencal/utils/calibration/dark.png"
-            )
-            self.enter_variable_adjustment(
-                "RPM",
-                self.pc.hardware.stepper.speed_rpm,
-                self.pc.hardware.stepper.set_rpm,
-            )
-        elif self.current_menu == "Calibration":
-            self.show_calibration_image(option)
-
-    def enter_variable_adjustment(
-        self,
-        variable_name: str,
-        current_value: float,
-        update_function: Callable[[int | float], None] | None = None,
-    ) -> None:
-        """Enter variable adjustment mode and allow the user to adjust any variable.
-        A callback (if provided) is stored and called after the adjustment is complete.
-        """
-        self.return_menu = self.current_menu
-        self.current_menu = None
-        self.variable_name = variable_name
-        self.current_var_value = current_value
-        self.target_var_value = current_value
-
-        self.update_function = update_function
-        self.pc.hardware.lcd.clear()
-        self.pc.hardware.lcd.write_message(
-            f"{self.variable_name}: {int(self.current_var_value)}".ljust(20),
-            0,
-            0,
-        )
-        self.pc.hardware.lcd.write_message("Use rotary to adjust", 1, 0)
-        self.pc.hardware.lcd.write_message("Click to set", 2, 0)
-        self.adjusting_variable = True
-        self.adjust_variable()
-
-    def adjust_variable(self):
-        self.current_var_value = self.target_var_value
-
-        line = f"{self.variable_name}: {self.current_var_value}".ljust(20)
-        self.pc.hardware.lcd.write_message(line, 0, 0)
-        # TODO: Feel like this is too specific to be here
-        if self.video_filename_short is not None:
-            self.pc.hardware.lcd.write_message(self.video_filename_short, 3, 0)
-
-    def show_calibration_image(self, file_name: str):
-        self.showing_calibration_image = True
-        self.adjusting_variable = False
-
-        projector = self.pc.hardware.projector
-        path = projector.calibration_dir_path / file_name
-        projector.display_image(path)
-        self.show_menu("Calibrating")
-
-    def button_press_handler(self):
-        if self.adjusting_variable and self.selected_video_filename is None:
-            # Pressing btn while adjusting variable returns to prev menu
-            if self.update_function is not None:
-                self.update_function(self.current_var_value)
-            else:
-                raise ValueError("No update function")
-
-            self.adjusting_variable = False
-            self.show_menu(self.return_menu)
-        elif self.selected_video_filename is not None:
-            # Pressing btn to start print job
-            if self.update_function is not None:
-                self.update_function(self.current_var_value)
-            else:
-                raise ValueError("No update function")
-
-            self.adjusting_variable = False
-            self.print_start_time = time.time()
-            self.menu_callbacks["print"](self.selected_video_filename)
-            self.selected_video_filename = None
-            self.video_filename_short = None
-            # Switch to print menu after starting the print job\
-            self.show_menu("Print menu")
-        else:
-            # Otherwise selecting menu option
-            self.select_option()
-
-    def restart_pi(self):
-        """Restart the Raspberry Pi."""
+    def restart_pi(self) -> None:
         self.pc.hardware.lcd.clear()
         self.pc.hardware.lcd.write_message("Restarting...", 1, 0)
         time.sleep(2)
-        _res = os.system("sudo reboot")
-        result = subprocess.run(["sudo", "reboot"], capture_output=True)
-        if result.returncode != 0:
-            print("fail!")
+        subprocess.run(["sudo", "reboot"])
 
-    def power_off_pi(self):
-        """Power off the Raspberry Pi."""
+    def power_off_pi(self) -> None:
         self.pc.hardware.lcd.clear()
         self.pc.hardware.lcd.write_message("Powering Off...", 1, 0)
         time.sleep(2)
         self.kill_gui()
-        _result = subprocess.call(["sudo", "shutdown", "-h", "now"])
-        # TODO: error handling
-        # os.system("sudo shutdown -h now")
+        subprocess.call(["sudo", "shutdown", "-h", "now"])
 
-    def kill_gui(self):
-        """Handles the kill GUI action."""
-        # self.camera.stop_camera()
-        # TODO: add threading Events?
+    def kill_gui(self) -> None:
         self.running = False
+        self.stop_event.set()
 
-    def handle_rotary_rotation(self, delta: int):
-        if self.adjusting_variable:
-            if self.variable_name == "size %":
-                self.target_var_value = max(0, min(100, self.target_var_value + delta))
-            else:
-                self.target_var_value += delta
-        else:
-            # In a menu
-            # FIXME: consider adding a Lock?
-            if self.current_menu is None:
-                raise ValueError("Menu is None")
-            menu_len = len(self.menu_dict[self.current_menu])
-            self.target_menu_index = max(0, min(menu_len - 1, self.target_menu_index + delta))
+    # ── Startup display ───────────────────────────────────────────────────────
 
-    def run(self):
-        """Main method to run the GUI."""
+    def show_startup_screen(self) -> None:
+        from threading import Thread
+
+        Thread(target=self.pc.hardware.led_manager.run_start_animation).start()
+        self.pc.hardware.lcd.clear()
+        self.pc.hardware.lcd.write_message("Open   ".center(20), 1, 0)
+        time.sleep(1)
+        self.pc.hardware.lcd.write_message("OpenCAL".center(20), 1, 0)
+        time.sleep(2)
+        self.pc.hardware.lcd.write_message("FOR THE COMMUNITY".center(20), 2, 0)
+        time.sleep(1)
+
+    # ── Main loop ─────────────────────────────────────────────────────────────
+
+    def run(self) -> None:
+        """Start the GUI loop. Must call set_root() before run()."""
         self.show_startup_screen()
-        self.show_menu("main")
-        self.pc.hardware.projector.display_image(Path.cwd() / "opencal/utils/calibration/dark.png")
 
         encoder = self.pc.hardware.rotary.encoder
         encoder.when_rotated_clockwise = lambda: self.handle_rotary_rotation(1)
         encoder.when_rotated_counter_clockwise = lambda: self.handle_rotary_rotation(-1)
-        self.pc.hardware.rotary.button.when_pressed = self.button_press_handler
+        self.pc.hardware.rotary.button.when_pressed = self.handle_button_press
 
         while self.running:
-            if self.print_start_time is not None:
-                elapsed = time.time() - self.print_start_time
-                # Format the elapsed time (e.g., minutes and seconds)
-                minutes, seconds = divmod(int(elapsed), 60)
-                elapsed_formatted = f"{minutes:02d}:{seconds:02d}"
-                # Write the elapsed time to a fixed line on the LCD (line 3)
-                self.pc.hardware.lcd.write_message(f"Elapsed: {elapsed_formatted}", 3, 0)
-            if self.adjusting_variable:
-                if self.current_var_value != self.target_var_value:
-                    self.adjust_variable()
-            else:
-                if self.current_menu_index != self.target_menu_index:
-                    self.navigate()
+            # Check for signals from pygame (only meaningful in PYGAME mode).
+            if self.mode == Mode.PYGAME:
+                while not self.pygame_q.empty():
+                    try:
+                        key, value = self.pygame_q.get_nowait()
+                        if key == "done" and self.stack:
+                            top = self.stack[-1]
+                            if isinstance(top, PyGameMenu) and top.on_exit_callback:
+                                result = value if isinstance(value, dict) else {}
+                                top.on_exit_callback(result)
+                            self.pop()
+                    except queue.Empty:
+                        break
 
-            _steps = self.pc.hardware.stepper.angle_in_steps()
-            _angle = self.pc.hardware.stepper.angle_in_degrees()
-            # print(f"{steps=} {angle=}")
+            # Re-render only when the display content changes.
+            if self.stack:
+                lines = self.stack[-1].render()
+                if lines != self._last_rendered:
+                    for i, line in enumerate(lines[:4]):
+                        self.pc.hardware.lcd.write_message(line, i, 0)
+                    self._last_rendered = list(lines)
 
-            # Control the GUI refresh rate here
-            time.sleep(0.05)
+            time.sleep(1 / self.fps)
 
+        # Goodbye sequence
         time.sleep(0.5)
         self.pc.hardware.lcd.clear()
         time.sleep(0.5)
@@ -414,5 +592,7 @@ class LCDGui:
 
 
 if __name__ == "__main__":
-    gui = LCDGui()
-    gui.run()
+    # Standalone test entry point (no queues).
+    _pc = PrintController()
+    _gui = LCDGui(pc=_pc)
+    _gui.run()
