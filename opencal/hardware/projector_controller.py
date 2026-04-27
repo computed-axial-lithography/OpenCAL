@@ -4,6 +4,7 @@ import threading
 from pathlib import Path
 from typing import final
 from enum import Enum
+import json
 
 import numpy as np
 from PIL import Image
@@ -18,6 +19,30 @@ class ProjectorOrientation(Enum):
     RIGHT = "right"
     FLIPPED = "flipped"
 
+    @classmethod
+    def from_wlr_randr(cls, s: str) -> "ProjectorOrientation":
+        if s == "normal":
+            return cls.NORMAL
+        elif s == "90":
+            return cls.LEFT
+        elif s == "180":
+            return cls.FLIPPED
+        elif s == "270":
+            return cls.RIGHT
+        else:
+            raise NotImplementedError(f"Can't parse wlr-randr transform value: {s}")
+
+    def to_wlr_randr(self) -> str:
+        match self:
+            case ProjectorOrientation.NORMAL:
+                return "normal"
+            case ProjectorOrientation.LEFT:
+                return "90"
+            case ProjectorOrientation.RIGHT:
+                return "270"
+            case ProjectorOrientation.FLIPPED:
+                return "180"
+
 
 @final
 class Projector:
@@ -31,32 +56,39 @@ class Projector:
 
         self.process = None
         self.thread = None  # We'll use this to keep track of the playback thread.
-        self._orientation = ProjectorOrientation.NORMAL
+        self._orientation = None
 
     def get_projector_orientation(self) -> ProjectorOrientation:
-        return self._orientation
+        """Query display orientation from wlr-randr, so that it cannot silently be changed in the background."""
 
-    def set_projector_orientation(self, orient: ProjectorOrientation) -> None:
-        if orient == self._orientation:
+        result = subprocess.run(
+            ["wlr-randr", "--output", "HDMI-A-1", "--json"], capture_output=True, text=True
+        )
+
+        if result.returncode != 0:
+            print(f"ERROR: Failed to query projector orientation: {result.stderr}")
             return
 
-        match orient:
-            case ProjectorOrientation.NORMAL:
-                dir = "0"
-            case ProjectorOrientation.LEFT:
-                dir = "90"
-            case ProjectorOrientation.RIGHT:
-                dir = "270"
-            case ProjectorOrientation.FLIPPED:
-                dir = "180"
+        out = json.loads(result.stdout)[0]
+        assert out["name"] == "HDMI-A-1"
 
-        cmd = f"wlr-randr --output HDMI-A-1 --transform {dir}"
+        transform = out["transform"]
+        orient = ProjectorOrientation.from_wlr_randr(transform)
+
+        return orient
+
+    def set_projector_orientation(self, orient: ProjectorOrientation) -> None:
+        current_orient = self.get_projector_orientation()
+        if orient == current_orient:
+            return
+
+        transform = orient.to_wlr_randr()
+
+        cmd = f"wlr-randr --output HDMI-A-1 --transform {transform}"
         result = subprocess.run(cmd.split(), capture_output=True, text=True)
 
         if result.returncode != 0:
             print(f"ERROR failed to rotate display: {result.stderr}")
-        else:
-            self._orientation = orient
 
     def get_video_dimensions(self, video_path: Path):
         """
