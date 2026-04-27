@@ -131,8 +131,6 @@ class Projector:
         crop_x = int((orig_width) / 2) - new_width / 2
         crop_y = int((orig_height) / 2) - new_height / 2
 
-        # Construct the crop filter argument to center the zoomed video
-
         # Set up the environment for the video
         env = os.environ.copy()
         env["DISPLAY"] = ":0"
@@ -143,7 +141,7 @@ class Projector:
             "/usr/bin/mpv",
             "--fs",  # Fullscreen mode
             "--loop",  # Loop the video
-            "--hwdec=auto",
+            "--hwdec=v4l2m2m-copy",
             f"--vf=crop={new_width}:{new_height}:{crop_x}:{crop_y}",
             str(video_path),
         ]
