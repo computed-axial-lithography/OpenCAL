@@ -11,7 +11,7 @@ WorkingDirectory=/home/opencal/OpenCAL
 ExecStartPre=/bin/bash -c 'until [ -S /tmp/.X11-unix/X0 ]; do sleep 1; done'
 ExecStart=/home/opencal/.venv/bin/python -m opencal
 Environment=DISPLAY=:0
-Environment=WAYLAND_DISPLAY=wayland-1
+Environment=WAYLAND_DISPLAY=wayland-0
 Environment=XDG_RUNTIME_DIR=/run/user/1000
 StandardOutput=journal
 StandardError=journal
