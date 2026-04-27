@@ -45,6 +45,8 @@ class PrintController:
             print("Print job complete.")
 
     def stop(self):
+        if not self.running:
+            return
         print("Stopping print job...")
         self.running = False
 
