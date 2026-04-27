@@ -132,7 +132,6 @@ class Projector:
         crop_y = int((orig_height) / 2) - new_height / 2
 
         # Construct the crop filter argument to center the zoomed video
-        crop_filter = f"crop={new_width}:{new_height}:{crop_x}:{crop_y}"
 
         # Set up the environment for the video
         env = os.environ.copy()
@@ -144,10 +143,10 @@ class Projector:
             "/usr/bin/mpv",
             "--fs",  # Fullscreen mode
             "--loop",  # Loop the video
-            f"--vf=lavfi=[{crop_filter}],fps=60",  # Apply the crop filter for zoom
+            "--hwdec=auto",
+            f"--vf=crop={new_width}:{new_height}:{crop_x}:{crop_y}",
             str(video_path),
         ]
-        print(f"DEBUG: mpv command: {' '.join(command)}")
 
         self.process = subprocess.Popen(command, env=env)
         print("Video playback started.")
