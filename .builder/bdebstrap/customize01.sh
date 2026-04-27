@@ -29,6 +29,11 @@ chroot "$CHROOT" python3 -m venv --system-site-packages /home/opencal/.venv
 chroot "$CHROOT" /home/opencal/.venv/bin/pip install --upgrade pip
 chroot "$CHROOT" /home/opencal/.venv/bin/pip install \
     /home/opencal/OpenCAL pygame Pillow
+# TODO: install opencv via pip once the build is stable. pip is used instead of
+# the apt package because python3-opencv from Debian Bookworm is compiled against
+# numpy 1.x, which conflicts with python3-picamera2 (RPi repo, numpy 2.x).
+# pip's opencv-python-headless ships aarch64 wheels built against numpy 2.x.
+# chroot "$CHROOT" /home/opencal/.venv/bin/pip install opencv-python-headless
 # build-essential was only needed to compile the pip packages above; remove it
 # from the final image to avoid shipping gcc/make on a production device.
 chroot "$CHROOT" apt-get purge -y --autoremove build-essential

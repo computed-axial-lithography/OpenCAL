@@ -12,7 +12,6 @@ mmdebstrap:
     - python3-venv
     - python3-pip
     - build-essential
-    - python3-opencv
     - python3-picamera2
     - libcamera-apps
     - ffmpeg
