@@ -1,0 +1,12 @@
+[Unit]
+Description=OpenCAL Printer Controller
+
+[Service]
+Type=simple
+WorkingDirectory=/home/opencal/OpenCAL
+ExecStart=/home/opencal/.venv/bin/python3 -m opencal
+Environment=SDL_VIDEODRIVER=wayland
+StandardOutput=journal
+StandardError=journal
+Restart=on-failure
+RestartSec=5

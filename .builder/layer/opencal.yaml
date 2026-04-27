@@ -24,7 +24,7 @@ mmdebstrap:
     - python3-smbus2
     - i2c-tools
     - usbutils
-    # Wayland compositor stack (matches default RPi OS Bookworm)
+    # Wayland compositor stack
     - wayfire
-    - xwayland
     - greetd
+    - libpam-systemd

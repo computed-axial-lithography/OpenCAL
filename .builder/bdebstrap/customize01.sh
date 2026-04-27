@@ -11,11 +11,8 @@ if [[ ! -d "$SRCROOT/opencal-src" ]]; then
 fi
 mkdir -p "$CHROOT/home/opencal/OpenCAL"
 cp -r "$SRCROOT/opencal-src/." "$CHROOT/home/opencal/OpenCAL/"
-# Chown the entire home dir — the rootfs-overlay (wayfire.ini etc.) is copied
-# as root, which leaves .config/ owned by root and causes shader-cache errors.
-chroot "$CHROOT" chown -R opencal:opencal /home/opencal
 
-# 2. Enable hardware interfaces and add user to hardware groups
+# 2. Enable hardware interfaces.
 # raspi-config cannot run in a build chroot (no configfs, no kernel modules),
 # so directly edit config.txt and modules-load.d instead.
 sed -i '/dtparam=i2c_arm/d;/dtparam=spi/d' "$CHROOT/boot/firmware/config.txt"
@@ -26,28 +23,31 @@ echo "spidev"  >> "$CHROOT/etc/modules-load.d/raspi-extra.conf"
 chroot "$CHROOT" usermod -aG i2c,spi,gpio,video,render opencal
 
 # 3. Create venv with system-site-packages so apt-installed python3-opencv and
-#    python3-picamera2 are visible, then install OpenCAL and undeclared runtime deps.
-# Run as root (sudo -u fails in a build chroot), then chown to opencal.
+#    python3-picamera2 are visible, then install OpenCAL and remaining runtime deps.
+#    Run as root (sudo -u fails in a build chroot); ownership is fixed in step 5.
 chroot "$CHROOT" python3 -m venv --system-site-packages /home/opencal/.venv
 chroot "$CHROOT" /home/opencal/.venv/bin/pip install --upgrade pip
 chroot "$CHROOT" /home/opencal/.venv/bin/pip install \
     /home/opencal/OpenCAL pygame Pillow
-chroot "$CHROOT" chown -R opencal:opencal /home/opencal/.venv
+# build-essential was only needed to compile the pip packages above; remove it
+# from the final image to avoid shipping gcc/make on a production device.
+chroot "$CHROOT" apt-get purge -y --autoremove build-essential
 
-# Wrapper so greetd can set up XDG_RUNTIME_DIR before launching wayfire.
-# greetd itself does not create /run/user/<uid> — that requires libpam-systemd.
-cat > "$CHROOT/usr/local/bin/start-wayfire" << 'EOF'
-#!/bin/bash
-export XDG_RUNTIME_DIR=/run/user/$(id -u)
-mkdir -p "$XDG_RUNTIME_DIR"
-chmod 0700 "$XDG_RUNTIME_DIR"
-exec wayfire "$@"
-EOF
-chmod +x "$CHROOT/usr/local/bin/start-wayfire"
+# 4. Enable the user service via a symlink (systemctl --user cannot run in a chroot).
+#    opencal.path fires when the Wayland socket appears, then activates opencal.service.
+mkdir -p "$CHROOT/home/opencal/.config/systemd/user/default.target.wants"
+ln -sf /home/opencal/.config/systemd/user/opencal.path \
+    "$CHROOT/home/opencal/.config/systemd/user/default.target.wants/opencal.path"
 
-# 4. Enable greetd (Wayland autologin) and the opencal service.
-#    Service and greetd config are already in the chroot via rootfs-overlay.
+# 5. Fix ownership of the entire home directory in one pass.
+#    This covers: the OpenCAL source, the rootfs-overlay files (.config/wayfire,
+#    .config/systemd), and the venv — all of which were written as root above.
+chroot "$CHROOT" chown -R opencal:opencal /home/opencal
+
+# 6. Enable greetd for Wayland autologin.
 "$BDEBSTRAP_HOOKS/enable-units" "$CHROOT" greetd
-"$BDEBSTRAP_HOOKS/enable-units" "$CHROOT" opencal
+
+# 7. Force password change on first login so the default credentials don't persist.
+chroot "$CHROOT" chage -d 0 opencal
 
 echo "OpenCAL customization complete."
