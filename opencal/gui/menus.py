@@ -167,15 +167,13 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
         ),
     ]
 
-    # Only add Find Vial Width if the encoder queue is available.
-    if encoder_q is not None:
-        settings_items.append(
-            PyGameMenu(
-                title="Find Vial Width",
-                encoder_q=encoder_q,
-                on_exit_callback=_apply_vial_result,
-            )
+    settings_items.append(
+        PyGameMenu(
+            title="Find Vial Width",
+            encoder_q=encoder_q,
+            on_exit_callback=_apply_vial_result,
         )
+    )
 
     return NavigationMenu(
         "main",

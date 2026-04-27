@@ -432,9 +432,9 @@ class LCDGui:
     def __init__(
         self,
         pc: PrintController,
-        encoder_q: queue.Queue | None = None,
-        pygame_q: queue.Queue | None = None,
-        stop_event: threading.Event | None = None,
+        encoder_q: queue.Queue,
+        pygame_q: queue.Queue,
+        stop_event: threading.Event,
         fps: int = 20,
     ):
         self.pc = pc
@@ -530,8 +530,7 @@ class LCDGui:
 
     def kill_gui(self) -> None:
         self.running = False
-        if self.stop_event is not None:
-            self.stop_event.set()
+        self.stop_event.set()
 
     # ── Startup display ───────────────────────────────────────────────────────
 
@@ -560,7 +559,7 @@ class LCDGui:
 
         while self.running:
             # Check for signals from pygame (only meaningful in PYGAME mode).
-            if self.pygame_q is not None and self.mode == Mode.PYGAME:
+            if self.mode == Mode.PYGAME:
                 while not self.pygame_q.empty():
                     try:
                         key, value = self.pygame_q.get_nowait()
