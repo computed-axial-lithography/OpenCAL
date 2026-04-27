@@ -2,8 +2,8 @@ import queue
 import threading
 import time
 from typing import final
-
 import pygame
+
 from opencal.utils.config import PygameConfig
 
 

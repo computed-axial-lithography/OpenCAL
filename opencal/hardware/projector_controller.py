@@ -146,6 +146,19 @@ class Projector:
             str(video_path),
         ]
 
+        # VLC command
+        command = [
+            "/usr/bin/cvlc",
+            "--fullscreen",
+            "--loop",
+            "--video-filter=croppadd",
+            f"croppadd-cropleft={crop_x}",
+            f"croppadd-cropright={crop_x}",
+            f"croppadd-croptop={crop_y}",
+            f"croppadd-cropbottom={crop_y}",
+            str(video_path),
+        ]
+
         self.process = subprocess.Popen(command, env=env)
         print("Video playback started.")
 
