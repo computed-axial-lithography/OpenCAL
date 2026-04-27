@@ -24,7 +24,10 @@ mmdebstrap:
     - i2c-tools
     - usbutils
     - udisks2
+    - udiskie
     # Wayland compositor stack
     - wayfire
     - greetd
     - libpam-systemd
+    # WiFi
+    - network-manager

@@ -65,8 +65,10 @@ ln -sf /home/opencal/.config/systemd/user/opencal.path \
 #    .config/systemd), and the venv — all of which were written as root above.
 chroot "$CHROOT" chown -R opencal:opencal /home/opencal
 
-# 6. Enable greetd for Wayland autologin.
+# 6. Enable services.
 "$BDEBSTRAP_HOOKS/enable-units" "$CHROOT" greetd
+chmod +x "$CHROOT/usr/local/bin/wifi-setup.sh"
+"$BDEBSTRAP_HOOKS/enable-units" "$CHROOT" wifi-setup
 
 # 7. Force password change on first login so the default credentials don't persist.
 chroot "$CHROOT" chage -d 0 opencal
