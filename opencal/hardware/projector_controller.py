@@ -136,28 +136,30 @@ class Projector:
         env["DISPLAY"] = ":0"
         # env["XAUTHORITY"] = "/home/opencal/.Xauthority"
 
-        # Construct the mpv command to play the video
-        command = [
-            "/usr/bin/mpv",
-            "--fs",  # Fullscreen mode
-            "--loop",  # Loop the video
-            f"--vf=crop={new_width}:{new_height}:{crop_x}:{crop_y}",
-            # TODO: Investigate --hwdec with v4l2-request
-            str(video_path),
-        ]
+        # TODO: Remove MPV command:
+
+        # command = [
+        #     "/usr/bin/mpv",
+        #     "--fs",  # Fullscreen mode
+        #     "--loop",  # Loop the video
+        #     f"--vf=crop={new_width}:{new_height}:{crop_x}:{crop_y}",
+        #     str(video_path),
+        # ]
 
         # VLC command
         command = [
             "/usr/bin/cvlc",
             "--fullscreen",
             "--loop",
+            "--no-video-title-show",
             "--video-filter=croppadd",
-            f"croppadd-cropleft={crop_x}",
-            f"croppadd-cropright={crop_x}",
-            f"croppadd-croptop={crop_y}",
-            f"croppadd-cropbottom={crop_y}",
+            f"--croppadd-cropleft={int(crop_x)}",
+            f"--croppadd-cropright={int(crop_x)}",
+            f"--croppadd-croptop={int(crop_y)}",
+            f"--croppadd-cropbottom={int(crop_y)}",
             str(video_path),
         ]
+        print(" ".join(command))
 
         self.process = subprocess.Popen(command, env=env)
         print("Video playback started.")
