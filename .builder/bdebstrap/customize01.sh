@@ -74,7 +74,13 @@ ln -sf /dev/null "$CHROOT/etc/systemd/system/getty@tty1.service"
 chmod +x "$CHROOT/usr/local/bin/wifi-setup.sh"
 "$BDEBSTRAP_HOOKS/enable-units" "$CHROOT" wifi-setup
 
-# 7. Force password change on first login so the default credentials don't persist.
+# 7. Enable linger so systemd --user starts at boot without waiting for an
+#    interactive login session. Without this, user services (opencal.path,
+#    opencal.service) may not start if the session registration races or fails.
+mkdir -p "$CHROOT/var/lib/systemd/linger"
+touch "$CHROOT/var/lib/systemd/linger/opencal"
+
+# 8. Force password change on first login so the default credentials don't persist.
 chroot "$CHROOT" chage -d 0 opencal
 
 echo "OpenCAL customization complete."
