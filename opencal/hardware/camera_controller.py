@@ -92,12 +92,14 @@ class CameraController:
         self.picam.configure(self.picam.create_video_configuration())
         encoder = H264Encoder()
         self.picam.start_recording(encoder=encoder, output=str(file))
+        print("DEBUG: starting recording")
         self._recording = True
 
     def stop_recording(self):
         if not self.picam:
             return
         if self._recording:
+            print("DEBUG: stopping recording")
             self.picam.stop_recording()
 
     def stop_camera(self):
@@ -105,21 +107,6 @@ class CameraController:
         if not self.picam:
             return
         self.picam.stop()
-
-        # TODO: remove when done
-
-        # self.streaming = False
-        # if self._stream_thread:
-        #     self._stream_thread.join(1.0)  # Wait for the streaming thread to finish
-        # if self.capture:
-        #     self.capture.release()  # Release the camera
-        #     self.capture = None
-        # cv2.destroyAllWindows()  # Close all OpenCV windows
-
-    def stop_all(self):
-        """Stop both recording and camera streaming."""
-        # self.stop_record()  # Stop recording
-        self.stop_camera()  # Stop camera streaming
 
 
 if __name__ == "__main__":

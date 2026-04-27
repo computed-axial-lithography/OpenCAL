@@ -58,6 +58,6 @@ class PrintController:
 
         # Stop camera operations if a camera is available
         self.hardware.camera.stop_recording()
-        self.hardware.camera.stop_all()  # Stop all camera operations
+        self.hardware.camera.stop_camera()  # Stop all camera operations
 
         print("Print job stopped and cleanup complete.")

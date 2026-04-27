@@ -144,9 +144,10 @@ class Projector:
             "/usr/bin/mpv",
             "--fs",  # Fullscreen mode
             "--loop",  # Loop the video
-            f"--vf=lavfi=[{crop_filter}],fps=30",  # Apply the crop filter for zoom
+            f"--vf=lavfi=[{crop_filter}],fps=60",  # Apply the crop filter for zoom
             str(video_path),
         ]
+        print(f"DEBUG: mpv command: {' '.join(command)}")
 
         self.process = subprocess.Popen(command, env=env)
         print("Video playback started.")
