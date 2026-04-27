@@ -23,6 +23,7 @@ mmdebstrap:
     - python3-smbus2
     - i2c-tools
     - usbutils
+    - udisks2
     # Wayland compositor stack
     - wayfire
     - greetd
