@@ -31,3 +31,4 @@ mmdebstrap:
     - libpam-systemd
     # WiFi
     - network-manager
+    - wpasupplicant
