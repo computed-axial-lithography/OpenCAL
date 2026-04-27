@@ -22,6 +22,22 @@ echo "i2c-dev" >> "$CHROOT/etc/modules-load.d/raspi-extra.conf"
 echo "spidev"  >> "$CHROOT/etc/modules-load.d/raspi-extra.conf"
 chroot "$CHROOT" usermod -aG i2c,spi,gpio,video,render opencal
 
+# Camera configuration.
+# Disable auto-detection so it doesn't conflict with the manually specified overlay.
+sed -i '/camera_auto_detect/d' "$CHROOT/boot/firmware/config.txt"
+echo "camera_auto_detect=0" >> "$CHROOT/boot/firmware/config.txt"
+# Camera overlay — edit this file on the boot partition (FAT32, readable from any OS)
+# to change the camera. Common options are listed below.
+cat >> "$CHROOT/boot/firmware/config.txt" << 'EOF'
+
+# Camera overlay — uncomment the line matching your camera model, then reboot.
+# The boot partition is FAT32 and can be edited from any computer.
+dtoverlay=imx708             # Arducam / Raspberry Pi Camera Module 3 (default)
+# dtoverlay=imx219           # Raspberry Pi Camera Module 2
+# dtoverlay=imx477           # Raspberry Pi HQ Camera / Arducam IMX477
+# dtoverlay=arducam-pivariety # Arducam 16MP / 64MP (needs Arducam driver)
+EOF
+
 # 3. Create venv with system-site-packages so apt-installed python3-opencv and
 #    python3-picamera2 are visible, then install OpenCAL and remaining runtime deps.
 #    Run as root (sudo -u fails in a build chroot); ownership is fixed in step 5.
