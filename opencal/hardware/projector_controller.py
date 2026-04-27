@@ -67,12 +67,12 @@ class Projector:
 
         if result.returncode != 0:
             print(f"ERROR: Failed to query projector orientation: {result.stderr}")
-            return
+            return ProjectorOrientation.NORMAL
 
-        out = json.loads(result.stdout)[0]
+        out: dict = json.loads(result.stdout)[0]
         assert out["name"] == "HDMI-A-1"
 
-        transform = out["transform"]
+        transform: str = out["transform"]
         orient = ProjectorOrientation.from_wlr_randr(transform)
 
         return orient

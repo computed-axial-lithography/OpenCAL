@@ -1,17 +1,19 @@
 import queue
 import threading
 import time
+from typing import final
 
 import pygame
 from opencal.utils.config import PygameConfig
 
 
+@final
 class PygameApp:
     def __init__(
         self,
         config: PygameConfig,
-        encoder_q: queue.Queue,
-        pygame_q: queue.Queue,
+        encoder_q: queue.Queue[int],
+        pygame_q: queue.Queue[tuple[str, str]],
         stop_event: threading.Event,
         video_playing: threading.Event,
         fps: int = 30,
@@ -33,7 +35,8 @@ class PygameApp:
             return
 
         while not self.stop_event.is_set():
-            pygame.init()
+            # FIXME: Do we need the result of pygame.init()?
+            _ = pygame.init()
             screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
             self.width, self.height = screen.get_size()
             clock = pygame.time.Clock()
@@ -54,10 +57,10 @@ class PygameApp:
                     except queue.Empty:
                         break
 
-                screen.fill((0, 0, 0))
+                _ = screen.fill((0, 0, 0))
                 self.on_frame(screen)
                 pygame.display.flip()
-                clock.tick(self.fps)
+                _ = clock.tick(self.fps)
 
             pygame.quit()
 
@@ -81,7 +84,7 @@ class PygameApp:
         top = self.height / 2 - self.rect_height / 2
         pygame.draw.rect(surf, "white", (left, top, rect_width, self.rect_height))
 
-    def send_to_gui(self, key: str, value):
+    def send_to_gui(self, key: str, value: str):
         """Publish a key-value pair to the GUI thread."""
         self.pygame_q.put((key, value))
 

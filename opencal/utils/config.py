@@ -26,7 +26,7 @@ class Config:
 
 class PygameConfig:
     def __init__(self, config: dict[str, Any]):
-        self.active = config["active"]
+        self.active: bool = config["active"]
 
 class StepperConfig:
     def __init__(self, config: dict[str, Any]):
