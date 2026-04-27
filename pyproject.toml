@@ -16,5 +16,8 @@ dependencies = [
 [tool.setuptools.packages.find]
 exclude = ["assets*"]
 
+[tool.setuptools.package-data]
+opencal = ["utils/config.json"]
+
 [tool.ruff]
 line-length = 100
