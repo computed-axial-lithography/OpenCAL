@@ -9,11 +9,11 @@ from pathlib import Path
 
 @final
 class PrintController:
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, video_playing: threading.Event):
         self.hardware = HardwareController(config)
         if not self.hardware.healthy:
             print("not all peripherals connected, some functionality may not work")
-        # TODO: Use threading event
+        self.video_playing = video_playing
         self.running = False
 
     def start_print_job(self, video_file: str):
@@ -29,6 +29,7 @@ class PrintController:
         self.hardware.led_manager.set_led((255, 0, 0))
 
         # Start video playback.
+        self.video_playing.set()
         self.hardware.projector.play_video_with_mpv(Path(video_file))
 
         self.hardware.camera.start_recording(Path.home() / "OpenCAL/output/videos/print.h264")
@@ -49,6 +50,7 @@ class PrintController:
 
         # Stop the video, motor, and clear LEDs.
         self.hardware.projector.stop_video()
+        self.video_playing.clear()
         self.hardware.stepper.stop()
         self.hardware.led_manager.clear_leds()
 

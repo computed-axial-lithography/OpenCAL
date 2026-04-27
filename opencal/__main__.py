@@ -16,8 +16,10 @@ def main():
     pygame_q: queue.Queue = queue.Queue()
     stop_event = threading.Event()
 
+    video_playing = threading.Event()
+
     conf = load_config()
-    pc = PrintController(conf)
+    pc = PrintController(conf, video_playing=video_playing)
     gui = LCDGui(pc=pc, encoder_q=encoder_q, pygame_q=pygame_q, stop_event=stop_event)
     root = build_menu_tree(pc, gui)
     gui.set_root(root)
@@ -26,7 +28,8 @@ def main():
     gui_thread.start()
 
     pygame_app = PygameApp(
-        config=conf.pygame, encoder_q=encoder_q, pygame_q=pygame_q, stop_event=stop_event, fps=30
+        config=conf.pygame, encoder_q=encoder_q, pygame_q=pygame_q, stop_event=stop_event, fps=30,
+        video_playing=video_playing,
     )
     pygame_app.run()
     # Join on GUI thread, so that if PyGame is disabled GUI continues to run
