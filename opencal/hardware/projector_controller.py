@@ -141,8 +141,8 @@ class Projector:
             "/usr/bin/mpv",
             "--fs",  # Fullscreen mode
             "--loop",  # Loop the video
-            "--hwdec=v4l2m2m-copy",
             f"--vf=crop={new_width}:{new_height}:{crop_x}:{crop_y}",
+            # TODO: Investigate --hwdec with v4l2-request
             str(video_path),
         ]
 
