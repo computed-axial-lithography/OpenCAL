@@ -67,6 +67,10 @@ chroot "$CHROOT" chown -R opencal:opencal /home/opencal
 
 # 6. Enable services.
 "$BDEBSTRAP_HOOKS/enable-units" "$CHROOT" greetd
+# Explicitly mask getty@tty1 so it cannot compete with greetd for the terminal.
+# greetd's package post-install normally does this, but that script does not
+# execute correctly inside a build chroot where systemd is not running.
+ln -sf /dev/null "$CHROOT/etc/systemd/system/getty@tty1.service"
 chmod +x "$CHROOT/usr/local/bin/wifi-setup.sh"
 "$BDEBSTRAP_HOOKS/enable-units" "$CHROOT" wifi-setup
 

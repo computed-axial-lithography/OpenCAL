@@ -2,5 +2,5 @@
 vt = 1
 
 [default_session]
-command = "wayfire"
+command = "/usr/bin/wayfire"
 user = "opencal"
