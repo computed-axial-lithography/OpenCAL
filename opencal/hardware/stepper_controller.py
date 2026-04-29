@@ -1,10 +1,12 @@
 import time
 import threading
 from gpiozero import OutputDevice, RotaryEncoder
+from typing import final
 
 from opencal.utils.config import StepperConfig
 
 
+@final
 class StepperMotor:
     def __init__(self, config: StepperConfig):
         """Initialize GPIO communication with the stepper motor driver (Step/Dir mode)."""
@@ -126,8 +128,6 @@ class StepperMotor:
             print("WARNING: Stepper already running")
             return
 
-        # TODO: remove _running at some point
-        self._running = True
         self.enable.on()
 
         if ramp_time > 0:

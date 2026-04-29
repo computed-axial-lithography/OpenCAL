@@ -30,7 +30,7 @@ class PrintController:
 
         # Start video playback.
         self.video_playing.set()
-        self.hardware.projector.play_video_with_mpv(video_file)
+        self.hardware.projector.play_video_with_vlc(video_file)
 
         self.hardware.camera.start_recording(Path.home() / "OpenCAL/output/videos/print.h264")
 
