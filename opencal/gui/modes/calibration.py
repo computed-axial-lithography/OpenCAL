@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, final, override
 
 import pygame
 
@@ -11,10 +11,10 @@ if TYPE_CHECKING:
     from opencal.gui.pygame_app import PygameApp
 
 
+@final
 class CalibrationMode(BasePygameMode):
     """Displays a calibration PNG fullscreen on the pygame surface.
 
-    Replaces the mpv-based display_image() path for static calibration images.
     Pressing the button exits with no result payload.
     """
 
@@ -23,13 +23,16 @@ class CalibrationMode(BasePygameMode):
         self._image_path = Path(image_path)
         self._surface: pygame.Surface | None = None
 
+    @override
     def on_activate(self) -> None:
         raw = pygame.image.load(str(self._image_path)).convert()
         self._surface = pygame.transform.scale(raw, (self.app.width, self.app.height))
 
+    @override
     def on_deactivate(self) -> None:
         self._surface = None
 
+    @override
     def on_frame(self, surf: pygame.Surface) -> None:
         if self._surface is not None:
-            surf.blit(self._surface, (0, 0))
+            _ = surf.blit(self._surface, (0, 0))

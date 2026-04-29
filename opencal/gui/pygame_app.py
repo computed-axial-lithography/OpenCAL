@@ -5,6 +5,7 @@ from typing import Any, final
 
 import pygame
 
+from opencal.gui.events import ActivateEvent, ButtonEvent, DeactivateEvent, EncoderEvent, InputEvent
 from opencal.gui.modes.base import BasePygameMode
 from opencal.gui.modes.vial_width import VialWidthMode
 from opencal.gui.modes.calibration import CalibrationMode
@@ -16,14 +17,14 @@ class PygameApp:
     def __init__(
         self,
         config: PygameConfig,
-        input_q: queue.Queue[tuple[str, Any]],
+        input_q: queue.Queue[InputEvent],
         pygame_q: queue.Queue[tuple[str, Any]],
         stop_event: threading.Event,
         video_playing: threading.Event,
         fps: int = 30,
     ):
         self.active = config.active
-        self.input_q = input_q
+        self.input_q: queue.Queue[InputEvent] = input_q
         self.pygame_q = pygame_q
         self.stop_event = stop_event
         self.video_playing = video_playing
@@ -80,25 +81,24 @@ class PygameApp:
                     return
                 time.sleep(0.1)
 
-    def _dispatch(self, msg: tuple[str, Any]) -> None:
-        match msg[0]:
-            case "encoder":
+    def _dispatch(self, msg: InputEvent) -> None:
+        match msg:
+            case EncoderEvent(delta=d):
                 if self._active_mode is not None:
-                    self._active_mode.on_encoder_delta(msg[1])
-            case "button":
+                    self._active_mode.on_encoder_delta(d)
+            case ButtonEvent():
                 if self._active_mode is not None:
                     self._active_mode.on_button()
-            case "activate":
-                _, name, kwargs = msg
+            case ActivateEvent(mode_name=name, kwargs=kw):
                 mode_cls = self._mode_registry.get(name)
                 if mode_cls is None:
                     print(f"WARNING: Unknown pygame mode '{name}'")
                     return
                 if self._active_mode is not None:
                     self._active_mode.on_deactivate()
-                self._active_mode = mode_cls(app=self, **kwargs)
+                self._active_mode = mode_cls(app=self, **kw)
                 self._active_mode.on_activate()
-            case "deactivate":
+            case DeactivateEvent():
                 if self._active_mode is not None:
                     self._active_mode.on_deactivate()
                 self._active_mode = None

@@ -22,10 +22,11 @@ import sys
 import threading
 import time
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, final
 from enum import Enum
 
 from opencal.hardware import PrintController
+from opencal.gui.events import ActivateEvent, ButtonEvent, DeactivateEvent, EncoderEvent, InputEvent
 
 CONFIG_PATH = Path(__file__).parent.parent / "utils" / "config.json"
 
@@ -192,6 +193,7 @@ class ActionItem(MenuBase):
 # ---------------------------------------------------------------------------
 
 
+@final
 class VariableMenu(MenuBase):
     """Rotate to adjust a numeric value within [min_val, max_val].
     Click to confirm: calls set(value), pops the menu, then fires on_confirm."""
@@ -312,6 +314,7 @@ class MultiSelectMenu(MenuBase):
 # ---------------------------------------------------------------------------
 
 
+@final
 class PyGameMenu(MenuBase):
     """Activates a named pygame mode and routes hardware input to PygameApp.
 
@@ -329,7 +332,7 @@ class PyGameMenu(MenuBase):
     def __init__(
         self,
         title: str,
-        input_q: queue.Queue,
+        input_q: queue.Queue[InputEvent],
         mode_name: str,
         mode_kwargs: dict[str, Any] | None = None,
         on_exit_callback: Callable[[dict], None] | None = None,
@@ -342,16 +345,16 @@ class PyGameMenu(MenuBase):
 
     def on_enter(self, gui: "LCDGui") -> None:
         super().on_enter(gui)
-        self._input_q.put(("activate", self.mode_name, self.mode_kwargs))
+        self._input_q.put(ActivateEvent(self.mode_name, self.mode_kwargs))
 
     def on_exit(self) -> None:
-        self._input_q.put(("deactivate",))
+        self._input_q.put(DeactivateEvent())
 
     def on_rotate(self, delta: int) -> None:
-        self._input_q.put(("encoder", delta))
+        self._input_q.put(EncoderEvent(delta))
 
     def on_click(self) -> None:
-        self._input_q.put(("button",))
+        self._input_q.put(ButtonEvent())
 
     def render(self) -> list[str]:
         header = f"-- {self.title} --"[:20].center(20)
@@ -442,7 +445,7 @@ class LCDGui:
     def __init__(
         self,
         pc: PrintController,
-        input_q: queue.Queue,
+        input_q: queue.Queue[InputEvent],
         pygame_q: queue.Queue,
         stop_event: threading.Event,
         fps: int = 20,

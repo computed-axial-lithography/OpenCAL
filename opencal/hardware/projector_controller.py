@@ -2,7 +2,7 @@ import os
 import subprocess
 import threading
 from pathlib import Path
-from typing import final
+from typing import Any, final
 from enum import Enum
 import json
 
@@ -69,7 +69,7 @@ class Projector:
             print(f"ERROR: Failed to query projector orientation: {result.stderr}")
             return ProjectorOrientation.NORMAL
 
-        out: dict = json.loads(result.stdout)[0]
+        out: dict[str, Any] = json.loads(result.stdout)[0]
         assert out["name"] == "HDMI-A-1"
 
         transform: str = out["transform"]
@@ -114,13 +114,11 @@ class Projector:
             raise ValueError(f"Unable to parse video dimensions from output: {output}") from e
         return width, height
 
-    def play_video_with_mpv(self, video_path: Path | None = None):
+    def play_video_with_vlc(self, video_path: Path):
         """
         Play the video using cvlc (VLC command-line interface) with the window positioned
         at x=1920 and y=0, and loop the video indefinitely.
         """
-        if not video_path:
-            raise ValueError("play_video_with_mpv() requires a `video_path` argument")
 
         orig_width, orig_height = self.get_video_dimensions(video_path)
         scale_factor = self.size / 100
@@ -135,16 +133,6 @@ class Projector:
         env = os.environ.copy()
         env["DISPLAY"] = ":0"
         # env["XAUTHORITY"] = "/home/opencal/.Xauthority"
-
-        # TODO: Remove MPV command:
-
-        # command = [
-        #     "/usr/bin/mpv",
-        #     "--fs",  # Fullscreen mode
-        #     "--loop",  # Loop the video
-        #     f"--vf=crop={new_width}:{new_height}:{crop_x}:{crop_y}",
-        #     str(video_path),
-        # ]
 
         # VLC command
         command = [
@@ -190,7 +178,7 @@ class Projector:
             raise ValueError("start_video_thread() requires a `video_path` argument")
 
         # Create a new thread for playing the video.
-        self.thread = threading.Thread(target=self.play_video_with_mpv, args=(video_path,))
+        self.thread = threading.Thread(target=self.play_video_with_vlc, args=(video_path,))
         self.thread.start()
 
     def show_vial_width(self, width: int):
@@ -252,7 +240,7 @@ def main():
     projector = Projector(cfg.projector)
     projector.resize(100)
     # Start video playback in a new thread.
-    projector.play_video_with_mpv()  # include video path here
+    projector.play_video_with_vlc(Path("test/path/here"))  # include video path here
 
     # Wait for user input to stop the video.
     _ = input("Press Enter to stop video playback...")
