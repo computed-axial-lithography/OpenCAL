@@ -16,7 +16,7 @@ class Config:
         with open(path) as f:
             config: dict[str, dict[str, Any]] = json.load(f)
         self.pygame = PygameConfig(config["pygame"])
-        self.stepper = StepperConfig(config["stepper_motor"])
+        self.stepper = _make_stepper_config(config["stepper_motor"])
         self.camera = CameraConfig(config["camera"])
         self.led_array = LedArrayConfig(config["led_array"])
         self.lcd_display = LcdDisplayConfig(config["lcd_display"])
@@ -28,17 +28,42 @@ class PygameConfig:
     def __init__(self, config: dict[str, Any]):
         self.active: bool = config["active"]
 
-class StepperConfig:
+class StepperConfigBase:
     def __init__(self, config: dict[str, Any]):
-        self.step_pin: int = config["step_pin"]
-        self.dir_pin: int = config["dir_pin"]
-        self.enable_pin: int = config["enable_pin"]
-        self.encoder_a_pin: int = config["A_pin"]
-        self.encoder_b_pin: int = config["B_pin"]
+        self.driver_mode: str = config.get("driver_mode", "step_dir")
+        self.enable_pin: int | None = config.get("enable_pin")
         self.default_rpm: float = config["default_rpm"]
         self.default_direction: str = config["default_direction"]
         self.steps_per_revolution: int = config["steps_per_revolution"]
         self.encoder_cpr: int = config["encoder_cpr"]
+
+
+class StepDirStepperConfig(StepperConfigBase):
+    def __init__(self, config: dict[str, Any]):
+        super().__init__(config)
+        self.step_pin: int = config["step_pin"]
+        self.dir_pin: int = config["dir_pin"]
+        self.encoder_a_pin: int = config["A_pin"]
+        self.encoder_b_pin: int = config["B_pin"]
+
+
+class UARTStepperConfig(StepperConfigBase):
+    def __init__(self, config: dict[str, Any]):
+        super().__init__(config)
+        self.uart_port: str = config["uart_port"]
+        self.baud_rate: int = config["baud_rate"]
+        self.uart_address: int = config["uart_address"]
+
+
+def _make_stepper_config(raw: dict[str, Any]) -> StepperConfigBase:
+    mode = raw.get("driver_mode", "step_dir")
+    if mode == "step_dir":
+        return StepDirStepperConfig(raw)
+    elif mode == "uart":
+        return UARTStepperConfig(raw)
+    elif mode == "mock":
+        return StepperConfigBase(raw)
+    raise ValueError(f"Unknown stepper driver_mode: {mode!r}")
 
 
 class CameraConfig:

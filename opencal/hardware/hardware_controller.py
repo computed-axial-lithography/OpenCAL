@@ -1,5 +1,5 @@
 from .camera_controller import CameraController
-from .stepper_controller import StepperMotor
+from .stepper import StepperMotorInterface, create_stepper
 from .led_manager import LEDManager
 from .lcd_display import LCDDisplay
 from .rotary_controller import RotaryEncoderHandler
@@ -28,9 +28,10 @@ class HardwareController:
         """Initialize all hardware components and handle any errors."""
 
         # TODO: All this error checking needs to actually do something
+        self.stepper: StepperMotorInterface
         try:
             print("initializing stepper")
-            self.stepper = StepperMotor(config.stepper)
+            self.stepper = create_stepper(config.stepper)
         except Exception as e:
             self.errors.append(f"StepperMotor failed: {e}")
             self.healthy = False

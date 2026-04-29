@@ -1,4 +1,5 @@
 gpiozero>=2.0.1
+pytrinamic
 opencv_python>=4.13
 Pi5Neo>=1.0.6
 rplcd>=1.4.0
