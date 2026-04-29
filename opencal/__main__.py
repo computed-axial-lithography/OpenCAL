@@ -12,7 +12,7 @@ from opencal.utils.config import load_config
 def main():
     os.environ["DISPLAY"] = ":0"
 
-    encoder_q: queue.Queue = queue.Queue()
+    input_q: queue.Queue = queue.Queue()
     pygame_q: queue.Queue = queue.Queue()
     stop_event = threading.Event()
 
@@ -20,7 +20,7 @@ def main():
 
     conf = load_config()
     pc = PrintController(conf, video_playing=video_playing)
-    gui = LCDGui(pc=pc, encoder_q=encoder_q, pygame_q=pygame_q, stop_event=stop_event)
+    gui = LCDGui(pc=pc, input_q=input_q, pygame_q=pygame_q, stop_event=stop_event)
     root = build_menu_tree(pc, gui)
     gui.set_root(root)
 
@@ -28,7 +28,7 @@ def main():
     gui_thread.start()
 
     pygame_app = PygameApp(
-        config=conf.pygame, encoder_q=encoder_q, pygame_q=pygame_q, stop_event=stop_event, fps=30,
+        config=conf.pygame, input_q=input_q, pygame_q=pygame_q, stop_event=stop_event, fps=30,
         video_playing=video_playing,
     )
     pygame_app.run()

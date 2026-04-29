@@ -9,7 +9,7 @@ DynamicNavigationMenu Like NavigationMenu but refreshes its item list on entry.
 ActionItem            Leaf: label + callback, no stack change.
 VariableMenu          Rotate to adjust a float value; click to confirm.
 MultiSelectMenu       Pick one of N string choices from a submenu-style list.
-PyGameMenu            Routes encoder to pygame; waits for ("done", result) signal.
+PyGameMenu            Activates a named pygame mode; routes input; waits for done.
 PrintStatusMenu       Shows print progress; click stops the job.
 StaticMenu            Read-only display; click pops to parent.
 """
@@ -22,7 +22,7 @@ import sys
 import threading
 import time
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 from enum import Enum
 
 from opencal.hardware import PrintController
@@ -313,35 +313,45 @@ class MultiSelectMenu(MenuBase):
 
 
 class PyGameMenu(MenuBase):
-    """Hands control of the rotary encoder to PygameApp.
+    """Activates a named pygame mode and routes hardware input to PygameApp.
 
     Queue ownership:
-      encoder_q — LCDGui writes rotary deltas; PygameApp reads.  (unchanged)
-      pygame_q  — PygameApp writes results; LCDGui reads.        (unchanged)
+      input_q  — LCDGui writes typed input messages; PygameApp reads.
+      pygame_q — PygameApp writes results; LCDGui reads.  (unchanged)
 
-    On rotate: forwards delta to encoder_q so PygameApp receives it.
-    On click:  emergency exit — pops this menu (PygameApp keeps running).
-    Graceful exit: PygameApp calls signal_done(result), which puts
-      ("done", result) on pygame_q; LCDGui calls on_exit_callback then pops.
+    On enter:  sends ("activate", mode_name, mode_kwargs) so PygameApp starts the mode.
+    On rotate: sends ("encoder", delta) to the active mode.
+    On click:  sends ("button",) — the mode's on_button() decides what happens
+               (default: signal_done(), which triggers a graceful exit).
+    On exit:   sends ("deactivate",) so PygameApp tears down the mode.
     """
 
     def __init__(
         self,
         title: str,
-        encoder_q: queue.Queue,
+        input_q: queue.Queue,
+        mode_name: str,
+        mode_kwargs: dict[str, Any] | None = None,
         on_exit_callback: Callable[[dict], None] | None = None,
     ):
         self.title = title
-        self._encoder_q = encoder_q
+        self._input_q = input_q
+        self.mode_name = mode_name
+        self.mode_kwargs = mode_kwargs or {}
         self.on_exit_callback = on_exit_callback
 
+    def on_enter(self, gui: "LCDGui") -> None:
+        super().on_enter(gui)
+        self._input_q.put(("activate", self.mode_name, self.mode_kwargs))
+
+    def on_exit(self) -> None:
+        self._input_q.put(("deactivate",))
+
     def on_rotate(self, delta: int) -> None:
-        self._encoder_q.put(delta)
+        self._input_q.put(("encoder", delta))
 
     def on_click(self) -> None:
-        # Emergency exit: pop without stopping PygameApp.
-        if self._gui:
-            self._gui.pop()
+        self._input_q.put(("button",))
 
     def render(self) -> list[str]:
         header = f"-- {self.title} --"[:20].center(20)
@@ -349,7 +359,7 @@ class PyGameMenu(MenuBase):
             header,
             "Pygame active".center(20),
             " " * 20,
-            "Click to exit".center(20),
+            "Click to confirm".center(20),
         ]
 
 
@@ -432,13 +442,13 @@ class LCDGui:
     def __init__(
         self,
         pc: PrintController,
-        encoder_q: queue.Queue,
+        input_q: queue.Queue,
         pygame_q: queue.Queue,
         stop_event: threading.Event,
         fps: int = 20,
     ):
         self.pc = pc
-        self.encoder_q = encoder_q
+        self.input_q = input_q
         self.pygame_q = pygame_q
         self.stop_event = stop_event
         self.running = True

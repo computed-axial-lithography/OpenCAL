@@ -19,7 +19,6 @@ from opencal.gui.lcd_gui import (
     MultiSelectMenu,
     PyGameMenu,
     PrintStatusMenu,
-    StaticMenu,
 )
 from opencal.hardware.projector_controller import ProjectorOrientation
 
@@ -80,35 +79,6 @@ class PrintLaunchItem(MenuBase):
             )
 
 
-class CalibActionItem(MenuBase):
-    """Represents a calibration image file in the 'Calibration' menu.
-
-    Selecting it displays the image on the projector and shows a static
-    'Calibrating' screen. Clicking that screen returns to the Calibration menu.
-    """
-
-    def __init__(self, filename: str, pc: PrintController):
-        self.title = filename
-        self._filename = filename
-        self._pc = pc
-
-    def on_activate(self, gui: "LCDGui") -> None:
-        projector = self._pc.hardware.projector
-        path = projector.calibration_dir_path / self._filename
-        projector.display_image(path)
-        gui.push(
-            StaticMenu(
-                title="Calibrating",
-                lines=[
-                    "Calibrating".center(20),
-                    self._filename[:20].ljust(20),
-                    " " * 20,
-                    "Click to go back".center(20),
-                ],
-            )
-        )
-
-
 # ---------------------------------------------------------------------------
 # Tree builder
 # ---------------------------------------------------------------------------
@@ -124,13 +94,22 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
          save_defaults, restart_pi, power_off_pi).
     """
 
-    encoder_q = gui.encoder_q
+    input_q = gui.input_q
 
     def _make_usb_items() -> list[MenuBase]:
         return [PrintLaunchItem(f, pc) for f in pc.hardware.usb_device.get_file_names()]
 
     def _make_calib_items() -> list[MenuBase]:
-        return [CalibActionItem(f, pc) for f in pc.hardware.projector.get_calibration_file_names()]
+        calib_dir = pc.hardware.projector.calibration_dir_path
+        return [
+            PyGameMenu(
+                title=f,
+                input_q=input_q,
+                mode_name="calibration",
+                mode_kwargs={"image_path": calib_dir / f},
+            )
+            for f in pc.hardware.projector.get_calibration_file_names()
+        ]
 
     def _apply_vial_result(result: dict) -> None:
         width = result.get("vial_width")
@@ -170,7 +149,8 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
     settings_items.append(
         PyGameMenu(
             title="Find Vial Width",
-            encoder_q=encoder_q,
+            input_q=input_q,
+            mode_name="vial_width",
             on_exit_callback=_apply_vial_result,
         )
     )

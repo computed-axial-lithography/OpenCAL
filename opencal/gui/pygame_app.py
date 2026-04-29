@@ -1,9 +1,13 @@
 import queue
 import threading
 import time
-from typing import final
+from typing import Any, final
+
 import pygame
 
+from opencal.gui.modes.base import BasePygameMode
+from opencal.gui.modes.vial_width import VialWidthMode
+from opencal.gui.modes.calibration import CalibrationMode
 from opencal.utils.config import PygameConfig
 
 
@@ -12,22 +16,26 @@ class PygameApp:
     def __init__(
         self,
         config: PygameConfig,
-        encoder_q: queue.Queue[int],
-        pygame_q: queue.Queue[tuple[str, str]],
+        input_q: queue.Queue[tuple[str, Any]],
+        pygame_q: queue.Queue[tuple[str, Any]],
         stop_event: threading.Event,
         video_playing: threading.Event,
         fps: int = 30,
     ):
         self.active = config.active
-        self.encoder_q = encoder_q
+        self.input_q = input_q
         self.pygame_q = pygame_q
         self.stop_event = stop_event
         self.video_playing = video_playing
         self.fps = fps
         self._running = False
-        self.rect_height = 100
         self.width = 1920
         self.height = 1080
+        self._active_mode: BasePygameMode | None = None
+        self._mode_registry: dict[str, type[BasePygameMode]] = {
+            "vial_width": VialWidthMode,
+            "calibration": CalibrationMode,
+        }
 
     def run(self):
         if not self.active:
@@ -35,7 +43,6 @@ class PygameApp:
             return
 
         while not self.stop_event.is_set():
-            # FIXME: Do we need the result of pygame.init()?
             _ = pygame.init()
             screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
             self.width, self.height = screen.get_size()
@@ -50,15 +57,16 @@ class PygameApp:
                     if event.type == pygame.QUIT:
                         self._running = False
 
-                while not self.encoder_q.empty():
+                while not self.input_q.empty():
                     try:
-                        delta = self.encoder_q.get_nowait()
-                        self.on_encoder_delta(delta)
+                        msg = self.input_q.get_nowait()
+                        self._dispatch(msg)
                     except queue.Empty:
                         break
 
                 _ = screen.fill((0, 0, 0))
-                self.on_frame(screen)
+                if self._active_mode is not None:
+                    self._active_mode.on_frame(screen)
                 pygame.display.flip()
                 _ = clock.tick(self.fps)
 
@@ -72,25 +80,35 @@ class PygameApp:
                     return
                 time.sleep(0.1)
 
-    def on_encoder_delta(self, delta: int):
-        """Called when the rotary encoder turns while pygame mode is active. Override to respond."""
-        SCROLL_RATIO = 2
-        self.rect_height = max(0, self.rect_height + delta * SCROLL_RATIO)
+    def _dispatch(self, msg: tuple[str, Any]) -> None:
+        match msg[0]:
+            case "encoder":
+                if self._active_mode is not None:
+                    self._active_mode.on_encoder_delta(msg[1])
+            case "button":
+                if self._active_mode is not None:
+                    self._active_mode.on_button()
+            case "activate":
+                _, name, kwargs = msg
+                mode_cls = self._mode_registry.get(name)
+                if mode_cls is None:
+                    print(f"WARNING: Unknown pygame mode '{name}'")
+                    return
+                if self._active_mode is not None:
+                    self._active_mode.on_deactivate()
+                self._active_mode = mode_cls(app=self, **kwargs)
+                self._active_mode.on_activate()
+            case "deactivate":
+                if self._active_mode is not None:
+                    self._active_mode.on_deactivate()
+                self._active_mode = None
 
-    def on_frame(self, surf: pygame.Surface):
-        """Called once per frame. Override to draw visuals."""
-
-        rect_width = 1000
-        left = self.width / 2 - rect_width / 2
-        top = self.height / 2 - self.rect_height / 2
-        _ = pygame.draw.rect(surf, "white", (left, top, rect_width, self.rect_height))
-
-    def send_to_gui(self, key: str, value: str):
+    def send_to_gui(self, key: str, value: Any):
         """Publish a key-value pair to the GUI thread."""
         self.pygame_q.put((key, value))
 
     def signal_done(self, result: dict | None = None):
-        """Signal LCDGui that this pygame screen is finished.
+        """Signal LCDGui that the active mode is finished.
 
         LCDGui will call the PyGameMenu's on_exit_callback with result, then
         pop the PyGameMenu off the stack, returning control to the LCD menu.
