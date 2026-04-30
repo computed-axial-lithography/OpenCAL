@@ -52,7 +52,6 @@ class LedArrayConfig:
     def __init__(self, config: dict[str, Any]):
         self.num_led: int = config["num_led"]
         self.default_color: tuple[int, int, int] = tuple(config["default_color"])
-        self.ring_indices: dict[str, list[int]] = config["ring_indices"]
 
 
 class LcdDisplayConfig:
