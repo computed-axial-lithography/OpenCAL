@@ -1,5 +1,6 @@
 import time
 import threading
+from typing import final, override
 
 from gpiozero import OutputDevice, RotaryEncoder
 
@@ -7,6 +8,7 @@ from opencal.hardware.stepper.interface import StepperMotorInterface
 from opencal.utils.config import StepDirStepperConfig
 
 
+@final
 class StepDirStepperMotor(StepperMotorInterface):
     def __init__(self, config: StepDirStepperConfig):
         self.step = OutputDevice(config.step_pin)
@@ -26,9 +28,11 @@ class StepDirStepperMotor(StepperMotorInterface):
         self._finish_event = threading.Event()
 
     @property
+    @override
     def speed_rpm(self) -> float:
         return self._speed_rpm
 
+    @override
     def set_rpm(self, rpm: float | None = None, ramp_time: float = 0) -> None:
         print(f"INFO: Changing rpm from {self._speed_rpm} to {rpm} in {ramp_time} sec.")
         rpm = rpm or self.default_rpm
@@ -60,6 +64,7 @@ class StepDirStepperMotor(StepperMotorInterface):
         self._speed_rpm = target
         self.step_delay = 60.0 / (self._speed_rpm * self.steps_per_rev)
 
+    @override
     def rotate_steps(self, steps: int, direction: str | None = None) -> None:
         direction = direction or self.default_direction
         print(f"INFO: Rotating {steps} steps {direction}")
@@ -79,12 +84,15 @@ class StepDirStepperMotor(StepperMotorInterface):
             self.step.off()
             prev_time = time.perf_counter()
 
+    @override
     def angle_in_steps(self) -> int:
         return self.encoder.steps % self.encoder_cpr
 
+    @override
     def angle_in_degrees(self) -> float:
         return self.angle_in_steps() / self.encoder_cpr * 360
 
+    @override
     def start_rotation(self, direction: str | None = None, ramp_time: float = 0) -> None:
         direction = direction or self.default_direction
         print(f"INFO: Starting continuous rotation {direction}")
@@ -122,9 +130,11 @@ class StepDirStepperMotor(StepperMotorInterface):
             else:
                 next_time = time.perf_counter()
 
+    @override
     def is_running(self) -> bool:
         return self._rotation_thread is not None and self._rotation_thread.is_alive()
 
+    @override
     def stop(self) -> None:
         print("INFO: Stopping the motor.")
         self._finish_event.set()

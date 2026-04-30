@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 
 
 class StepperMotorInterface(ABC):
-
     default_rpm: float
     default_direction: str
 

@@ -9,10 +9,14 @@
     "A_pin": 12,
     "B_pin": 13,
     "enable_pin": 27,
-    "default_rpm": 10,
+    "default_rpm": 9,
     "default_direction": "CW",
     "steps_per_revolution": 1600,
-    "encoder_cpr": 1000
+    "encoder_cpr": 1000,
+    "uart_address": 0,
+    "uart_port": "/dev/tty/AMA0",
+    "baud_rate": 0
+    ""
   },
   "camera": {
     "type": "rpi",

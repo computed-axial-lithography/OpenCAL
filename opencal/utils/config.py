@@ -56,7 +56,7 @@ class UARTStepperConfig(StepperConfigBase):
 
 
 def _make_stepper_config(raw: dict[str, Any]) -> StepperConfigBase:
-    mode = raw.get("driver_mode", "step_dir")
+    mode: str = raw.get("driver_mode", "step_dir")
     if mode == "step_dir":
         return StepDirStepperConfig(raw)
     elif mode == "uart":
