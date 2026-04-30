@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, final, override
 
 import pygame
 
@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from opencal.gui.pygame_app import PygameApp
 
 
+@final
 class VialWidthMode(BasePygameMode):
     """Interactive vial-width measurement mode.
 
@@ -26,17 +27,21 @@ class VialWidthMode(BasePygameMode):
         super().__init__(app)
         self.rect_height: int = self.INITIAL_HEIGHT
 
+    @override
     def on_activate(self) -> None:
         self.rect_height = self.INITIAL_HEIGHT
 
+    @override
     def on_encoder_delta(self, delta: int) -> None:
         self.rect_height = max(0, self.rect_height + delta * self.SCROLL_RATIO)
 
+    @override
     def on_button(self) -> None:
         self.app.signal_done({"vial_width": self.rect_height})
 
+    @override
     def on_frame(self, surf: pygame.Surface) -> None:
         w, h = surf.get_size()
         left = w / 2 - self.RECT_WIDTH / 2
         top = h / 2 - self.rect_height / 2
-        pygame.draw.rect(surf, "white", (left, top, self.RECT_WIDTH, self.rect_height))
+        _ = pygame.draw.rect(surf, "white", (left, top, self.RECT_WIDTH, self.rect_height))

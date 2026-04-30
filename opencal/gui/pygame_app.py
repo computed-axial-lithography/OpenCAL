@@ -107,7 +107,7 @@ class PygameApp:
         """Publish a key-value pair to the GUI thread."""
         self.pygame_q.put((key, value))
 
-    def signal_done(self, result: dict | None = None):
+    def signal_done(self, result: dict[str, Any] | None = None):
         """Signal LCDGui that the active mode is finished.
 
         LCDGui will call the PyGameMenu's on_exit_callback with result, then
