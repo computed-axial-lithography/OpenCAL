@@ -15,6 +15,7 @@ mmdebstrap:
     - python3-picamera2
     - libcamera-apps
     - ffmpeg
+    - mpv
     - vlc
     - v4l-utils
     - python3-gpiozero
@@ -25,8 +26,10 @@ mmdebstrap:
     - usbutils
     - udisks2
     - udiskie
+    - dbus-user-session
     # Wayland compositor stack
     - wayfire
+    - xwayland
     - greetd
     - libpam-systemd
     # WiFi
