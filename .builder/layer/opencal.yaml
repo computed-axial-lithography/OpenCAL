@@ -15,7 +15,7 @@ mmdebstrap:
     - python3-picamera2
     - libcamera-apps
     - ffmpeg
-    - mpv
+    - vlc
     - v4l-utils
     - python3-gpiozero
     - python3-libgpiod

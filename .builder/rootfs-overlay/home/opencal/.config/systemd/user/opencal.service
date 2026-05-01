@@ -6,7 +6,7 @@ Type=simple
 WorkingDirectory=/home/opencal/OpenCAL
 ExecStart=/home/opencal/.venv/bin/python3 -m opencal
 Environment=SDL_VIDEODRIVER=wayland
-Environment=WAYLAND_DISPLAY=wayland-0
+Environment=WAYLAND_DISPLAY=wayland-1
 Environment=XDG_RUNTIME_DIR=/run/user/1000
 StandardOutput=journal
 StandardError=journal

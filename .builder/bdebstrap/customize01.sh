@@ -20,7 +20,7 @@ echo "dtparam=i2c_arm=on" >> "$CHROOT/boot/firmware/config.txt"
 echo "dtparam=spi=on"     >> "$CHROOT/boot/firmware/config.txt"
 echo "i2c-dev" >> "$CHROOT/etc/modules-load.d/raspi-extra.conf"
 echo "spidev"  >> "$CHROOT/etc/modules-load.d/raspi-extra.conf"
-chroot "$CHROOT" usermod -aG i2c,spi,gpio,video,render opencal
+chroot "$CHROOT" usermod -aG i2c,spi,gpio,video,render,plugdev opencal
 
 # Camera configuration.
 # Disable auto-detection so it doesn't conflict with the manually specified overlay.
@@ -59,6 +59,8 @@ chroot "$CHROOT" apt-get purge -y --autoremove build-essential
 mkdir -p "$CHROOT/home/opencal/.config/systemd/user/default.target.wants"
 ln -sf /home/opencal/.config/systemd/user/opencal.path \
     "$CHROOT/home/opencal/.config/systemd/user/default.target.wants/opencal.path"
+ln -sf /home/opencal/.config/systemd/user/udiskie.service \
+    "$CHROOT/home/opencal/.config/systemd/user/default.target.wants/udiskie.service"
 
 # 5. Fix ownership of the entire home directory in one pass.
 #    This covers: the OpenCAL source, the rootfs-overlay files (.config/wayfire,
