@@ -2,14 +2,28 @@ import time
 import threading
 from typing import final, override
 
+import serial
+
 from opencal.hardware.stepper.interface import StepperMotorInterface
 from opencal.utils.config import UARTStepperConfig
 
-from pytrinamic.connections import UartIcInterface
-from pytrinamic.evalboards import TMC2209_eval
-
-# TODO: Verify against actual hardware; internal oscillator is typically 12 MHz
+# TMC2209 internal oscillator; verify against hardware (typically 12 MHz)
 _TMC_CLK_HZ = 12_000_000
+_REG_VACTUAL = 0x22
+_SYNC_BYTE = 0x05
+
+
+def _crc8(data: bytes) -> int:
+    """CRC8 with polynomial 0x07, as required by the TMC2209 UART protocol."""
+    crc = 0
+    for byte in data:
+        for _ in range(8):
+            if (crc >> 7) ^ (byte & 0x01):
+                crc = ((crc << 1) ^ 0x07) & 0xFF
+            else:
+                crc = (crc << 1) & 0xFF
+            byte >>= 1
+    return crc
 
 
 def _rpm_to_vactual(rpm: float, steps_per_rev: int) -> int:
@@ -25,38 +39,55 @@ class UARTStepperMotor(StepperMotorInterface):
         self.default_direction = config.default_direction
         self.steps_per_rev = config.steps_per_revolution
         self.encoder_cpr = config.encoder_cpr
+        self._slave_addr = config.uart_address
 
         self._speed_rpm: float = config.default_rpm
         self._current_direction: str = config.default_direction
         self._rotation_thread: threading.Thread | None = None
         self._finish_event = threading.Event()
 
-        self._interface: UartIcInterface | None = None
-        self._board: TMC2209_eval | None = None
+        self._serial: serial.Serial | None = None
 
         try:
-            self._interface = UartIcInterface(config.uart_port, datarate=config.baud_rate)
-            self._board = TMC2209_eval(self._interface, module_id=config.uart_address)
-            self._ic = self._board.ics[0]
+            self._serial = serial.Serial(
+                config.uart_port,
+                baudrate=config.baud_rate,
+                timeout=0.1,
+            )
             print("INFO: TMC2209 UART driver initialized.")
         except Exception as e:
             print(f"WARNING: UARTStepperMotor init failed: {e}")
-            self._board = None
 
-    @property
-    @override
-    def speed_rpm(self) -> float:
-        return self._speed_rpm
+    def _write_register(self, reg: int, value: int) -> None:
+        """Send a TMC2209 UART write datagram (8 bytes: sync, addr, reg|0x80, 4 data, CRC)."""
+        if self._serial is None:
+            return
+        datagram = bytes([
+            _SYNC_BYTE,
+            self._slave_addr,
+            reg | 0x80,
+            (value >> 24) & 0xFF,
+            (value >> 16) & 0xFF,
+            (value >> 8) & 0xFF,
+            value & 0xFF,
+        ])
+        self._serial.write(datagram + bytes([_crc8(datagram)]))
+        # Single-wire UART echoes TX back on RX; read and discard the 8-byte echo.
+        self._serial.read(8)
 
     def _write_vactual(self, vactual: int) -> None:
-        if self._board is None:
-            return
-        self._board.write_register_field(self._ic.FIELD.VACTUAL, vactual)
+        # Encode as 24-bit (handles sign via two's complement masking).
+        self._write_register(_REG_VACTUAL, vactual & 0xFFFFFF)
 
     def _signed_vactual(self, rpm: float) -> int:
         """Return VACTUAL with sign encoding direction (positive=CW, negative=CCW)."""
         magnitude = _rpm_to_vactual(abs(rpm), self.steps_per_rev)
         return magnitude if self._current_direction == "CW" else -magnitude
+
+    @property
+    @override
+    def speed_rpm(self) -> float:
+        return self._speed_rpm
 
     @override
     def set_rpm(self, rpm: float | None = None, ramp_time: float = 0) -> None:

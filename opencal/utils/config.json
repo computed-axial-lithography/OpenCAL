@@ -14,9 +14,8 @@
     "steps_per_revolution": 1600,
     "encoder_cpr": 1000,
     "uart_address": 0,
-    "uart_port": "/dev/tty/AMA0",
-    "baud_rate": 0
-    ""
+    "uart_port": "/dev/ttyAMA0",
+    "baud_rate": 115200
   },
   "camera": {
     "type": "rpi",
