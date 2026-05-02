@@ -32,7 +32,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: rpi-image-gen
-        run: sudo ./install_deps.sh
+        run: sudo ./install_deps.sh && sudo apt-get install -y xz-utils
 
       - name: Install keyrings
         run: |
@@ -55,8 +55,19 @@ jobs:
             -S projects/OpenCAL \
             -c projects/OpenCAL/config.yaml \
             -- \
-            IGconf_sys_outputdir=${{ github.workspace }}/output \
-            IGconf_sys_deploydir=${{ github.workspace }}/deploy
+            IGconf_deploy_dir=${{ github.workspace }}/deploy \
+            IGconf_image_outputdir=${{ github.workspace }}/output
+
+      - name: Compress image
+        run: |
+          IMG=$(find ${{ github.workspace }}/output -name "*.img" | head -n 1)
+          if [ -z "$IMG" ]; then
+            echo "No .img file found in output directory"
+            exit 1
+          fi
+          echo "Compressing $IMG..."
+          xz -v -T0 -k "$IMG"
+          cp "${IMG}.xz" ${{ github.workspace }}/deploy/
 
       - name: Release image
         uses: softprops/action-gh-release@v2

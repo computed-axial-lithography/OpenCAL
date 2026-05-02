@@ -1,18 +1,33 @@
 #!/bin/sh
+set -e
 
-REPO_PATH="$1/home/opencal/OpeCAL"
+REPO_PATH="$1/home/opencal/OpenCAL"
 
+# Clone the repo
+git clone https://github.com/computed-axial-lithography/OpenCAL.git "$REPO_PATH"
 
-git clone https://github.com/computed-axial-lithography/OpenCAL.git $REPO_PATH
+# Install a passthrough sudo shim so setup.sh's sudo calls work
+echo '#!/bin/sh
+exec "$@"' > "$1/usr/local/bin/sudo"
+chmod +x "$1/usr/local/bin/sudo"
 
-cd $REPO_PATH
-chmod +x setup.sh
-sudo -u opencal ./setup.sh
+# Run setup.sh inside the chroot
+chroot "$1" /bin/sh -c "cd /home/opencal/OpenCAL && HOME=/home/opencal bash setup.sh"
 
-# System Settings
+# Remove the sudo shim
+rm "$1/usr/local/bin/sudo"
 
+# Enable I2C and SPI directly instead of via raspi-config
+# These lines are what raspi-config nonint do_i2c/do_spi actually do under the hood
+grep -qxF 'dtparam=i2c_arm=on' "$1/boot/firmware/config.txt" \
+    || echo 'dtparam=i2c_arm=on' >> "$1/boot/firmware/config.txt"
+grep -qxF 'dtparam=spi=on' "$1/boot/firmware/config.txt" \
+    || echo 'dtparam=spi=on' >> "$1/boot/firmware/config.txt"
 
-# Startup Script
+# Fix ownership of the repo
+chroot "$1" chown -R opencal:opencal /home/opencal/OpenCAL
+
+# Startup service
 cat <<EOF > "$1/etc/systemd/system/opencal-startup.service"
 [Unit]
 Description=Opencal Startup Script
@@ -32,4 +47,5 @@ EOF
 
 systemctl --root="$1" enable opencal-startup.service
 
-
+# Always last
+chroot "$1" passwd --expire opencal
