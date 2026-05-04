@@ -53,6 +53,7 @@ class UARTStepperConfig(StepperConfigBase):
         self.uart_port: str = config["uart_port"]
         self.baud_rate: int = config["baud_rate"]
         self.uart_address: int = config["uart_address"]
+        self.microsteps: int = config["microsteps"]
 
 
 def _make_stepper_config(raw: dict[str, Any]) -> StepperConfigBase:

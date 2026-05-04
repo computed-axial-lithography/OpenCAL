@@ -3,6 +3,7 @@ import threading
 from typing import final, override
 
 import serial
+import math
 
 from opencal.hardware.stepper.interface import StepperMotorInterface
 from opencal.utils.config import UARTStepperConfig
@@ -10,6 +11,8 @@ from opencal.utils.config import UARTStepperConfig
 # TMC2209 internal oscillator; verify against hardware (typically 12 MHz)
 _TMC_CLK_HZ = 12_000_000
 _REG_VACTUAL = 0x22
+_REG_GCONF = 0x00
+_REG_CHOPCONF = 0x6C
 _SYNC_BYTE = 0x05
 
 
@@ -26,18 +29,6 @@ def _crc8(data: bytes) -> int:
     return crc
 
 
-def _rpm_to_vactual(rpm: float, steps_per_rev: int) -> int:
-    """Convert RPM to unsigned VACTUAL magnitude for the TMC2209."""
-    fstep = rpm * steps_per_rev / 60.0
-    print(f"fstep is {fstep}")
-    CORRECTION_FACTOR = 0.9849
-    bad_vactual = round(fstep * (2**24) / _TMC_CLK_HZ)
-    vactual = round(CORRECTION_FACTOR * fstep * (2**24) / _TMC_CLK_HZ)
-    print(f"VACTUAL without correction: {bad_vactual}")
-    print(f"corrected VACTUAL: {vactual}")
-    return vactual
-
-
 @final
 class UARTStepperMotor(StepperMotorInterface):
     def __init__(self, config: UARTStepperConfig):
@@ -45,7 +36,8 @@ class UARTStepperMotor(StepperMotorInterface):
         self.default_direction = config.default_direction
         self.steps_per_rev = config.steps_per_revolution
         self.encoder_cpr = config.encoder_cpr
-        self._slave_addr = config.uart_address
+        self.uart_address = config.uart_address
+        self.microsteps = config.microsteps
 
         self._speed_rpm: float = config.default_rpm
         self._current_direction: str = config.default_direction
@@ -60,23 +52,33 @@ class UARTStepperMotor(StepperMotorInterface):
                 baudrate=config.baud_rate,
                 timeout=0.5,
             )
+            self.initialize()
+
             print("INFO: TMC2209 UART driver initialized.")
         except Exception as e:
             print(f"WARNING: UARTStepperMotor init failed: {e}")
+
+    def initialize(self):
+        self._write_register(_REG_GCONF, 0x000001C5)
+        mres = 8 - int(math.log2(self.microsteps))
+        chopconf = ((0x10 | mres) << 6) | 0x00020055
+        self._write_register(_REG_CHOPCONF, chopconf)
 
     def _write_register(self, reg: int, value: int) -> None:
         """Send a TMC2209 UART write datagram (8 bytes: sync, addr, reg|0x80, 4 data, CRC)."""
         if self._serial is None:
             return
-        datagram = bytes([
-            _SYNC_BYTE,
-            self._slave_addr,
-            reg | 0x80,
-            (value >> 24) & 0xFF,
-            (value >> 16) & 0xFF,
-            (value >> 8) & 0xFF,
-            value & 0xFF,
-        ])
+        datagram = bytes(
+            [
+                _SYNC_BYTE,
+                self.uart_address,
+                reg | 0x80,
+                (value >> 24) & 0xFF,
+                (value >> 16) & 0xFF,
+                (value >> 8) & 0xFF,
+                value & 0xFF,
+            ]
+        )
         self._serial.write(datagram + bytes([_crc8(datagram)]))
         # Single-wire UART echoes TX back on RX; read and discard the 8-byte echo.
         self._serial.read(8)
@@ -87,7 +89,7 @@ class UARTStepperMotor(StepperMotorInterface):
 
     def _signed_vactual(self, rpm: float) -> int:
         """Return VACTUAL with sign encoding direction (positive=CW, negative=CCW)."""
-        magnitude = _rpm_to_vactual(abs(rpm), self.steps_per_rev)
+        magnitude = self._rpm_to_vactual(abs(rpm), self.steps_per_rev)
         return magnitude if self._current_direction == "CW" else -magnitude
 
     @property
@@ -102,10 +104,7 @@ class UARTStepperMotor(StepperMotorInterface):
         if rpm <= 0:
             raise ValueError("RPM must be positive. Use stop() to halt the stepper.")
 
-
-        if True:
-            # FIXME: reimplement ramp time
-        # if ramp_time == 0:
+        if ramp_time == 0:
             self._speed_rpm = rpm
             self._write_vactual(self._signed_vactual(rpm))
         else:
@@ -139,9 +138,7 @@ class UARTStepperMotor(StepperMotorInterface):
 
         self._finish_event.clear()
 
-        # if ramp_time > 0:
-        # FIXME: reimplement ramp time
-        if False:
+        if ramp_time > 0:
             target_rpm, self._speed_rpm = self._speed_rpm, 0
             self._write_vactual(0)
             self._rotation_thread = threading.Thread(target=self._run_until_stopped, daemon=True)
@@ -180,3 +177,20 @@ class UARTStepperMotor(StepperMotorInterface):
     @override
     def angle_in_degrees(self) -> float:
         return 0.0
+
+    def _rpm_to_vactual(self, rpm: float, steps_per_rev: int) -> int:
+        """Convert RPM to unsigned VACTUAL magnitude for the TMC2209."""
+
+        #FIXME: Make this formula and config more clear
+        # steps per rev is based on microstepping being 8; convert to actual steps per rev
+        steps_per_rev: float = steps_per_rev * (self.microsteps / 8)
+
+        fstep = rpm * steps_per_rev / 60.0
+        print(f"fstep is {fstep}")
+        CORRECTION_FACTOR = 0.9849 # From the TMC2209 clock
+        bad_vactual = round(fstep * (2**24) / _TMC_CLK_HZ) # Without correction factor
+        frac_vactual = CORRECTION_FACTOR * fstep * (2**24) / _TMC_CLK_HZ # With correction factor, use this value if interpolating
+        vactual = round(frac_vactual)
+        
+        print(f"{bad_vactual=}\n{frac_vactual=}\n{vactual=}")
+        return vactual

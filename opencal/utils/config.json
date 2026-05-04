@@ -15,7 +15,8 @@
     "encoder_cpr": 1000,
     "uart_address": 0,
     "uart_port": "/dev/ttyAMA0",
-    "baud_rate": 115200
+    "baud_rate": 115200,
+    "microsteps": 128
   },
   "camera": {
     "type": "rpi",
