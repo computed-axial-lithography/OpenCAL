@@ -31,6 +31,7 @@ def main():
 
     while True:
         cmd = input("Command: ")
+        cmd, _, value = cmd.partition()
 
         tmc.vactual.VACTUAL = 200
         tmc.write_VACTUAL()

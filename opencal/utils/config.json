@@ -3,7 +3,7 @@
     "active": true
   },
   "stepper_motor": {
-    "driver_mode": "step_dir",
+    "driver_mode": "uart",
     "step_pin": 18,
     "dir_pin": 23,
     "A_pin": 12,

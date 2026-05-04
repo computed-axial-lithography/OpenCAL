@@ -29,7 +29,13 @@ def _crc8(data: bytes) -> int:
 def _rpm_to_vactual(rpm: float, steps_per_rev: int) -> int:
     """Convert RPM to unsigned VACTUAL magnitude for the TMC2209."""
     fstep = rpm * steps_per_rev / 60.0
-    return round(fstep * (2**24) / _TMC_CLK_HZ)
+    print(f"fstep is {fstep}")
+    CORRECTION_FACTOR = 0.9849
+    bad_vactual = round(fstep * (2**24) / _TMC_CLK_HZ)
+    vactual = round(CORRECTION_FACTOR * fstep * (2**24) / _TMC_CLK_HZ)
+    print(f"VACTUAL without correction: {bad_vactual}")
+    print(f"corrected VACTUAL: {vactual}")
+    return vactual
 
 
 @final
@@ -52,7 +58,7 @@ class UARTStepperMotor(StepperMotorInterface):
             self._serial = serial.Serial(
                 config.uart_port,
                 baudrate=config.baud_rate,
-                timeout=0.1,
+                timeout=0.5,
             )
             print("INFO: TMC2209 UART driver initialized.")
         except Exception as e:
@@ -96,7 +102,10 @@ class UARTStepperMotor(StepperMotorInterface):
         if rpm <= 0:
             raise ValueError("RPM must be positive. Use stop() to halt the stepper.")
 
-        if ramp_time == 0:
+
+        if True:
+            # FIXME: reimplement ramp time
+        # if ramp_time == 0:
             self._speed_rpm = rpm
             self._write_vactual(self._signed_vactual(rpm))
         else:
@@ -130,7 +139,9 @@ class UARTStepperMotor(StepperMotorInterface):
 
         self._finish_event.clear()
 
-        if ramp_time > 0:
+        # if ramp_time > 0:
+        # FIXME: reimplement ramp time
+        if False:
             target_rpm, self._speed_rpm = self._speed_rpm, 0
             self._write_vactual(0)
             self._rotation_thread = threading.Thread(target=self._run_until_stopped, daemon=True)
