@@ -4,6 +4,8 @@ opencv_python>=4.13
 Pi5Neo>=1.0.6
 rplcd>=1.4.0
 smbus2>=0.6.0
+TMC2209_PY
+pygame
 lgpio
 picamera2
 
