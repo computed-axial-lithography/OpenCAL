@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 
@@ -16,9 +17,9 @@ class MP4Driver:
         if not self.mount_point.exists():
             raise FileNotFoundError(f"USB mount point {self.mount_point} does not exist")
 
-        for dir_path, _dirs, files in self.mount_point.walk():
+        for dir_path, _dirs, files in os.walk(self.mount_point):
             for file in files:
-                file_path = dir_path / file
+                file_path = Path(dir_path) / file
                 if file_path.suffix == ".mp4":
                     mp4_paths.append(file_path)
 

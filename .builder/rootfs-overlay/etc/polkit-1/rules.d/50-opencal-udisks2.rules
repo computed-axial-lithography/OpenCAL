@@ -1,0 +1,6 @@
+polkit.addRule(function(action, subject) {
+    if (action.id.indexOf("org.freedesktop.udisks2.") === 0 &&
+        subject.user === "opencal") {
+        return polkit.Result.YES;
+    }
+});

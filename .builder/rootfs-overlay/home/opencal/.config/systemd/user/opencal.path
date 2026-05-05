@@ -1,0 +1,8 @@
+[Unit]
+Description=Start OpenCAL when Wayland compositor is ready
+
+[Path]
+PathExists=%t/wayland-1
+
+[Install]
+WantedBy=default.target

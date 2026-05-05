@@ -5,11 +5,6 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
-    inputs:
-      debug_mode:
-        description: 'Run in debug mode?'
-        required: false
-        default: 'false'
 
 jobs:
   build:
@@ -18,10 +13,10 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout Project Repo
+      - name: Checkout OpenCAL repo
         uses: actions/checkout@v4
         with:
-          repository: computed-axial-lithography/OpenCAL
+          repository: ${{ github.repository }}
           path: OpenCAL
 
       - name: Checkout rpi-image-gen
@@ -30,14 +25,13 @@ jobs:
           repository: raspberrypi/rpi-image-gen
           path: rpi-image-gen
 
-      - name: Install dependencies
+      - name: Install rpi-image-gen dependencies
         working-directory: rpi-image-gen
         run: sudo ./install_deps.sh && sudo apt-get install -y xz-utils
 
-      - name: Install keyrings
+      - name: Install Raspberry Pi archive keyring
         run: |
           sudo apt-get install -y debian-archive-keyring
-          
           sudo mkdir -p /usr/share/keyrings
           curl -fsSL https://archive.raspberrypi.com/debian/raspberrypi.gpg.key \
             | gpg --dearmor \
@@ -46,7 +40,12 @@ jobs:
       - name: Prepare project folder
         run: |
           mkdir -p rpi-image-gen/projects/OpenCAL
-          cp -r OpenCAL/.builder/* rpi-image-gen/projects/OpenCAL/
+          # Copy builder config (config.yaml, layer/, bdebstrap/, rootfs-overlay/)
+          cp -r OpenCAL/.builder/. rpi-image-gen/projects/OpenCAL/
+          # Copy OpenCAL source into SRCROOT as 'opencal-src' for the hook script
+          cp -r OpenCAL/. rpi-image-gen/projects/OpenCAL/opencal-src/
+          # Hook must be executable or rpi-image-gen silently skips it
+          chmod +x rpi-image-gen/projects/OpenCAL/bdebstrap/customize01.sh
 
       - name: Build image
         working-directory: rpi-image-gen
@@ -55,24 +54,12 @@ jobs:
             -S projects/OpenCAL \
             -c projects/OpenCAL/config.yaml \
             -- \
-            IGconf_deploy_dir=${{ github.workspace }}/deploy \
-            IGconf_image_outputdir=${{ github.workspace }}/output
-
-      - name: Compress image
-        run: |
-          IMG=$(find ${{ github.workspace }}/output -name "*.img" | head -n 1)
-          if [ -z "$IMG" ]; then
-            echo "No .img file found in output directory"
-            exit 1
-          fi
-          echo "Compressing $IMG..."
-          xz -v -T0 -k "$IMG"
-          cp "${IMG}.xz" ${{ github.workspace }}/deploy/
+            IGconf_deploy_dir=${{ github.workspace }}/deploy
 
       - name: Release image
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          files: ${{ github.workspace }}/deploy/*.img.xz
+          files: ${{ github.workspace }}/deploy/*.img.zst
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

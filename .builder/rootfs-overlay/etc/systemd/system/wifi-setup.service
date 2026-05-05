@@ -1,0 +1,13 @@
+[Unit]
+Description=Apply WiFi credentials from boot partition
+ConditionPathExists=/boot/firmware/wifi.txt
+After=NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/wifi-setup.sh
+
+[Install]
+WantedBy=multi-user.target
