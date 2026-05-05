@@ -16,7 +16,7 @@
     "uart_address": 0,
     "uart_port": "/dev/ttyAMA0",
     "baud_rate": 115200,
-    "microsteps": 128
+    "microsteps": 64
   },
   "camera": {
     "type": "rpi",

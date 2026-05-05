@@ -61,7 +61,7 @@ class UARTStepperMotor(StepperMotorInterface):
     def initialize(self):
         self._write_register(_REG_GCONF, 0x000001C5)
         mres = 8 - int(math.log2(self.microsteps))
-        chopconf = ((0x10 | mres) << 6) | 0x00020055
+        chopconf = ((0x10 | mres) << 24) | 0x00020055
         self._write_register(_REG_CHOPCONF, chopconf)
 
     def _write_register(self, reg: int, value: int) -> None:
@@ -181,16 +181,18 @@ class UARTStepperMotor(StepperMotorInterface):
     def _rpm_to_vactual(self, rpm: float, steps_per_rev: int) -> int:
         """Convert RPM to unsigned VACTUAL magnitude for the TMC2209."""
 
-        #FIXME: Make this formula and config more clear
+        # FIXME: Make this formula and config more clear
         # steps per rev is based on microstepping being 8; convert to actual steps per rev
         steps_per_rev: float = steps_per_rev * (self.microsteps / 8)
 
         fstep = rpm * steps_per_rev / 60.0
         print(f"fstep is {fstep}")
-        CORRECTION_FACTOR = 0.9849 # From the TMC2209 clock
-        bad_vactual = round(fstep * (2**24) / _TMC_CLK_HZ) # Without correction factor
-        frac_vactual = CORRECTION_FACTOR * fstep * (2**24) / _TMC_CLK_HZ # With correction factor, use this value if interpolating
+        # CORRECTION_FACTOR = 0.9849  # From the TMC2209 clock
+        CORRECTION_FACTOR = 0.988375
+        bad_vactual = round(fstep * (2**24) / _TMC_CLK_HZ)  # Without correction factor
+        # With correction factor, use this value if interpolating
+        frac_vactual = CORRECTION_FACTOR * fstep * (2**24) / _TMC_CLK_HZ
         vactual = round(frac_vactual)
-        
+
         print(f"{bad_vactual=}\n{frac_vactual=}\n{vactual=}")
         return vactual
