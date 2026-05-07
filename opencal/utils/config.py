@@ -41,6 +41,7 @@ class StepperConfigBase:
 class StepDirStepperConfig(StepperConfigBase):
     def __init__(self, config: dict[str, Any]):
         super().__init__(config)
+        config = config["step_dir"]
         self.step_pin: int = config["step_pin"]
         self.dir_pin: int = config["dir_pin"]
         self.encoder_a_pin: int = config["A_pin"]
@@ -50,6 +51,7 @@ class StepDirStepperConfig(StepperConfigBase):
 class UARTStepperConfig(StepperConfigBase):
     def __init__(self, config: dict[str, Any]):
         super().__init__(config)
+        config = config["uart"]
         self.uart_port: str = config["uart_port"]
         self.baud_rate: int = config["baud_rate"]
         self.uart_address: int = config["uart_address"]
