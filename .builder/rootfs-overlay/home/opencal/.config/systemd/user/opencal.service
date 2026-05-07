@@ -1,22 +1,15 @@
 [Unit]
 Description=OpenCAL Printer Controller
-After=greetd.service
-Requires=greetd.service
 
 [Service]
 Type=simple
-User=opencal
-Group=opencal
 WorkingDirectory=/home/opencal/OpenCAL
-ExecStartPre=/bin/bash -c 'until [ -S /tmp/.X11-unix/X0 ]; do sleep 1; done'
-ExecStart=/home/opencal/.venv/bin/python -m opencal
-Environment=DISPLAY=:0
+ExecStart=/home/opencal/.venv/bin/python3 -m opencal
+Environment=SDL_VIDEODRIVER=wayland
 Environment=WAYLAND_DISPLAY=wayland-1
 Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=DISPLAY=:0
 StandardOutput=journal
 StandardError=journal
 Restart=on-failure
 RestartSec=5
-
-[Install]
-WantedBy=multi-user.target

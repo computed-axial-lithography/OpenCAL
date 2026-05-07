@@ -8,12 +8,16 @@ dependencies = [
     "gpiozero>=2.0.1",
     "ipython>=9.10.0",
     "lgpio>=0.2.2.0",
-    "opencv-python>=4.13.0.90",
     "pi5neo>=1.0.6",
     "rplcd>=1.4.0",
     "smbus2>=0.6.0",
 ]
 
+[tool.setuptools.packages.find]
+exclude = ["assets*"]
+
+[tool.setuptools.package-data]
+opencal = ["utils/config.json"]
 
 [tool.ruff]
 line-length = 100

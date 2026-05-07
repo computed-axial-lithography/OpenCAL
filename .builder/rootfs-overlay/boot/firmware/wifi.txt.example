@@ -1,0 +1,14 @@
+# OpenCAL WiFi Configuration
+# To connect to WiFi on first boot:
+#   1. Copy this file to wifi.txt in this same directory
+#   2. Fill in your network SSID and PASSWORD below
+#   3. Safely eject the SD card and boot
+#
+# This file (wifi.txt) is automatically deleted after credentials are applied
+# so your password does not remain in plaintext on the boot partition.
+#
+# To reconfigure WiFi after first boot, SSH in over Ethernet and run:
+#   nmcli device wifi connect "YourSSID" password "YourPassword"
+
+SSID=
+PASSWORD=

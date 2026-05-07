@@ -1,0 +1,4 @@
+SUBSYSTEM=="gpio", GROUP="gpio", MODE="0660"
+SUBSYSTEM=="spidev", GROUP="spi", MODE="0660"
+SUBSYSTEM=="i2c-dev", GROUP="i2c", MODE="0660"
+SUBSYSTEM=="rfkill", ATTR{type}=="wlan", ATTR{soft}="0"

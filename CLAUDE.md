@@ -23,10 +23,9 @@ pip install -r requirements.txt
 python -m opencal
 ```
 
-**Run as systemd service:**
+**View opencal logs on a running image (user service):**
 ```bash
-sudo systemctl start opencal.service
-sudo journalctl -u opencal.service -f   # view logs
+journalctl --user -u opencal.service -f
 ```
 
 **Build docs:**
@@ -87,4 +86,53 @@ Edit `opencal/utils/config.json` to change GPIO pins, I2C address, LED count, ca
 
 ## Deployment
 
-A GitHub Actions workflow (`.github/workflows/build-image.yml`) triggers on version tags (`v*`) and uses `rpi-image-gen` to produce a bootable Raspberry Pi SD card image released as a compressed `.img.xz` file.
+### Overview
+
+A GitHub Actions workflow (`.github/workflows/build-image.yml`) triggers on version tags (`v*`) or manual dispatch. It uses [`rpi-image-gen`](https://github.com/raspberrypi/rpi-image-gen) to produce a bootable Raspberry Pi 5 SD card image, released as a compressed `.img.zst` file.
+
+The workflow checks out both this repo and `rpi-image-gen`, copies `.builder/` into `rpi-image-gen/projects/OpenCAL/`, copies the OpenCAL source into `projects/OpenCAL/opencal-src/`, then runs `rpi-image-gen build`.
+
+### Builder layout (`.builder/`)
+
+```
+.builder/
+├── config.yaml                  # rpi-image-gen project config (device, image, layer settings)
+├── layer/
+│   └── opencal.yaml             # mmdebstrap layer: apt packages installed into the image
+├── bdebstrap/
+│   └── customize01.sh           # Post-install hook: copies source, enables hardware, builds venv
+└── rootfs-overlay/              # Files copied verbatim into the image filesystem
+    ├── etc/greetd/config.toml   # greetd autologin as opencal user, launches wayfire
+    └── home/opencal/.config/
+        ├── wayfire/wayfire.ini  # Wayfire compositor config (native Wayland, no Xwayland)
+        └── systemd/user/
+            ├── opencal.path     # Watches for Wayland socket; activates opencal.service
+            └── opencal.service  # User service: runs `python -m opencal`
+```
+
+### Boot sequence
+
+1. **greetd** autologs in as `opencal` and launches **wayfire** (native Wayland, no X11).
+2. **libpam-systemd** (via PAM) registers the user session with logind, creating `/run/user/1000` and starting `systemd --user` for the `opencal` user.
+3. **`opencal.path`** (user service) watches for `/run/user/1000/wayland-0` (the Wayland socket wayfire creates on startup).
+4. Once the socket appears, systemd activates **`opencal.service`**, which runs `python -m opencal` with `SDL_VIDEODRIVER=wayland`.
+
+### Key image details
+
+- **Base**: Debian Bookworm minimal (`bookworm-minbase`) for RPi5
+- **Display**: Native Wayland via wayfire — no Xwayland, no X11
+- **Python**: venv at `/home/opencal/.venv` with `--system-site-packages` so apt-installed `python3-opencv` and `python3-picamera2` are visible
+- **Hardware interfaces**: I2C and SPI enabled via `dtparam` entries in `config.txt` and `modules-load.d`
+- **SSH**: Enabled with password auth; default credentials are `opencal` / `OpenCAL1!` — **the user is forced to change the password on first login** (`chage -d 0`)
+- **Image size**: 512 MB boot partition + 4 GB root partition; does not auto-expand to fill the SD card
+
+### Customise.sh responsibilities
+
+`customize01.sh` runs inside the mmdebstrap chroot after all packages are installed. It:
+1. Copies the OpenCAL source from `$SRCROOT/opencal-src` into `/home/opencal/OpenCAL`
+2. Enables I2C and SPI via `config.txt` and `modules-load.d` (raspi-config cannot run in a build chroot)
+3. Creates `/home/opencal/.venv`, pip-installs opencal + pygame + Pillow, then purges `build-essential`
+4. Creates the user service enable symlink for `opencal.path`
+5. Fixes ownership of `/home/opencal` in a single `chown -R`
+6. Enables `greetd` via `systemctl enable`
+7. Runs `chage -d 0 opencal` to force a password change on first login

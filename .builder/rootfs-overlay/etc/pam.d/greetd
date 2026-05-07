@@ -1,0 +1,13 @@
+# Custom PAM config for greetd autologin.
+# auth and account are permitted unconditionally so the autologin session is
+# never interrupted by password expiry. SSH uses its own PAM config and is
+# unaffected — password expiry is still enforced there.
+auth     sufficient  pam_permit.so
+account  sufficient  pam_permit.so
+password sufficient  pam_permit.so
+# Session modules still run so that pam_systemd registers the user session
+# with logind (creates XDG_RUNTIME_DIR, etc.).
+session  required    pam_loginuid.so
+session  required    pam_limits.so
+session  required    pam_unix.so
+session  optional    pam_systemd.so

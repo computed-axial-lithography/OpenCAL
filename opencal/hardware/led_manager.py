@@ -18,7 +18,6 @@ class LEDManager:
         self.num_led: int = config.num_led  # Number of LEDs in the array
 
         # Retrieve the pin values and indices for the LED ring from the configuration
-        self.ring_indices = config.ring_indices
         self.default_color = config.default_color
 
         # Initialize communication with the Pi5Neo library
