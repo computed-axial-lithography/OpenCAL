@@ -53,6 +53,7 @@ Usage: python3 tmc5160_spi_test.py
 # ============================================================
 
 import sys
+import time
 from enum import IntEnum
 from typing import Optional
 
@@ -61,6 +62,19 @@ import spidev
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
+
+# Write-only registers on TMC5160 (SPI reads always return 0).
+# Values written to these are shadowed in _write_cache for inspection.
+_WRITE_ONLY_REGS = frozenset({
+    0x23,  # VSTART
+    0x24,  # A1
+    0x25,  # V1
+    0x26,  # AMAX
+    0x28,  # DMAX
+    0x2A,  # D1
+    0x2B,  # VSTOP
+    0x2C,  # TZEROWAIT
+})
 
 SPI_BUS    = 0
 SPI_DEVICE = 0
@@ -187,6 +201,7 @@ _MRES_REVERSE: dict[int, int] = {v: k for k, v in _MRES_MAP.items()}
 # ---------------------------------------------------------------------------
 
 _spi: Optional[spidev.SpiDev] = None
+_write_cache: dict[int, int] = {}   # shadows write-only register values
 
 
 def open_spi() -> None:
@@ -252,6 +267,18 @@ def write_register(reg: Reg, value: int) -> None:
         (value >>  8) & 0xFF,
         value         & 0xFF,
     ])
+    _write_cache[int(reg)] = value
+
+
+def read_register_or_cached(reg: Reg) -> tuple[int, bool]:
+    """
+    Return (value, is_cached).
+    For write-only registers, SPI reads always return 0; return the last
+    written value from the cache instead and flag it as cached.
+    """
+    if int(reg) in _WRITE_ONLY_REGS:
+        return _write_cache.get(int(reg), 0), True
+    return read_register(reg), False
 
 # ---------------------------------------------------------------------------
 # GPIO — enable pin
@@ -491,6 +518,44 @@ def stop_motor() -> None:
     print("  Motor stopping  (VMAX=0, RAMPMODE=3 hold)")
 
 # ---------------------------------------------------------------------------
+# Reset detection
+# ---------------------------------------------------------------------------
+
+def check_reset() -> bool:
+    """
+    Read GSTAT.reset to detect whether the TMC5160 has reset since last check.
+    Returns True if a reset occurred. Reading GSTAT clears the flag.
+
+    The most common cause of an unexpected reset during operation is a voltage
+    dip on VS (motor supply) below the UVLO threshold (~4.75 V). This happens
+    when the ramp generator fires its first PWM pulse and the supply lacks
+    sufficient bulk capacitance. After a reset, ALL registers revert to OTP
+    defaults — notably CHOPCONF.toff=0, which disables driver outputs.
+
+    Recovery: type 'reinit' in the interactive loop, then 'spin <rpm>'.
+    Hardware fix: add ≥100 µF electrolytic capacitance close to the VS pin,
+    and/or reduce IRUN to lower the initial current surge.
+    """
+    gstat_raw = read_register(Reg.GSTAT)
+    reset  = bool((gstat_raw >> 0) & 1)
+    drv_err = bool((gstat_raw >> 1) & 1)
+    uv_cp   = bool((gstat_raw >> 2) & 1)
+
+    if reset:
+        print("\n  *** TMC5160 RESET DETECTED (GSTAT.reset=1) ***")
+        print("  All registers have reverted to OTP defaults (CHOPCONF.toff=0 — driver disabled).")
+        print("  Likely cause: VS supply dipped below UVLO (~4.75 V) when the ramp generator")
+        print("  fired its first PWM pulse (high instantaneous current demand).")
+        print("  Hardware fix: add ≥100 µF bulk capacitance on VS near the TMC5160.")
+        print("  Software workaround: reduce IRUN — type 'reinit <irun>' (e.g. 'reinit 4').")
+    if uv_cp:
+        print("  WARNING: GSTAT.uv_cp=1 — charge pump undervoltage (VCC_IO too low?).")
+    if drv_err:
+        print("  WARNING: GSTAT.drv_err=1 — driver error flag set; check drvstatus.")
+    return reset
+
+
+# ---------------------------------------------------------------------------
 # Connection verification
 # ---------------------------------------------------------------------------
 
@@ -540,11 +605,16 @@ def _print_dict(d: dict) -> None:
 
 
 def _help(commands: list[str]) -> None:
-    print("  Register reads: " + ", ".join([
+    print("  Register reads (R/W): " + ", ".join([
         "gconf", "gstat", "ioin", "chopconf", "drvstatus",
-        "rampmode", "xactual", "vactual", "vmax", "amax", "pwmconf",
+        "rampmode", "xactual", "vactual", "vmax", "pwmconf",
     ]))
+    print("  Register reads (write-only, cached*): " + ", ".join([
+        "amax", "vstart", "vstop", "a1", "v1", "dmax", "d1",
+    ]))
+    print("  *Write-only regs always read 0 via SPI; cached = last value written this session.")
     print("  Commands: " + ", ".join(commands))
+    print("  reinit [irun]: re-write all config registers after a chip reset (default irun=8)")
 
 
 def main() -> None:
@@ -589,8 +659,12 @@ def main() -> None:
         set_velocity(DEFAULT_RPM, direction="CW",
                      steps_per_rev=DEFAULT_STEPS_REV, microsteps=DEFAULT_MICROSTEPS)
 
+        # Brief delay so the first PWM pulse can fire before we check GSTAT.
+        time.sleep(0.1)
+        check_reset()
+
         # ── 6. Interactive loop ───────────────────────────────────────────────
-        motion_cmds = ["spin <rpm> [cw|ccw]", "stop", "enable", "disable", "q"]
+        motion_cmds = ["spin <rpm> [cw|ccw]", "stop", "reinit [irun]", "enable", "disable", "q"]
 
         print("\n--- Interactive control ---")
         _help(motion_cmds)
@@ -622,8 +696,24 @@ def main() -> None:
                     set_velocity(rpm, direction,
                                  steps_per_rev=DEFAULT_STEPS_REV,
                                  microsteps=DEFAULT_MICROSTEPS)
+                    time.sleep(0.1)
+                    check_reset()
                 except (ValueError, IndexError) as e:
                     print(f"  Usage: spin <rpm> [cw|ccw]   ({e})")
+
+            elif cmd == "reinit":
+                # Allow 'reinit <irun>' to test with lower current after a reset
+                try:
+                    irun = int(parts[1]) if len(parts) > 1 else 8
+                    if not 0 <= irun <= 31:
+                        raise ValueError("irun must be 0–31")
+                except ValueError as e:
+                    print(f"  Usage: reinit [irun 0–31]  ({e})")
+                    irun = 8
+                print(f"\n--- Reinitialising (IRUN={irun}) ---")
+                init_driver(ihold=max(irun // 2, 1), irun=irun, iholddelay=6, amax=200)
+                enable_driver()
+                print("  Ready. Type 'spin <rpm>' to try again.")
 
             elif cmd == "enable":
                 enable_driver()
@@ -646,7 +736,11 @@ def main() -> None:
                 if ioin.get("DRV_ENN"):
                     print("    NOTE: DRV_ENN=1 — driver disabled. Type 'enable' to fix.")
             elif cmd == "chopconf":
-                _print_dict(get_chopconf())
+                cc = get_chopconf()
+                _print_dict(cc)
+                if cc.get("toff") == 0:
+                    print("    *** toff=0: driver outputs DISABLED — chip likely reset.")
+                    print("        Run 'gstat' to check reset flag, then 'reinit' to recover.")
             elif cmd == "drvstatus":
                 drvs = get_driver_status()
                 _print_dict(drvs)
@@ -666,8 +760,20 @@ def main() -> None:
                 vmax = read_register(Reg.VMAX)
                 rpm_est = vmax * TMC_CLK_HZ / (2**24) / (DEFAULT_STEPS_REV * DEFAULT_MICROSTEPS) * 60
                 print(f"    VMAX = {vmax}  (~{rpm_est:.1f} RPM at {DEFAULT_STEPS_REV} steps, {DEFAULT_MICROSTEPS} µsteps)")
-            elif cmd == "amax":
-                print(f"    AMAX = {read_register(Reg.AMAX)}")
+            elif cmd in ("amax", "vstart", "vstop", "a1", "v1", "dmax", "d1"):
+                reg_map = {
+                    "amax":   Reg.AMAX,
+                    "vstart": Reg.VSTART,
+                    "vstop":  Reg.VSTOP,
+                    "a1":     Reg.A1,
+                    "v1":     Reg.V1,
+                    "dmax":   Reg.DMAX,
+                    "d1":     Reg.D1,
+                }
+                r = reg_map[cmd]
+                val, cached = read_register_or_cached(r)
+                tag = "cached — write-only reg, SPI readback always 0" if cached else ""
+                print(f"    {cmd.upper()} = {val}  {tag}")
             elif cmd == "pwmconf":
                 print(f"    PWMCONF = {hex(read_register(Reg.PWMCONF))}")
 
