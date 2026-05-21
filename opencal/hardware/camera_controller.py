@@ -36,7 +36,7 @@ class CameraController:
             self.video_config = self.picam.create_video_configuration()
             self.picam.configure(self.still_config)
             self.set_focus(15)
-        except RuntimeError:
+        except Exception as e:
             self.picam = None
             print("WARNING: No camera connected, camera functionality disabled.")
 
