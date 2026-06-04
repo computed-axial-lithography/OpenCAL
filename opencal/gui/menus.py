@@ -120,7 +120,7 @@ class VideoSaveMenu(MenuBase):
             self._gui.splash("No USB found")
             return
         try:
-            dest = usb.usb_save_path(self._pc.recording_path.name)
+            dest = unique_path(usb.usb_save_path(self._pc.recording_path.name))
             shutil.copy2(self._pc.recording_path, dest)
             self._gui.splash("Video Saved!")
         except Exception as e:
@@ -169,7 +169,7 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
         filename = f"{timestamp}.jpeg"
         usb = pc.hardware.usb_device
         if usb.is_mounted():
-            save_path = usb.usb_save_path(filename)
+            save_path = unique_path(usb.usb_save_path(filename))
             success_msg = "Saved to USB"
         else:
             save_path = None

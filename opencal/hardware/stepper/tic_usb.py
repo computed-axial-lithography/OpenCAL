@@ -19,14 +19,19 @@ def _apply_tic_settings() -> None:
 
     ticcmd validates the product field in the YAML, so this also acts as a
     sanity check that the correct Tic model is connected.
+    If ticcmd is not installed, logs a warning and skips (motor still works
+    with whatever settings are already on the device).
     """
-    result = subprocess.run(
-        ["ticcmd", "--set-settings", str(_SETTINGS_PATH)],
-        capture_output=True, text=True,
-    )
-    if result.returncode != 0:
-        raise RuntimeError(f"Failed to apply Tic settings: {result.stderr.strip()}")
-    subprocess.run(["ticcmd", "--reinitialize"], capture_output=True)
+    try:
+        result = subprocess.run(
+            ["ticcmd", "--set-settings", str(_SETTINGS_PATH)],
+            capture_output=True, text=True,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"Failed to apply Tic settings: {result.stderr.strip()}")
+        subprocess.run(["ticcmd", "--reinitialize"], capture_output=True)
+    except FileNotFoundError:
+        print("WARNING: ticcmd not found — Tic settings not applied. Install Pololu Tic software to enable this.")
 
 
 @final

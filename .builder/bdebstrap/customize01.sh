@@ -12,7 +12,13 @@ fi
 mkdir -p "$CHROOT/home/opencal/OpenCAL"
 cp -r "$SRCROOT/opencal-src/." "$CHROOT/home/opencal/OpenCAL/"
 
-# 2. Enable hardware interfaces.
+# 2. Install Pololu Tic command-line software (not in apt).
+TIC_VERSION="1.8.2"
+TIC_URL="https://www.pololu.com/file/0J1887/pololu-tic-${TIC_VERSION}-linux-aarch64.tar.gz"
+curl -fsSL "$TIC_URL" | tar -xz -C /tmp
+install -m 755 /tmp/pololu-tic-*/bin/ticcmd "$CHROOT/usr/local/bin/ticcmd"
+
+# 3. Enable hardware interfaces.
 # raspi-config cannot run in a build chroot (no configfs, no kernel modules),
 # so directly edit config.txt and modules-load.d instead.
 sed -i '/dtparam=i2c_arm/d;/dtparam=spi/d' "$CHROOT/boot/firmware/config.txt"
@@ -44,7 +50,7 @@ EOF
 chroot "$CHROOT" python3 -m venv --system-site-packages /home/opencal/.venv
 chroot "$CHROOT" /home/opencal/.venv/bin/pip install --upgrade pip
 chroot "$CHROOT" /home/opencal/.venv/bin/pip install \
-    /home/opencal/OpenCAL pygame Pillow
+    /home/opencal/OpenCAL pygame Pillow ticlib pyusb pi5neo rplcd smbus2
 # TODO: install opencv via pip once the build is stable. pip is used instead of
 # the apt package because python3-opencv from Debian Bookworm is compiled against
 # numpy 1.x, which conflicts with python3-picamera2 (RPi repo, numpy 2.x).
