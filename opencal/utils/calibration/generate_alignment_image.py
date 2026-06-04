@@ -31,7 +31,7 @@ from PIL import Image, ImageDraw
 
 # ── Configuration ────────────────────────────────────────────────────────────
 
-PIXEL_SIZE_MM = 0.09          # 90 µm per pixel
+PIXEL_SIZE_MM = 0.0801        # 80.1 µm per pixel — measured: 86.47mm / 1080px
 PX_PER_MM     = 1.0 / PIXEL_SIZE_MM   # ≈ 11.11 px / mm
 
 # The projector is mounted rotated 90° on its side, so generate on a portrait
@@ -185,7 +185,7 @@ def main() -> None:
     img = img.rotate(-90, expand=True)   # -90° = CW rotation: 1080×1920 → 1920×1080
     img.save(OUT_PATH)
     print(f"Saved: {OUT_PATH}")
-    print(f"Canvas: {W_OUT}×{H_OUT} px  |  Scale: {PX_PER_MM:.2f} px/mm  (90 µm/pixel)")
+    print(f"Canvas: {W_OUT}×{H_OUT} px  |  Scale: {PX_PER_MM:.2f} px/mm  ({PIXEL_SIZE_MM*1000:.1f} µm/pixel)")
 
 
 if __name__ == "__main__":
