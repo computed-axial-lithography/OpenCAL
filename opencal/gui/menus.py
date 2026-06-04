@@ -164,10 +164,12 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
         usb = pc.hardware.usb_device
         if usb.is_mounted():
             save_path = usb.usb_save_path("capture.jpeg")
+            success_msg = "Saved to USB"
         else:
             save_path = None
+            success_msg = "Image Captured"
         success = pc.hardware.camera.capture_image(save_path)
-        gui.splash("Image Captured" if success else "Image error")
+        gui.splash(success_msg if success else "Image error")
 
     def _toggle_usb_video_prompt() -> None:
         pc.ui_config.prompt_usb_video_save = not pc.ui_config.prompt_usb_video_save

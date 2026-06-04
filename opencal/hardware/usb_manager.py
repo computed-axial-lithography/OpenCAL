@@ -6,13 +6,25 @@ class MP4Driver:
     def __init__(self, mount_point: Path = Path("/media/opencal/")):
         self.mount_point = mount_point
 
+    def _mounted_drive(self) -> Path | None:
+        """Return the first mounted subdirectory under the mount point, or None."""
+        if not self.mount_point.exists():
+            return None
+        for entry in self.mount_point.iterdir():
+            if entry.is_dir():
+                return entry
+        return None
+
     def is_mounted(self) -> bool:
         """Return True if a USB drive is currently mounted."""
-        return self.mount_point.exists() and self.mount_point.is_dir()
+        return self._mounted_drive() is not None
 
     def usb_save_path(self, filename: str) -> Path:
         """Return a path on the USB drive for saving a file."""
-        return self.mount_point / filename
+        drive = self._mounted_drive()
+        if drive is None:
+            raise FileNotFoundError("No USB drive mounted")
+        return drive / filename
 
     def list_mp4_files(self) -> list[Path]:
         """
