@@ -137,6 +137,65 @@ class VideoSaveMenu(MenuBase):
 
 
 # ---------------------------------------------------------------------------
+# About menu
+# ---------------------------------------------------------------------------
+
+
+class AboutMenu(MenuBase):
+    """Scrollable credits list. Rotate to scroll, click to exit."""
+
+    title = "About"
+
+    _NAMES: list[str] = [
+        "X Sun",
+        "Alvin Li",
+        "Connor Vidmar",
+        "Scarlett Hao",
+        "Erfan Kohyarnejadfard",
+        "Evan Percival",
+        "Tristan Bourgade",
+        "Angel Arambula",
+        "Daniel Oslund",
+        "Maya Lund",
+        "Paul Morenkov",
+        "Wangari Mbuthia",
+        "Zev Schuman",
+        "Bryan Vu",
+        "Erik Broude",
+        "Rajdeep Summan",
+        "Ty Snyder",
+        "Tamira Shany",
+        "Tavleen Kaur",
+        "Natalia De La Torre",
+        "Carl Kruse",
+        "Huy Tran",
+        "Ian Bos",
+    ]
+
+    def on_enter(self, gui: "LCDGui") -> None:
+        super().on_enter(gui)
+        self._offset = 0
+
+    def on_rotate(self, delta: int) -> None:
+        max_offset = max(0, len(self._NAMES) - 4)
+        self._offset = max(0, min(max_offset, self._offset + delta))
+
+    def on_click(self) -> None:
+        if self._gui:
+            self._gui.pop()
+
+    def render(self) -> list[str]:
+        lines = []
+        for i in range(4):
+            idx = self._offset + i
+            if idx < len(self._NAMES):
+                lines.append(self._NAMES[idx][:20].ljust(20))
+            else:
+                lines.append(" " * 20)
+        return lines
+
+
+# ---------------------------------------------------------------------------
 # Tree builder
 # ---------------------------------------------------------------------------
 
@@ -243,5 +302,6 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
                     ActionItem("Power Off", gui.power_off_pi),
                 ],
             ),
+            AboutMenu(),
         ],
     )
