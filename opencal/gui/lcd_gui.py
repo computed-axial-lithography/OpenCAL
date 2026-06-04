@@ -389,7 +389,7 @@ class PrintStatusMenu(MenuBase):
         pass  # no-op while printing
 
     def on_click(self) -> None:
-        self._pc.stop()
+        threading.Thread(target=self._pc.stop, daemon=True).start()
         if self._gui:
             self._gui.pop()
 

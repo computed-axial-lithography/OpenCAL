@@ -50,14 +50,14 @@ class PrintController:
         print("Stopping print job...")
         self.running = False
 
-        # Stop the video, motor, and clear LEDs.
-        self.hardware.projector.stop_video()
-        self.video_playing.clear()
+        # Stop motor and LEDs first so hardware responds immediately.
         self.hardware.stepper.stop()
         self.hardware.led_manager.clear_leds()
 
-        # Stop camera operations if a camera is available
+        # Stop video and camera (these may block briefly).
+        self.hardware.projector.stop_video()
+        self.video_playing.clear()
         self.hardware.camera.stop_recording()
-        self.hardware.camera.stop_camera()  # Stop all camera operations
+        self.hardware.camera.stop_camera()
 
         print("Print job stopped and cleanup complete.")
