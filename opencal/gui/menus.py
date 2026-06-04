@@ -243,7 +243,10 @@ class AboutMenu(MenuBase):
                 return
             next_offset = self._offset + 4
             if next_offset >= len(self._NAMES):
-                return  # one full loop done — stop
+                # Last batch shown — exit the menu
+                if self._gui:
+                    self._gui.pop()
+                return
             self._offset = next_offset
 
     def render(self) -> list[str]:
