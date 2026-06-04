@@ -458,6 +458,7 @@ class LCDGui:
         self.mode = Mode.MENU
         self.stack: list[MenuBase] = []
         self._last_rendered: list[str] = []
+        self._splash_active = False
         self.fps = fps
 
     # ── Stack management ──────────────────────────────────────────────────────
@@ -523,9 +524,11 @@ class LCDGui:
 
     def splash(self, message: str, duration: float = 1.0) -> None:
         """Briefly show a centered message on the LCD, then force a redraw."""
+        self._splash_active = True
         self.pc.hardware.lcd.clear()
         self.pc.hardware.lcd.write_message(message.center(20), 1, 0)
         time.sleep(duration)
+        self._splash_active = False
         self._last_rendered = []  # force full redraw on next loop tick
 
     def restart_pi(self) -> None:
@@ -586,7 +589,7 @@ class LCDGui:
                         break
 
             # Re-render only when the display content changes.
-            if self.stack:
+            if self.stack and not self._splash_active:
                 lines = self.stack[-1].render()
                 if lines != self._last_rendered:
                     for i, line in enumerate(lines[:4]):
