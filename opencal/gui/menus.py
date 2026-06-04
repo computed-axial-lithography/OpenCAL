@@ -142,7 +142,7 @@ class VideoSaveMenu(MenuBase):
 
 
 class AboutMenu(MenuBase):
-    """Animated credits. Shows 'MADE BY' intro then auto-scrolls names. Click to exit."""
+    """Animated credits with LED checkerboard. Click to exit at any time."""
 
     title = "About"
 
@@ -172,7 +172,11 @@ class AboutMenu(MenuBase):
         "Ian Bos",
     ]
 
-    def __init__(self) -> None:
+    _HALF_YELLOW = (120, 120, 0, 0)
+    _HALF_BLUE   = (0, 0, 120, 0)
+
+    def __init__(self, pc: PrintController) -> None:
+        self._pc = pc
         self._phase = "intro"
         self._offset = 0
         self._stop_event = threading.Event()
@@ -188,6 +192,7 @@ class AboutMenu(MenuBase):
 
     def on_exit(self) -> None:
         self._stop_event.set()
+        self._pc.hardware.led_manager.clear_leds()
 
     def on_rotate(self, delta: int) -> None:
         pass  # auto-scroll only
@@ -196,24 +201,50 @@ class AboutMenu(MenuBase):
         if self._gui:
             self._gui.pop()
 
+    def _build_groups(self) -> tuple[list[int], list[int]]:
+        group_1, group_2 = [], []
+        for i in range(8):
+            for j in range(8):
+                idx = i * 8 + j
+                if (i // 2 + j // 2) % 2 == 0:
+                    group_1.append(idx)
+                else:
+                    group_2.append(idx)
+        return group_1, group_2
+
+    def _led_loop(self, group_1: list[int], group_2: list[int]) -> None:
+        leds = self._pc.hardware.led_manager
+        while not self._stop_event.is_set():
+            leds.set_led(self._HALF_YELLOW, group_1, update=False)
+            leds.set_led(self._HALF_BLUE, group_2)
+            self._stop_event.wait(0.5)
+            if self._stop_event.is_set():
+                break
+            leds.set_led(self._HALF_BLUE, group_1, update=False)
+            leds.set_led(self._HALF_YELLOW, group_2)
+            self._stop_event.wait(0.5)
+
     def _animate(self) -> None:
-        # Hold intro screen for 2 seconds
+        group_1, group_2 = self._build_groups()
+        led_thread = threading.Thread(target=self._led_loop, args=(group_1, group_2), daemon=True)
+        led_thread.start()
+
+        # Intro screen
         self._stop_event.wait(2.0)
         if self._stop_event.is_set():
             return
 
         self._phase = "scroll"
 
-        # Show 4 names at a time, advance by 4 every 3 seconds
+        # Show 4 names at a time, one batch every 3 seconds, stop after one loop
         while not self._stop_event.is_set():
             self._stop_event.wait(3.0)
             if self._stop_event.is_set():
                 return
             next_offset = self._offset + 4
             if next_offset >= len(self._NAMES):
-                self._offset = 0  # loop back to start
-            else:
-                self._offset = next_offset
+                return  # one full loop done — stop
+            self._offset = next_offset
 
     def render(self) -> list[str]:
         if self._phase == "intro":
@@ -340,6 +371,6 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
                     ActionItem("Power Off", gui.power_off_pi),
                 ],
             ),
-            AboutMenu(),
+            AboutMenu(pc),
         ],
     )
