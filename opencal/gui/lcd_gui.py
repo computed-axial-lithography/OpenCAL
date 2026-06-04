@@ -468,6 +468,7 @@ class LCDGui:
         self.stack: list[MenuBase] = []
         self._last_rendered: list[str] = []
         self._splash_active = False
+        self._long_press_timer: threading.Timer | None = None
         self.fps = fps
 
     # ── Stack management ──────────────────────────────────────────────────────
@@ -507,6 +508,26 @@ class LCDGui:
     def handle_button_press(self) -> None:
         if self.stack:
             self.stack[-1].on_click()
+
+    def _on_button_pressed(self) -> None:
+        self._long_press_timer = threading.Timer(10.0, self._handle_long_press)
+        self._long_press_timer.start()
+
+    def _on_button_released(self) -> None:
+        if self._long_press_timer is not None:
+            if self._long_press_timer.is_alive():
+                self._long_press_timer.cancel()
+                self.handle_button_press()
+            self._long_press_timer = None
+
+    def _handle_long_press(self) -> None:
+        self.restart_program()
+
+    def restart_program(self) -> None:
+        self.pc.hardware.lcd.clear()
+        self.pc.hardware.lcd.write_message("Restarting...".center(20), 1, 0)
+        time.sleep(1)
+        os.execv(sys.executable, [sys.executable] + sys.argv)
 
     # ── Utility methods (called from menu callbacks) ──────────────────────────
 
@@ -580,7 +601,10 @@ class LCDGui:
         encoder = self.pc.hardware.rotary.encoder
         encoder.when_rotated_clockwise = lambda: self.handle_rotary_rotation(1)
         encoder.when_rotated_counter_clockwise = lambda: self.handle_rotary_rotation(-1)
-        self.pc.hardware.rotary.button.when_pressed = self.handle_button_press
+
+        button = self.pc.hardware.rotary.button
+        button.when_pressed = self._on_button_pressed
+        button.when_released = self._on_button_released
 
         while self.running:
             # Check for signals from pygame (only meaningful in PYGAME mode).
