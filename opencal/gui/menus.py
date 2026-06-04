@@ -142,7 +142,7 @@ class VideoSaveMenu(MenuBase):
 
 
 class AboutMenu(MenuBase):
-    """Scrollable credits list. Rotate to scroll, click to exit."""
+    """Animated credits. Shows 'MADE BY' intro then auto-scrolls names. Click to exit."""
 
     title = "About"
 
@@ -172,19 +172,59 @@ class AboutMenu(MenuBase):
         "Ian Bos",
     ]
 
+    def __init__(self) -> None:
+        self._phase = "intro"
+        self._offset = 0
+        self._stop_event = threading.Event()
+        self._anim_thread: threading.Thread | None = None
+
     def on_enter(self, gui: "LCDGui") -> None:
         super().on_enter(gui)
+        self._phase = "intro"
         self._offset = 0
+        self._stop_event.clear()
+        self._anim_thread = threading.Thread(target=self._animate, daemon=True)
+        self._anim_thread.start()
+
+    def on_exit(self) -> None:
+        self._stop_event.set()
 
     def on_rotate(self, delta: int) -> None:
-        max_offset = max(0, len(self._NAMES) - 4)
-        self._offset = max(0, min(max_offset, self._offset + delta))
+        pass  # auto-scroll only
 
     def on_click(self) -> None:
         if self._gui:
             self._gui.pop()
 
+    def _animate(self) -> None:
+        # Hold intro screen for 2 seconds
+        self._stop_event.wait(2.0)
+        if self._stop_event.is_set():
+            return
+
+        self._phase = "scroll"
+
+        # Auto-scroll one line at a time
+        max_offset = max(0, len(self._NAMES) - 4)
+        while not self._stop_event.is_set():
+            if self._offset >= max_offset:
+                # Pause at end, then loop back to start
+                self._stop_event.wait(3.0)
+                if not self._stop_event.is_set():
+                    self._offset = 0
+            else:
+                self._stop_event.wait(1.2)
+                if not self._stop_event.is_set():
+                    self._offset += 1
+
     def render(self) -> list[str]:
+        if self._phase == "intro":
+            return [
+                " " * 20,
+                "-- MADE BY --".center(20),
+                " " * 20,
+                " " * 20,
+            ]
         lines = []
         for i in range(4):
             idx = self._offset + i
