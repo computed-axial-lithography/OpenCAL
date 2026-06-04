@@ -2,6 +2,18 @@ import os
 from pathlib import Path
 
 
+def unique_path(path: Path) -> Path:
+    """Return a unique path, appending (1), (2), etc. if the file already exists."""
+    if not path.exists():
+        return path
+    counter = 1
+    while True:
+        candidate = path.parent / f"{path.stem} ({counter}){path.suffix}"
+        if not candidate.exists():
+            return candidate
+        counter += 1
+
+
 class MP4Driver:
     def __init__(self, mount_point: Path = Path("/media/opencal/")):
         self.mount_point = mount_point

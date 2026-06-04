@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from opencal.hardware import PrintController
+from opencal.hardware.usb_manager import unique_path
 from opencal.gui.lcd_gui import (
     MenuBase,
     NavigationMenu,
