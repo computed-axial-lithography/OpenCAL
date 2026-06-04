@@ -7,11 +7,11 @@ class MP4Driver:
         self.mount_point = mount_point
 
     def _mounted_drive(self) -> Path | None:
-        """Return the first mounted subdirectory under the mount point, or None."""
+        """Return the subdirectory that has an active filesystem mount, or None."""
         if not self.mount_point.exists():
             return None
         for entry in self.mount_point.iterdir():
-            if entry.is_dir():
+            if entry.is_dir() and os.path.ismount(entry):
                 return entry
         return None
 
