@@ -204,18 +204,16 @@ class AboutMenu(MenuBase):
 
         self._phase = "scroll"
 
-        # Auto-scroll one line at a time
-        max_offset = max(0, len(self._NAMES) - 4)
+        # Show 4 names at a time, advance by 4 every 3 seconds
         while not self._stop_event.is_set():
-            if self._offset >= max_offset:
-                # Pause at end, then loop back to start
-                self._stop_event.wait(3.0)
-                if not self._stop_event.is_set():
-                    self._offset = 0
+            self._stop_event.wait(3.0)
+            if self._stop_event.is_set():
+                return
+            next_offset = self._offset + 4
+            if next_offset >= len(self._NAMES):
+                self._offset = 0  # loop back to start
             else:
-                self._stop_event.wait(1.2)
-                if not self._stop_event.is_set():
-                    self._offset += 1
+                self._offset = next_offset
 
     def render(self) -> list[str]:
         if self._phase == "intro":
