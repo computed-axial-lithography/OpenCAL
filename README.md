@@ -48,12 +48,12 @@ cd OpenCAL
 sudo apt update
 xargs sudo apt install -y < apt_requirements.txt
 
-# (Optional) create and activate virtual environment
-python3 -m venv venv
-source venv/bin/activate
+# Create and activate virtual environment
+python3 -m venv --use-system-packages
+source .venv/bin/activate
 
 # Install Python dependencies
-pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 ```
 
 ## Configuration
@@ -66,11 +66,6 @@ Edit `utils/config.json` to match your hardware setup. For example:
     "clk_pin": 5,
     "dt_pin": 6,
     "btn_pin": 19
-  },
-  "camera": {
-    "type": "rpi",
-    "index": 0,
-    "save_path": "/home/pi/OpenCAL/utils/prints"
   }
 }
 ```
@@ -91,7 +86,7 @@ To have OpenCAL start automatically at boot, register it as a `systemd` service:
    sudo nano /etc/systemd/system/opencal.service
    ```
 
-   Make sure these fields match your install location and user. For example, if you cloned into `/home/pi/OpenCAL` and created a `venv` there, you might have:
+   Make sure to adjust the `User` and `WorkingDirectory` fields to match your installation. For example, if you cloned into `/home/opencal/OpenCAL` and created a `.venv` there, you might have:
 
    ```ini
    [Unit]
@@ -99,9 +94,9 @@ To have OpenCAL start automatically at boot, register it as a `systemd` service:
    After=network.target
 
    [Service]
-   User=pi
-   WorkingDirectory=/home/pi/OpenCAL
-   ExecStart=/home/pi/OpenCAL/venv/bin/python /home/pi/OpenCAL/main.py
+   User=opencal
+   WorkingDirectory=/home/opencal/OpenCAL
+   ExecStart=/home/opencal/OpenCAL/.venv/bin/python -m opencal
    Restart=on-failure
    ```
 
@@ -109,8 +104,8 @@ To have OpenCAL start automatically at boot, register it as a `systemd` service:
 
    ```bash
    sudo systemctl daemon-reload
-   sudo systemctl enable opencal.service    # start at boot
-   sudo systemctl start  opencal.service
+   sudo systemctl enable opencal.service
+   sudo systemctl start opencal.service
    ```
 
 4. **Verify it’s running**
@@ -128,8 +123,8 @@ To have OpenCAL start automatically at boot, register it as a `systemd` service:
 
 If everything is properly connected and installed, the system can run entirely from the GUI. Expected sequence for printing:
 
-1. Provide `.mp4` via USB storage device
-2. Navigate to "Print from USB" on the GUI
-3. Select `.mp4` file for printing
-4. Confirm the rotation speed (in rpm) of the resin
-5. Start the print or test
+1. Provide `.mp4` via USB storage device.
+2. Navigate to "Print from USB" on the GUI.
+3. Select `.mp4` file for printing.
+4. Confirm the rotation speed (in rpm) of the resin (should be 9 for provided video).
+5. Start the print or test.

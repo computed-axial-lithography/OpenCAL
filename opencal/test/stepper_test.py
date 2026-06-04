@@ -1,30 +1,23 @@
-from time import sleep
+import time
+from ticlib import TicUSB
 
-from gpiozero import OutputDevice
 
-
-# TODO: move to tests folder
 def main():
-    step_pin = 18  # Replace with your step pin number
-    dir_pin = 23  # Replace with your direction pin number
-    enable_pin = 27
+    tic = TicUSB()
 
-    step = OutputDevice(step_pin)
-    direction = OutputDevice(dir_pin)
-    enable = OutputDevice(enable_pin)
-    enable.on()
+    tic.energize()
+    tic.exit_safe_start()
+    tic.reset_command_timeout()
 
-    # Set direction (CW or CCW)
-    direction.on()  # CW direction
-    # direction.off()  # CCW direction
-    print("starting test")
-    # Test motor by rotating 200 steps
-    for _ in range(200):  # Adjust step count as needed
-        step.on()
-        sleep(0.01)  # Adjust delay to control speed
-        step.off()
-        sleep(0.01)
-    enable.off()
+    print("Starting test - rotating 200 steps CW")
+    target = tic.get_current_position() + 200
+    tic.set_target_position(target)
+
+    while tic.get_current_position() != target:
+        tic.reset_command_timeout()
+        time.sleep(0.05)
+
+    tic.deenergize()
     print("Test complete")
 
 

@@ -8,4 +8,5 @@ TMC2209_PY
 pygame
 lgpio
 picamera2
-rpi_hardware_pwm
+ticlib
+

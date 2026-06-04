@@ -26,12 +26,8 @@ class Config:
 
 class PygameConfig:
     def __init__(self, config: dict[str, Any]):
-        self.active: bool = config["active"]
-
-class StepperConfigBase:
-    def __init__(self, config: dict[str, Any]):
-        self.driver_mode: str = config.get("driver_mode", "step_dir")
-        self.enable_pin: int | None = config.get("enable_pin")
+        self.encoder_a_pin: int = config["A_pin"]
+        self.encoder_b_pin: int = config["B_pin"]
         self.default_rpm: float = config["default_rpm"]
         self.default_direction: str = config["default_direction"]
         self.steps_per_revolution: int = config["steps_per_revolution"]
