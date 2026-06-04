@@ -31,11 +31,7 @@
   },
   "led_array": {
     "num_led": 64,
-    "default_color": [
-      0,
-      255,
-      0
-    ]
+    "default_color": [0, 240, 0, 0]
   },
   "lcd_display": {
     "port": "PCF8574",

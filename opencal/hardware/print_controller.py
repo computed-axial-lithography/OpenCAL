@@ -26,7 +26,7 @@ class PrintController:
 
         # Start motor rotation and LED color change.
         self.hardware.stepper.start_rotation("CCW")
-        self.hardware.led_manager.set_led((255, 0, 0))
+        self.hardware.led_manager.set_led((0, 240, 0, 0))  # red (GRBW order, reduced to minimise W bleed)
 
         # Start video playback.
         self.video_playing.set()

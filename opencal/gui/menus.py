@@ -163,7 +163,7 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
                 "Manual Control",
                 items=[
                     ActionItem(
-                        "Turn on LEDs", lambda: pc.hardware.led_manager.set_led((255, 0, 0))
+                        "Turn on LEDs", lambda: pc.hardware.led_manager.set_led((0, 240, 0, 0))
                     ),
                     ActionItem("Turn off LEDs", pc.hardware.led_manager.clear_leds),
                     ActionItem(
