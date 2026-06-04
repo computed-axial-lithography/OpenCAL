@@ -6,12 +6,13 @@ from pi5neo.pi5neo import Pi5Neo, EPixelType
 from opencal.utils.config import LedArrayConfig
 
 # SK6812 RGBW byte order: (G, R, B, W)
-# R is driven at 180 rather than 255 to minimise W-LED crosstalk bleed.
-RED   = (0, 240, 0, 0)
-GREEN = (255, 0, 0, 0)
-BLUE  = (0, 0, 180, 0)
-WHITE = (0, 0, 0, 255)
-OFF   = (0, 0, 0, 0)
+# All channels capped at 240 to prevent W-LED crosstalk bleed at full drive.
+RED    = (0,   240, 0,   0)
+GREEN  = (240, 0,   0,   0)
+BLUE   = (0,   0,   240, 0)
+YELLOW = (240, 240, 0,   0)
+WHITE  = (0,   0,   0,   240)
+OFF    = (0,   0,   0,   0)
 
 
 @final
@@ -61,12 +62,12 @@ class LEDManager:
                     group_2.append(idx)
 
         for _ in range(CYCLES):
-            self.set_led(RED, group_1, update=False)
-            self.set_led(WHITE, group_2)
+            self.set_led(YELLOW, group_1, update=False)
+            self.set_led(BLUE, group_2)
             time.sleep(DELAY)
 
-            self.set_led(WHITE, group_1, update=False)
-            self.set_led(RED, group_2)
+            self.set_led(BLUE, group_1, update=False)
+            self.set_led(YELLOW, group_2)
             time.sleep(DELAY)
 
         self.clear_leds()
