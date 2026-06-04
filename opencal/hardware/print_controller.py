@@ -1,13 +1,12 @@
 import threading
 import time
 from typing import final
-
-from opencal.utils.config import Config
-
-from .hardware_controller import HardwareController
 from pathlib import Path
 
-VIDEO_SAVE_PATH = Path.home() / "OpenCAL/output/videos/print.h264"
+from opencal.utils.config import Config
+from .hardware_controller import HardwareController
+
+_RECORDING_DIR = Path.home() / "OpenCAL/output/videos"
 
 
 @final
@@ -19,6 +18,7 @@ class PrintController:
         self.video_playing = video_playing
         self.running = False
         self.ui_config = config.ui
+        self.recording_path: Path | None = None
 
     def start_print_job(self, video_file: Path):
         """Start the print job in a new thread."""
@@ -28,19 +28,17 @@ class PrintController:
         print(f"Starting print job... {video_file}")
         self.running = True
 
-        # Start motor rotation and LED color change.
-        self.hardware.stepper.start_rotation("CCW")
-        self.hardware.led_manager.set_led((0, 240, 0, 0))  # red (GRBW order, reduced to minimise W bleed)
+        self.recording_path = _RECORDING_DIR / f"{video_file.stem}_recording.h264"
+        self.recording_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Start video playback.
+        self.hardware.stepper.start_rotation("CCW")
+        self.hardware.led_manager.set_led((0, 240, 0, 0))
+
         self.video_playing.set()
         self.hardware.projector.play_video_with_vlc(video_file)
-
-        VIDEO_SAVE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        self.hardware.camera.start_recording(VIDEO_SAVE_PATH)
+        self.hardware.camera.start_recording(self.recording_path)
 
         try:
-            # Keep the job running until self.running is set to False externally.
             while self.running:
                 time.sleep(1)
         except KeyboardInterrupt:
@@ -55,11 +53,9 @@ class PrintController:
         print("Stopping print job...")
         self.running = False
 
-        # Stop motor and LEDs first so hardware responds immediately.
         self.hardware.stepper.stop()
         self.hardware.led_manager.clear_leds()
 
-        # Stop video and camera (these may block briefly).
         self.hardware.projector.stop_video()
         self.video_playing.clear()
         self.hardware.camera.stop_recording()

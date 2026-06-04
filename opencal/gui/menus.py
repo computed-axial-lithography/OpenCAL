@@ -8,11 +8,11 @@ MultiSelectMenu / PyGameMenu / DynamicNavigationMenu instances.
 
 import shutil
 import threading
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from opencal.hardware import PrintController
-from opencal.hardware.print_controller import VIDEO_SAVE_PATH
 from opencal.gui.lcd_gui import (
     MenuBase,
     NavigationMenu,
@@ -111,13 +111,16 @@ class VideoSaveMenu(MenuBase):
     def _save_to_usb(self) -> None:
         if self._gui is None:
             return
+        if self._pc.recording_path is None:
+            self._gui.splash("No recording found")
+            return
         usb = self._pc.hardware.usb_device
         if not usb.is_mounted():
             self._gui.splash("No USB found")
             return
         try:
-            dest = usb.usb_save_path(VIDEO_SAVE_PATH.name)
-            shutil.copy2(VIDEO_SAVE_PATH, dest)
+            dest = usb.usb_save_path(self._pc.recording_path.name)
+            shutil.copy2(self._pc.recording_path, dest)
             self._gui.splash("Video Saved!")
         except Exception as e:
             print(f"ERROR: Failed to save video to USB: {e}")
@@ -161,9 +164,11 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
             pc.hardware.projector.show_vial_width(int(width))
 
     def _capture_image() -> None:
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        filename = f"{timestamp}.jpeg"
         usb = pc.hardware.usb_device
         if usb.is_mounted():
-            save_path = usb.usb_save_path("capture.jpeg")
+            save_path = usb.usb_save_path(filename)
             success_msg = "Saved to USB"
         else:
             save_path = None

@@ -46,12 +46,9 @@ class MP4Driver:
         return mp4_paths
 
     def get_file_names(self) -> list[str]:
-        """
-        Return only the file names (without paths).
-        """
-        # Get the list of full MP4 file paths and extract just the file names
+        """Return file names, excluding any recording files."""
         mp4_paths = self.list_mp4_files()
-        return [path.name for path in mp4_paths]
+        return [path.name for path in mp4_paths if "recording" not in path.name]
 
     def print_mp4_files(self):
         """
