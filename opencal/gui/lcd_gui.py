@@ -376,10 +376,16 @@ class PrintStatusMenu(MenuBase):
 
     title = "Printing..."
 
-    def __init__(self, pc: PrintController, video_filename_short: str):
+    def __init__(
+        self,
+        pc: PrintController,
+        video_filename_short: str,
+        on_stop: "Callable[[], None] | None" = None,
+    ):
         self._pc = pc
         self._filename = video_filename_short[:20]
         self._start_time: float = 0.0
+        self._on_stop = on_stop
 
     def on_enter(self, gui: "LCDGui") -> None:
         super().on_enter(gui)
@@ -389,9 +395,12 @@ class PrintStatusMenu(MenuBase):
         pass  # no-op while printing
 
     def on_click(self) -> None:
-        threading.Thread(target=self._pc.stop, daemon=True).start()
-        if self._gui:
-            self._gui.pop()
+        if self._on_stop:
+            self._on_stop()
+        else:
+            threading.Thread(target=self._pc.stop, daemon=True).start()
+            if self._gui:
+                self._gui.pop()
 
     def render(self) -> list[str]:
         elapsed = time.time() - self._start_time

@@ -6,10 +6,13 @@ Add new menus here by composing NavigationMenu / ActionItem / VariableMenu /
 MultiSelectMenu / PyGameMenu / DynamicNavigationMenu instances.
 """
 
+import shutil
+import threading
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from opencal.hardware import PrintController
+from opencal.hardware.print_controller import VIDEO_SAVE_PATH
 from opencal.gui.lcd_gui import (
     MenuBase,
     NavigationMenu,
@@ -34,14 +37,7 @@ _DARK_IMAGE = Path(__file__).parent.parent / "utils" / "calibration" / "dark.png
 
 
 class PrintLaunchItem(MenuBase):
-    """Represents a single .mp4 file in the 'Print from USB' menu.
-
-    Selecting it:
-      1. Blackens the projector screen.
-      2. Pushes a VariableMenu to let the user set the print RPM.
-      3. On RPM confirmation: sets RPM, starts the print job, and pushes
-         a PrintStatusMenu so the user can monitor / stop the print.
-    """
+    """Represents a single .mp4 file in the 'Print from USB' menu."""
 
     def __init__(self, filename: str, pc: PrintController):
         self.title = filename
@@ -51,7 +47,6 @@ class PrintLaunchItem(MenuBase):
 
     def on_activate(self, gui: "LCDGui") -> None:
         self._gui_ref = gui
-        # Black out the projector while the user sets RPM.
         self._pc.hardware.projector.display_image(_DARK_IMAGE)
         gui.push(
             VariableMenu(
@@ -67,16 +62,74 @@ class PrintLaunchItem(MenuBase):
         )
 
     def _on_rpm_confirmed(self, _rpm: float) -> None:
-        # RPM was already applied by VariableMenu._set; just start the print.
         full_path = self._pc.hardware.usb_device.get_full_path(self._filename)
         self._pc.start_print_job(full_path)
         if self._gui_ref is not None:
-            self._gui_ref.push(
+            gui = self._gui_ref
+            pc = self._pc
+            def _stop() -> None:
+                threading.Thread(target=pc.stop, daemon=True).start()
+                if pc.ui_config.prompt_usb_video_save and pc.hardware.usb_device.is_mounted():
+                    gui.push(VideoSaveMenu(pc))
+                else:
+                    gui.pop()
+            gui.push(
                 PrintStatusMenu(
                     pc=self._pc,
                     video_filename_short=self._filename,
+                    on_stop=_stop,
                 )
             )
+
+
+class VideoSaveMenu(MenuBase):
+    """Shown after stopping a print — lets the user save the video to USB."""
+
+    title = "Save video to USB?"
+
+    def __init__(self, pc: PrintController):
+        self._pc = pc
+        self._items = ["Yes", "No"]
+        self._index = 0
+
+    def on_enter(self, gui: "LCDGui") -> None:
+        super().on_enter(gui)
+        self._index = 0
+
+    def on_rotate(self, delta: int) -> None:
+        self._index = max(0, min(len(self._items) - 1, self._index + delta))
+
+    def on_click(self) -> None:
+        if self._gui is None:
+            return
+        if self._items[self._index] == "Yes":
+            self._gui.pop()
+            self._save_to_usb()
+        else:
+            self._gui.pop()
+
+    def _save_to_usb(self) -> None:
+        if self._gui is None:
+            return
+        usb = self._pc.hardware.usb_device
+        if not usb.is_mounted():
+            self._gui.splash("No USB found")
+            return
+        try:
+            dest = usb.usb_save_path(VIDEO_SAVE_PATH.name)
+            shutil.copy2(VIDEO_SAVE_PATH, dest)
+            self._gui.splash("Video Saved!")
+        except Exception as e:
+            print(f"ERROR: Failed to save video to USB: {e}")
+            self._gui.splash("Save Failed")
+
+    def render(self) -> list[str]:
+        return [
+            "Save video to USB?".center(20),
+            " " * 20,
+            f"{'>' if self._index == 0 else ' '} Yes".ljust(20),
+            f"{'>' if self._index == 1 else ' '} No".ljust(20),
+        ]
 
 
 # ---------------------------------------------------------------------------
@@ -85,15 +138,6 @@ class PrintLaunchItem(MenuBase):
 
 
 def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
-    """Build and return the root NavigationMenu for the OpenCAL interface.
-
-    Parameters
-    ----------
-    pc:  PrintController owning all hardware.
-    gui: The LCDGui instance (used for utility callbacks like kill_gui,
-         save_defaults, restart_pi, power_off_pi).
-    """
-
     input_q = gui.input_q
 
     def _make_usb_items() -> list[MenuBase]:
@@ -116,11 +160,22 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
         if width is not None:
             pc.hardware.projector.show_vial_width(int(width))
 
+    def _capture_image() -> None:
+        usb = pc.hardware.usb_device
+        if usb.is_mounted():
+            save_path = usb.usb_save_path("capture.jpeg")
+        else:
+            save_path = None
+        success = pc.hardware.camera.capture_image(save_path)
+        gui.splash("Image Captured" if success else "Image error")
+
+    def _toggle_usb_video_prompt() -> None:
+        pc.ui_config.prompt_usb_video_save = not pc.ui_config.prompt_usb_video_save
+        state = "On" if pc.ui_config.prompt_usb_video_save else "Off"
+        gui.splash(f"USB prompt: {state}")
+
     settings_items: list[MenuBase] = [
-        ActionItem(
-            "save as default",
-            lambda: gui.save_defaults(),
-        ),
+        ActionItem("save as default", lambda: gui.save_defaults()),
         VariableMenu(
             title="Resize Print",
             get=lambda: pc.hardware.projector.size,
@@ -144,16 +199,14 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
             get=pc.hardware.projector.get_projector_orientation,
             set=lambda s: pc.hardware.projector.set_projector_orientation(ProjectorOrientation(s)),
         ),
-    ]
-
-    settings_items.append(
+        ActionItem("USB video prompt", _toggle_usb_video_prompt),
         PyGameMenu(
             title="Find Vial Width",
             input_q=input_q,
             mode_name="vial_width",
             on_exit_callback=_apply_vial_result,
-        )
-    )
+        ),
+    ]
 
     return NavigationMenu(
         "main",
@@ -170,10 +223,7 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
                         "Start stepper", lambda: pc.hardware.stepper.start_rotation(ramp_time=1)
                     ),
                     ActionItem("Stop stepper", pc.hardware.stepper.stop),
-                    ActionItem(
-                        "Capture image",
-                        lambda: gui.splash("Image capture" if pc.hardware.camera.capture_image("test.jpeg") else "Image error"),
-                    ),
+                    ActionItem("Capture image", _capture_image),
                 ],
             ),
             NavigationMenu("Settings", items=settings_items),

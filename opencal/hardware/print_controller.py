@@ -7,6 +7,9 @@ from opencal.utils.config import Config
 from .hardware_controller import HardwareController
 from pathlib import Path
 
+VIDEO_SAVE_PATH = Path.home() / "OpenCAL/output/videos/print.h264"
+
+
 @final
 class PrintController:
     def __init__(self, config: Config, video_playing: threading.Event):
@@ -15,6 +18,7 @@ class PrintController:
             print("not all peripherals connected, some functionality may not work")
         self.video_playing = video_playing
         self.running = False
+        self.ui_config = config.ui
 
     def start_print_job(self, video_file: Path):
         """Start the print job in a new thread."""
@@ -32,7 +36,8 @@ class PrintController:
         self.video_playing.set()
         self.hardware.projector.play_video_with_vlc(video_file)
 
-        self.hardware.camera.start_recording(Path.home() / "OpenCAL/output/videos/print.h264")
+        VIDEO_SAVE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        self.hardware.camera.start_recording(VIDEO_SAVE_PATH)
 
         try:
             # Keep the job running until self.running is set to False externally.

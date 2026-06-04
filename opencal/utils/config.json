@@ -48,5 +48,8 @@
     "default_print_size": 100,
     "calibration_img_path": "/home/opencal/OpenCAL/opencal/utils/calibration/OpenCAL_Alignment_Calibration_Image.png",
     "calibration_dir_path": "/home/opencal/OpenCAL/opencal/utils/calibration"
+  },
+  "ui": {
+    "prompt_usb_video_save": true
   }
 }

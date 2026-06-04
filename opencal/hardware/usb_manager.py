@@ -6,6 +6,14 @@ class MP4Driver:
     def __init__(self, mount_point: Path = Path("/media/opencal/")):
         self.mount_point = mount_point
 
+    def is_mounted(self) -> bool:
+        """Return True if a USB drive is currently mounted."""
+        return self.mount_point.exists() and self.mount_point.is_dir()
+
+    def usb_save_path(self, filename: str) -> Path:
+        """Return a path on the USB drive for saving a file."""
+        return self.mount_point / filename
+
     def list_mp4_files(self) -> list[Path]:
         """
         List all MP4 files in the USB storage device directory.

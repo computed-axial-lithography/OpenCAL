@@ -22,6 +22,7 @@ class Config:
         self.lcd_display = LcdDisplayConfig(config["lcd_display"])
         self.rotary_encoder = RotaryConfig(config["rotary_encoder"])
         self.projector = ProjectorConfig(config["projector"])
+        self.ui = UIConfig(config["ui"])
 
 
 class PygameConfig:
@@ -115,3 +116,8 @@ class ProjectorConfig:
         self.default_print_size: int = config["default_print_size"]
         self.calibration_img_path: str = config["calibration_img_path"]
         self.calibration_dir_path: str = config["calibration_dir_path"]
+
+
+class UIConfig:
+    def __init__(self, config: dict[str, Any]):
+        self.prompt_usb_video_save: bool = config["prompt_usb_video_save"]

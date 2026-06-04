@@ -59,7 +59,7 @@ class CameraController:
 
         self.picam.start()
 
-    def capture_image(self, filename: str) -> bool:
+    def capture_image(self, save_path: Path | None = None) -> bool:
         if not self.picam:
             print("WARNING: No camera connected, cannot capture image.")
             return False
@@ -68,7 +68,8 @@ class CameraController:
             if not self.picam.started:
                 self.start_camera(preview=True)
 
-            save_path = Path.cwd() / "output/images" / filename
+            if save_path is None:
+                save_path = self.save_path / "capture.jpeg"
             save_path.parent.mkdir(parents=True, exist_ok=True)
             self.picam.switch_mode_and_capture_file(self.still_config, save_path)
             return True
