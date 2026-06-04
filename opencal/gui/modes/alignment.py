@@ -25,11 +25,11 @@ class AlignmentMode(BasePygameMode):
         super().__init__(app)
         self._image_path = Path(image_path)
         self._surface: pygame.Surface | None = None
-        self._y_offset: int = 0
+        self._x_offset: int = 0  # physical up/down = image X due to 90° projector rotation
 
     @override
     def on_activate(self) -> None:
-        self._y_offset = 0
+        self._x_offset = 0
         raw = pygame.image.load(str(self._image_path)).convert()
         self._surface = pygame.transform.scale(raw, (self.app.width, self.app.height))
 
@@ -39,7 +39,7 @@ class AlignmentMode(BasePygameMode):
 
     @override
     def on_encoder_delta(self, delta: int) -> None:
-        self._y_offset += delta * _STEP_PX
+        self._x_offset += delta * _STEP_PX
 
     @override
     def on_button(self) -> None:
@@ -49,4 +49,4 @@ class AlignmentMode(BasePygameMode):
     def on_frame(self, surf: pygame.Surface) -> None:
         surf.fill((0, 0, 0))
         if self._surface is not None:
-            _ = surf.blit(self._surface, (0, self._y_offset))
+            _ = surf.blit(self._surface, (self._x_offset, 0))

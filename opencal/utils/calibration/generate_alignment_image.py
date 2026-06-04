@@ -33,7 +33,12 @@ from PIL import Image, ImageDraw
 
 PIXEL_SIZE_MM = 0.09          # 90 µm per pixel
 PX_PER_MM     = 1.0 / PIXEL_SIZE_MM   # ≈ 11.11 px / mm
-W, H          = 1920, 1080
+
+# The projector is mounted rotated 90° on its side, so generate on a portrait
+# canvas (physical orientation) then rotate to landscape for the projector output.
+W, H          = 1080, 1920   # portrait virtual canvas (physical orientation)
+W_OUT, H_OUT  = 1920, 1080   # landscape output for projector
+
 LINE_WIDTH    = 2             # px — outline stroke
 HOLE_WIDTH    = 3             # px — alignment hole stroke (slightly bolder)
 ARC_STEPS     = 120           # line segments per arc
@@ -176,9 +181,11 @@ def main() -> None:
     _fill_slot_h(draw, x_inner_mm=-14, x_outer_mm=-32, y_mm=0, r_mm=1.0)          # left
     print("  Filled 4 alignment slots")
 
+    # Rotate portrait canvas → landscape for the sideways-mounted projector
+    img = img.rotate(-90, expand=True)   # -90° = CW rotation: 1080×1920 → 1920×1080
     img.save(OUT_PATH)
     print(f"Saved: {OUT_PATH}")
-    print(f"Canvas: {W}×{H} px  |  Scale: {PX_PER_MM:.2f} px/mm  (90 µm/pixel)")
+    print(f"Canvas: {W_OUT}×{H_OUT} px  |  Scale: {PX_PER_MM:.2f} px/mm  (90 µm/pixel)")
 
 
 if __name__ == "__main__":
