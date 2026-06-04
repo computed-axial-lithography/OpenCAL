@@ -26,12 +26,25 @@ class Config:
 
 class PygameConfig:
     def __init__(self, config: dict[str, Any]):
+        self.active: bool = config["active"]
+
+
+class StepperConfigBase:
+    def __init__(self, config: dict[str, Any]):
         self.encoder_a_pin: int = config["A_pin"]
         self.encoder_b_pin: int = config["B_pin"]
         self.default_rpm: float = config["default_rpm"]
         self.default_direction: str = config["default_direction"]
         self.steps_per_revolution: int = config["steps_per_revolution"]
         self.encoder_cpr: int = config["encoder_cpr"]
+
+
+# Alias so existing imports of StepperConfig still work
+StepperConfig = StepperConfigBase
+
+
+class TicUSBStepperConfig(StepperConfigBase):
+    pass  # USB device is found automatically — no extra config needed
 
 
 class StepDirStepperConfig(StepperConfigBase):
@@ -56,7 +69,9 @@ class UARTStepperConfig(StepperConfigBase):
 
 def _make_stepper_config(raw: dict[str, Any]) -> StepperConfigBase:
     mode: str = raw.get("driver_mode", "step_dir")
-    if mode == "step_dir":
+    if mode == "tic_usb":
+        return TicUSBStepperConfig(raw)
+    elif mode == "step_dir":
         return StepDirStepperConfig(raw)
     elif mode == "uart":
         return UARTStepperConfig(raw)
