@@ -12,6 +12,7 @@ dependencies = [
     "rplcd>=1.4.0",
     "smbus2>=0.6.0",
     "ticlib",
+    "pyusb",
 ]
 
 [tool.setuptools.packages.find]
