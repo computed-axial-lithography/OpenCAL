@@ -171,7 +171,8 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
                     ),
                     ActionItem("Stop stepper", pc.hardware.stepper.stop),
                     ActionItem(
-                        "Capture image", lambda: pc.hardware.camera.capture_image("test.jpeg")
+                        "Capture image",
+                        lambda: gui.splash("Image capture" if pc.hardware.camera.capture_image("test.jpeg") else "Image error"),
                     ),
                 ],
             ),
