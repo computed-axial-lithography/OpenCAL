@@ -9,6 +9,7 @@ from opencal.gui.events import ActivateEvent, ButtonEvent, DeactivateEvent, Enco
 from opencal.gui.modes.base import BasePygameMode
 from opencal.gui.modes.vial_width import VialWidthMode
 from opencal.gui.modes.calibration import CalibrationMode
+from opencal.gui.modes.alignment import AlignmentMode
 from opencal.utils.config import PygameConfig
 
 
@@ -36,6 +37,7 @@ class PygameApp:
         self._mode_registry: dict[str, type[BasePygameMode]] = {
             "vial_width": VialWidthMode,
             "calibration": CalibrationMode,
+            "alignment": AlignmentMode,
         }
 
     def run(self):

@@ -317,12 +317,6 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
         Path(__file__).parent.parent / "utils" / "calibration" / "alignment_tool.png"
     )
 
-    def _show_alignment() -> None:
-        if not _ALIGNMENT_IMAGE.exists():
-            gui.splash("No alignment image")
-            return
-        pc.hardware.projector.display_image(_ALIGNMENT_IMAGE)
-
     settings_items: list[MenuBase] = [
         ActionItem("save as default", lambda: gui.save_defaults()),
         VariableMenu(
@@ -348,7 +342,12 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
             get=pc.hardware.projector.get_projector_orientation,
             set=lambda s: pc.hardware.projector.set_projector_orientation(ProjectorOrientation(s)),
         ),
-        ActionItem("Show Alignment", _show_alignment),
+        PyGameMenu(
+            title="Show Alignment",
+            input_q=input_q,
+            mode_name="alignment",
+            mode_kwargs={"image_path": _ALIGNMENT_IMAGE},
+        ),
         ActionItem("USB video prompt", _toggle_usb_video_prompt),
         PyGameMenu(
             title="Find Vial Width",
