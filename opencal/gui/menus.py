@@ -102,11 +102,11 @@ class VideoSaveMenu(MenuBase):
     def on_click(self) -> None:
         if self._gui is None:
             return
-        if self._items[self._index] == "Yes":
-            self._gui.pop()
+        save = self._items[self._index] == "Yes"
+        self._gui.pop()  # pop VideoSaveMenu
+        self._gui.pop()  # pop PrintStatusMenu
+        if save:
             self._save_to_usb()
-        else:
-            self._gui.pop()
 
     def _save_to_usb(self) -> None:
         if self._gui is None:
