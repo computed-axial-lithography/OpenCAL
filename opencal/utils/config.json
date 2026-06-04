@@ -1,10 +1,7 @@
 {
   "stepper_motor": {
-    "step_pin": 18,
-    "dir_pin": 23,
     "A_pin": 12,
     "B_pin": 13,
-    "enable_pin": 27,
     "default_rpm": 10,
     "default_direction": "CW",
     "steps_per_revolution": 1600,

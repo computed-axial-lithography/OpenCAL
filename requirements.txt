@@ -5,4 +5,5 @@ rplcd>=1.4.0
 smbus2>=0.6.0
 lgpio
 picamera2
+ticlib
 

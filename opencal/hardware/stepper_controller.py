@@ -1,186 +1,115 @@
 import time
 import threading
-from gpiozero import OutputDevice, RotaryEncoder
+from gpiozero import RotaryEncoder
+from ticlib import TicUSB
 
 from opencal.utils.config import StepperConfig
+
+_HEARTBEAT_INTERVAL = 0.2  # seconds — Tic default command timeout is 1000ms
 
 
 class StepperMotor:
     def __init__(self, config: StepperConfig):
-        """Initialize GPIO communication with the stepper motor driver (Step/Dir mode)."""
-
-        # Load configuration from the specified JSON file
-
-        # Initialize GPIO output devices for step and direction
-        self.step = OutputDevice(config.step_pin)
-        self.direction = OutputDevice(config.dir_pin)
+        """Initialize USB communication with the Tic 259 stepper motor controller."""
+        self.tic = TicUSB()
         self.encoder = RotaryEncoder(config.encoder_a_pin, config.encoder_b_pin, max_steps=0)
 
-        self.enable = OutputDevice(config.enable_pin, active_high=False)
-        self.enable.off()
-
-        # Load default parameters from the configuration
         self.default_rpm = config.default_rpm
         self.speed_rpm = self.default_rpm
         self.default_direction = config.default_direction
+        self._current_direction = self.default_direction
         self.steps_per_rev = config.steps_per_revolution
         self.encoder_cpr = config.encoder_cpr
 
-        # Calculate the delay between steps based on speed and steps per revolution
-        self.step_delay = 60.0 / (self.default_rpm * self.steps_per_rev)
-        self._rotation_thread: threading.Thread | None = None
+        self._heartbeat_thread: threading.Thread | None = None
         self._finish_event = threading.Event()
 
+        self.tic.energize()
+        self.tic.exit_safe_start()
+
+    def _rpm_to_tic_velocity(self, rpm: float, direction: str) -> int:
+        """Convert RPM and direction to Tic velocity units (microsteps per 10,000 seconds)."""
+        steps_per_sec = rpm * self.steps_per_rev / 60
+        velocity = int(steps_per_sec * 10000)
+        return -velocity if direction == "CCW" else velocity
+
     def is_running(self) -> bool:
-        return self._rotation_thread is not None and self._rotation_thread.is_alive()
+        return self._heartbeat_thread is not None and self._heartbeat_thread.is_alive()
 
     def set_rpm(self, rpm: float | None = None, ramp_time: float = 0):
-        """Set the stepper motor speed in RPM (frequency of step pulses)."""
-        print(f"INFO: Changing rpm from {self.speed_rpm} to {rpm} in {ramp_time} sec.")
-
-        rpm = rpm or self.default_rpm  # Use default speed if no RPM is provided
+        """Set the stepper motor speed in RPM. The Tic handles acceleration internally."""
+        rpm = rpm or self.default_rpm
         if rpm <= 0:
-            raise ValueError("RPM must be positive. Use stop() to halt the stepper.)")
-
-        if ramp_time == 0:
-            self.speed_rpm = rpm
-            # Recalculate step delay
-            self.step_delay = 60.0 / (self.speed_rpm * self.steps_per_rev)
-        else:
-            # FIXME: make sure this gets stopped if the motor is stopped before the ramp time completes
-            thread = threading.Thread(target=self._ramp_rpm, args=(rpm, ramp_time))
-            thread.start()
-
-    def _ramp_rpm(self, target: float, ramp_time: float):
-        if ramp_time <= 0:
-            raise ValueError("ramp time must be positive")
-
-        # Discretize into approximately sized intervals and increment RPM
-        TIMESTEPS = 100
-        dt = ramp_time / TIMESTEPS
-        start_rpm = max(
-            self.speed_rpm, 1
-        )  # Ensure minimum start RPM to not have long first delay(s)
-
-        for i in range(TIMESTEPS):
-            # LERP between current and target RPMs
-            self.speed_rpm = start_rpm + (target - start_rpm) * ((i + 1) / TIMESTEPS)
-            self.step_delay = 60.0 / (self.speed_rpm * self.steps_per_rev)
-            time.sleep(dt)
-        # Set finally to ensure exact value achieved
-        self.speed_rpm = target
-        self.step_delay = 60.0 / (self.speed_rpm * self.steps_per_rev)
+            raise ValueError("RPM must be positive. Use stop() to halt the stepper.")
+        print(f"INFO: Changing rpm from {self.speed_rpm} to {rpm}")
+        self.speed_rpm = rpm
+        if self.is_running():
+            velocity = self._rpm_to_tic_velocity(rpm, self._current_direction)
+            self.tic.set_target_velocity(velocity)
+            self.tic.reset_command_timeout()
 
     def rotate_steps(self, steps: int, direction: str | None = None):
-        """
-        Rotate the stepper motor for a specified number of steps.
-        - steps: Number of steps to move.
-        - direction: "CW" for clockwise, "CCW" for counterclockwise.
-        """
+        """Rotate the stepper motor a specific number of steps."""
         direction = direction or self.default_direction
         print(f"INFO: Rotating {steps} steps {direction}")
 
-        # Set the direction of rotation
-        if direction == "CW":
-            self.direction.on()
-        else:
-            self.direction.off()
+        signed_steps = -steps if direction == "CCW" else steps
+        target = self.tic.get_current_position() + signed_steps
+        self.tic.set_target_position(target)
 
-        # Generate step pulses for the specified number of steps
-        prev_time = time.perf_counter()  # Record the start time
-        for _ in range(steps):
-            self.step.on()  # Activate the step pin
-            # Calculate the elapsed time and determine how long to sleep
-            elapsed_time = time.perf_counter() - prev_time
-            time_to_sleep = self.step_delay - elapsed_time
-            if time_to_sleep > 0:
-                time.sleep(time_to_sleep)  # Sleep for the remaining time
-            # NOTE: Should this be immediately after setting to high?
-            self.step.off()  # Deactivate the step pin
-            prev_time = time.perf_counter()  # Reset the start time for the next pulse
+        while self.tic.get_current_position() != target:
+            self.tic.reset_command_timeout()
+            time.sleep(0.05)
 
     def angle_in_steps(self) -> int:
         return self.encoder.steps % self.encoder_cpr
 
     def angle_in_degrees(self) -> float:
-        """Returns the motor angle in degrees from it's angle at startup."""
+        """Returns the motor angle in degrees from its angle at startup."""
         return self.angle_in_steps() / self.encoder_cpr * 360
 
     def start_rotation(self, direction: str | None = None, ramp_time: float = 0):
-        """
-        Start rotating the stepper motor continuously at the set speed.
-
-        :param direction: "CW" for clockwise, "CCW" for counterclockwise.
-        """
+        """Start rotating the stepper motor continuously at the set speed."""
         direction = direction or self.default_direction
+        self._current_direction = direction
         print(f"INFO: Starting continuous rotation {direction}")
 
-        # Set the direction of rotation
-        if direction == "CW":
-            self.direction.on()
-        else:
-            self.direction.off()
-
-        # Start a new thread for continuous rotation if not already running
         if self.is_running():
             print("WARNING: Stepper already running")
             return
 
-        # TODO: remove _running at some point
-        self._running = True
-        self.enable.on()
+        self.tic.energize()
+        self.tic.exit_safe_start()
 
-        if ramp_time > 0:
-            target_rpm, self.speed_rpm = self.speed_rpm, 0
-            self.set_rpm(target_rpm, ramp_time)
+        velocity = self._rpm_to_tic_velocity(self.speed_rpm, direction)
+        self.tic.set_target_velocity(velocity)
+        self.tic.reset_command_timeout()
 
         self._finish_event.clear()
-        self._rotation_thread = threading.Thread(target=self._rotate_motor, daemon=True)
-        self._rotation_thread.start()
+        self._heartbeat_thread = threading.Thread(target=self._heartbeat_loop, daemon=True)
+        self._heartbeat_thread.start()
 
-    def _rotate_motor(self):
-        """Internal method to handle continuous rotation of the motor."""
-
-        next_time = time.perf_counter()  # Initialize the next time for scheduling
-        steps_taken = 0
-        while not self._finish_event.is_set():  # Continue while the motor is running
-            self.step.on()  # Activate the step pin
-            self.step.off()  # Deactivate the step pin
-            steps_taken += 1
-
-            # Schedule the next step based on the step delay
-            next_time += self.step_delay
-            sleep_time = next_time - time.perf_counter()  # Calculate how long to sleep
-
-            if sleep_time > 0:
-                time.sleep(sleep_time)  # Sleep for the calculated time
-            else:
-                # If we're behind schedule, adjust the next_time
-                next_time = time.perf_counter()  # Reset next_time to current time
+    def _heartbeat_loop(self):
+        """Periodically reset the Tic command timeout to keep the motor running."""
+        while not self._finish_event.is_set():
+            self.tic.reset_command_timeout()
+            self._finish_event.wait(timeout=_HEARTBEAT_INTERVAL)
 
     def stop(self):
-        """Stop the rotation of the motor."""
+        """Stop the motor."""
         print("INFO: Stopping the motor.")
         self._finish_event.set()
-
-        if self._rotation_thread is not None:
-            self._rotation_thread.join()  # Wait for the thread to finish cleanly
-
-        # FIXME: Really we should only be updating one of these values, it's bad logic to have both be independent
-
-        self.step.off()  # Deactivate the step pin
-        self.enable.off()  # Disable the motor if an enable pin is used
+        if self._heartbeat_thread is not None:
+            self._heartbeat_thread.join()
+        self.tic.deenergize()
 
 
-# Example usage (remove or modify during integration)
 if __name__ == "__main__":
     from opencal.utils.config import Config
 
     cfg = Config()
-    motor = StepperMotor(cfg.stepper)  # Create an instance of the StepperMotor class
-    motor.set_rpm(20)  # Set the motor speed to the default (20 RPM)
-    motor.start_rotation()  # Start continuous rotation
-    time.sleep(30.0)  # Run for 60 seconds
-    # motor.rotate_steps(15, "CCW")  # Example of rotating a specific number of steps
-    # time.sleep(2)  # Wait 2 seconds
-    motor.stop()  # Stop the motor
+    motor = StepperMotor(cfg.stepper)
+    motor.set_rpm(20)
+    motor.start_rotation()
+    time.sleep(30.0)
+    motor.stop()

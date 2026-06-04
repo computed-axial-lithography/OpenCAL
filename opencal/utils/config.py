@@ -21,9 +21,6 @@ class Config:
 
 class StepperConfig:
     def __init__(self, config: dict[str, Any]):
-        self.step_pin: int = config["step_pin"]
-        self.dir_pin: int = config["dir_pin"]
-        self.enable_pin: int = config["enable_pin"]
         self.encoder_a_pin: int = config["A_pin"]
         self.encoder_b_pin: int = config["B_pin"]
         self.default_rpm: float = config["default_rpm"]
