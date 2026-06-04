@@ -19,7 +19,7 @@ dependencies = [
 exclude = ["assets*"]
 
 [tool.setuptools.package-data]
-opencal = ["utils/config.json"]
+opencal = ["utils/config.json", "utils/tic_settings.yaml"]
 
 [tool.ruff]
 line-length = 100

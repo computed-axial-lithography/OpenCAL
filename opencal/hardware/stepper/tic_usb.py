@@ -1,5 +1,7 @@
+import subprocess
 import time
 import threading
+from pathlib import Path
 from typing import final, override
 
 from gpiozero import RotaryEncoder
@@ -9,11 +11,28 @@ from opencal.hardware.stepper.interface import StepperMotorInterface
 from opencal.utils.config import TicUSBStepperConfig
 
 _HEARTBEAT_INTERVAL = 0.2  # seconds — Tic default command timeout is 1000ms
+_SETTINGS_PATH = Path(__file__).parent.parent.parent / "utils" / "tic_settings.yaml"
+
+
+def _apply_tic_settings() -> None:
+    """Write saved settings to the Tic and reinitialize it.
+
+    ticcmd validates the product field in the YAML, so this also acts as a
+    sanity check that the correct Tic model is connected.
+    """
+    result = subprocess.run(
+        ["ticcmd", "--set-settings", str(_SETTINGS_PATH)],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"Failed to apply Tic settings: {result.stderr.strip()}")
+    subprocess.run(["ticcmd", "--reinitialize"], capture_output=True)
 
 
 @final
 class TicUSBStepperMotor(StepperMotorInterface):
     def __init__(self, config: TicUSBStepperConfig):
+        _apply_tic_settings()
         self.tic = TicUSB()
         self.encoder = RotaryEncoder(config.encoder_a_pin, config.encoder_b_pin, max_steps=0)
 
@@ -27,8 +46,7 @@ class TicUSBStepperMotor(StepperMotorInterface):
         self._heartbeat_thread: threading.Thread | None = None
         self._finish_event = threading.Event()
 
-        self.tic.energize()
-        self.tic.exit_safe_start()
+        self.tic.deenergize()
 
     @property
     @override
@@ -62,6 +80,9 @@ class TicUSBStepperMotor(StepperMotorInterface):
     def rotate_steps(self, steps: int, direction: str | None = None) -> None:
         direction = direction or self.default_direction
         print(f"INFO: Rotating {steps} steps {direction}")
+
+        self.tic.energize()
+        self.tic.exit_safe_start()
 
         signed_steps = -steps if direction == "CCW" else steps
         target = self.tic.get_current_position() + signed_steps

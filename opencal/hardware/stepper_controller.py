@@ -24,8 +24,7 @@ class StepperMotor:
         self._heartbeat_thread: threading.Thread | None = None
         self._finish_event = threading.Event()
 
-        self.tic.energize()
-        self.tic.exit_safe_start()
+        self.tic.deenergize()
 
     def _rpm_to_tic_velocity(self, rpm: float, direction: str) -> int:
         """Convert RPM and direction to Tic velocity units (microsteps per 10,000 seconds)."""
