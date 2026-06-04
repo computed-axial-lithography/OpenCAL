@@ -31,6 +31,7 @@ class PygameConfig:
 
 class StepperConfigBase:
     def __init__(self, config: dict[str, Any]):
+        self.driver_mode: str = config.get("driver_mode", "step_dir")
         self.encoder_a_pin: int = config["A_pin"]
         self.encoder_b_pin: int = config["B_pin"]
         self.default_rpm: float = config["default_rpm"]
@@ -49,6 +50,7 @@ class TicUSBStepperConfig(StepperConfigBase):
 
 class StepDirStepperConfig(StepperConfigBase):
     def __init__(self, config: dict[str, Any]):
+        self.enable_pin: int = config["enable_pin"]
         super().__init__(config)
         config = config["step_dir"]
         self.step_pin: int = config["step_pin"]

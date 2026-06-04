@@ -4,7 +4,11 @@ from opencal.utils.config import StepperConfigBase
 
 def create_stepper(config: StepperConfigBase) -> StepperMotorInterface:
     mode = config.driver_mode
-    if mode == "step_dir":
+    if mode == "tic_usb":
+        from .tic_usb import TicUSBStepperMotor
+
+        return TicUSBStepperMotor(config)  # pyright: ignore[reportArgumentType]
+    elif mode == "step_dir":
         from .step_dir import StepDirStepperMotor
 
         return StepDirStepperMotor(config)  # pyright: ignore[reportArgumentType]
