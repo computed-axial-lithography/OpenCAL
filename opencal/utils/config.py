@@ -6,12 +6,17 @@ from typing import Any, final
 CFG_PATH = Path(__file__).with_suffix(".json")
 
 
+def load_config() -> "Config":
+    return Config()
+
+
 @final
 class Config:
     def __init__(self, path: Path = CFG_PATH):
         with open(path) as f:
             config: dict[str, dict[str, Any]] = json.load(f)
-        self.stepper = StepperConfig(config["stepper_motor"])
+        self.pygame = PygameConfig(config["pygame"])
+        self.stepper = _make_stepper_config(config["stepper_motor"])
         self.camera = CameraConfig(config["camera"])
         self.led_array = LedArrayConfig(config["led_array"])
         self.lcd_display = LcdDisplayConfig(config["lcd_display"])
@@ -19,7 +24,7 @@ class Config:
         self.projector = ProjectorConfig(config["projector"])
 
 
-class StepperConfig:
+class PygameConfig:
     def __init__(self, config: dict[str, Any]):
         self.encoder_a_pin: int = config["A_pin"]
         self.encoder_b_pin: int = config["B_pin"]
@@ -27,6 +32,37 @@ class StepperConfig:
         self.default_direction: str = config["default_direction"]
         self.steps_per_revolution: int = config["steps_per_revolution"]
         self.encoder_cpr: int = config["encoder_cpr"]
+
+
+class StepDirStepperConfig(StepperConfigBase):
+    def __init__(self, config: dict[str, Any]):
+        super().__init__(config)
+        config = config["step_dir"]
+        self.step_pin: int = config["step_pin"]
+        self.dir_pin: int = config["dir_pin"]
+        self.encoder_a_pin: int = config["A_pin"]
+        self.encoder_b_pin: int = config["B_pin"]
+
+
+class UARTStepperConfig(StepperConfigBase):
+    def __init__(self, config: dict[str, Any]):
+        super().__init__(config)
+        config = config["uart"]
+        self.uart_port: str = config["uart_port"]
+        self.baud_rate: int = config["baud_rate"]
+        self.uart_address: int = config["uart_address"]
+        self.microsteps: int = config["microsteps"]
+
+
+def _make_stepper_config(raw: dict[str, Any]) -> StepperConfigBase:
+    mode: str = raw.get("driver_mode", "step_dir")
+    if mode == "step_dir":
+        return StepDirStepperConfig(raw)
+    elif mode == "uart":
+        return UARTStepperConfig(raw)
+    elif mode == "mock":
+        return StepperConfigBase(raw)
+    raise ValueError(f"Unknown stepper driver_mode: {mode!r}")
 
 
 class CameraConfig:
@@ -40,7 +76,6 @@ class LedArrayConfig:
     def __init__(self, config: dict[str, Any]):
         self.num_led: int = config["num_led"]
         self.default_color: tuple[int, int, int] = tuple(config["default_color"])
-        self.ring_indices: dict[str, list[int]] = config["ring_indices"]
 
 
 class LcdDisplayConfig:

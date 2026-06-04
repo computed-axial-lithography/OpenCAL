@@ -2,12 +2,46 @@ import os
 import subprocess
 import threading
 from pathlib import Path
-from typing import final
+from typing import Any, final
+from enum import Enum
+import json
 
 import numpy as np
 from PIL import Image
 
 from opencal.utils.config import ProjectorConfig
+
+
+class ProjectorOrientation(Enum):
+    # FIXME: These values are kinda misleading
+    NORMAL = "normal"
+    LEFT = "left"
+    RIGHT = "right"
+    FLIPPED = "flipped"
+
+    @classmethod
+    def from_wlr_randr(cls, s: str) -> "ProjectorOrientation":
+        if s == "normal":
+            return cls.NORMAL
+        elif s == "90":
+            return cls.LEFT
+        elif s == "180":
+            return cls.FLIPPED
+        elif s == "270":
+            return cls.RIGHT
+        else:
+            raise NotImplementedError(f"Can't parse wlr-randr transform value: {s}")
+
+    def to_wlr_randr(self) -> str:
+        match self:
+            case ProjectorOrientation.NORMAL:
+                return "normal"
+            case ProjectorOrientation.LEFT:
+                return "90"
+            case ProjectorOrientation.RIGHT:
+                return "270"
+            case ProjectorOrientation.FLIPPED:
+                return "180"
 
 
 @final
@@ -18,10 +52,43 @@ class Projector:
         self.calibration_img_path = Path(config.calibration_img_path)
         self.calibration_dir_path = Path(config.calibration_dir_path)
         # FIXME: Figure out where to put vial width config
-        self.vial_width = 384 # Measured for small vial
+        self.vial_width = 384  # Measured for small vial
 
         self.process = None
         self.thread = None  # We'll use this to keep track of the playback thread.
+        self._orientation = None
+
+    def get_projector_orientation(self) -> ProjectorOrientation:
+        """Query display orientation from wlr-randr, so that it cannot silently be changed in the background."""
+
+        result = subprocess.run(
+            ["wlr-randr", "--output", "HDMI-A-1", "--json"], capture_output=True, text=True
+        )
+
+        if result.returncode != 0:
+            print(f"ERROR: Failed to query projector orientation: {result.stderr}")
+            return ProjectorOrientation.NORMAL
+
+        out: dict[str, Any] = json.loads(result.stdout)[0]
+        assert out["name"] == "HDMI-A-1"
+
+        transform: str = out["transform"]
+        orient = ProjectorOrientation.from_wlr_randr(transform)
+
+        return orient
+
+    def set_projector_orientation(self, orient: ProjectorOrientation) -> None:
+        current_orient = self.get_projector_orientation()
+        if orient == current_orient:
+            return
+
+        transform = orient.to_wlr_randr()
+
+        cmd = f"wlr-randr --output HDMI-A-1 --transform {transform}"
+        result = subprocess.run(cmd.split(), capture_output=True, text=True)
+
+        if result.returncode != 0:
+            print(f"ERROR failed to rotate display: {result.stderr}")
 
     def get_video_dimensions(self, video_path: Path):
         """
@@ -47,13 +114,11 @@ class Projector:
             raise ValueError(f"Unable to parse video dimensions from output: {output}") from e
         return width, height
 
-    def play_video_with_mpv(self, video_path: Path | None = None):
+    def play_video_with_vlc(self, video_path: Path):
         """
         Play the video using cvlc (VLC command-line interface) with the window positioned
         at x=1920 and y=0, and loop the video indefinitely.
         """
-        if not video_path:
-            raise ValueError("play_video_with_mpv() requires a `video_path` argument")
 
         orig_width, orig_height = self.get_video_dimensions(video_path)
         scale_factor = self.size / 100
@@ -64,22 +129,25 @@ class Projector:
         crop_x = int((orig_width) / 2) - new_width / 2
         crop_y = int((orig_height) / 2) - new_height / 2
 
-        # Construct the crop filter argument to center the zoomed video
-        crop_filter = f"crop={new_width}:{new_height}:{crop_x}:{crop_y}"
-
         # Set up the environment for the video
         env = os.environ.copy()
         env["DISPLAY"] = ":0"
         # env["XAUTHORITY"] = "/home/opencal/.Xauthority"
 
-        # Construct the mpv command to play the video
+        # VLC command
         command = [
-            "/usr/bin/mpv",
-            "--fs",  # Fullscreen mode
-            "--loop",  # Loop the video
-            f"--vf=lavfi=[{crop_filter}]",  # Apply the crop filter for zoom
+            "/usr/bin/cvlc",
+            "--fullscreen",
+            "--loop",
+            "--no-video-title-show",
+            "--video-filter=croppadd",
+            f"--croppadd-cropleft={int(crop_x)}",
+            f"--croppadd-cropright={int(crop_x)}",
+            f"--croppadd-croptop={int(crop_y)}",
+            f"--croppadd-cropbottom={int(crop_y)}",
             str(video_path),
         ]
+        print(" ".join(command))
 
         self.process = subprocess.Popen(command, env=env)
         print("Video playback started.")
@@ -110,7 +178,7 @@ class Projector:
             raise ValueError("start_video_thread() requires a `video_path` argument")
 
         # Create a new thread for playing the video.
-        self.thread = threading.Thread(target=self.play_video_with_mpv, args=(video_path,))
+        self.thread = threading.Thread(target=self.play_video_with_vlc, args=(video_path,))
         self.thread.start()
 
     def show_vial_width(self, width: int):
@@ -118,7 +186,11 @@ class Projector:
         Display a rectangle to calibrate the vial width.
         """
         self.vial_width = width
-        w, h = 1920, 1080  # FIXME: Make this automated/dynamic
+        # FIXME: Screen dimensions are hardcoded. Query them dynamically using
+        # e.g. `xrandr --query` (X11) or `wlr-randr` (Wayland) so the
+        # calibration rectangle scales correctly on any projector resolution.
+        # See wayfire.ini in rootfs-overlay for display configuration notes.
+        w, h = 1920, 1080
         arr = np.zeros((h, w), dtype=np.uint8)
         cx, cy = w // 2, h // 2
         dy, dx = self.vial_width // 2, 400
@@ -172,7 +244,7 @@ def main():
     projector = Projector(cfg.projector)
     projector.resize(100)
     # Start video playback in a new thread.
-    projector.play_video_with_mpv()  # include video path here
+    projector.play_video_with_vlc(Path("test/path/here"))  # include video path here
 
     # Wait for user input to stop the video.
     _ = input("Press Enter to stop video playback...")

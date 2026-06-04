@@ -22,12 +22,13 @@ class CameraController:
         self._stream_thread = None
         self.streaming = False
         self._record_thread = None
-        self.recording = False
+        self._recording = False
         self.writer = None
         self.record_file = None
         self._proc = None
         self._raw_file = None
         self.fps = 20
+        self.recording = False
 
         try:
             self.picam = Picamera2()
@@ -35,7 +36,7 @@ class CameraController:
             self.video_config = self.picam.create_video_configuration()
             self.picam.configure(self.still_config)
             self.set_focus(15)
-        except RuntimeError:
+        except Exception as e:
             self.picam = None
             print("WARNING: No camera connected, camera functionality disabled.")
 
@@ -92,32 +93,21 @@ class CameraController:
         self.picam.configure(self.picam.create_video_configuration())
         encoder = H264Encoder()
         self.picam.start_recording(encoder=encoder, output=str(file))
+        print("DEBUG: starting recording")
+        self._recording = True
 
     def stop_recording(self):
         if not self.picam:
             return
-        self.picam.stop_recording()
+        if self._recording:
+            print("DEBUG: stopping recording")
+            self.picam.stop_recording()
 
     def stop_camera(self):
         """Stop the camera and release resources."""
         if not self.picam:
             return
         self.picam.stop()
-
-        # TODO: remove when done
-
-        # self.streaming = False
-        # if self._stream_thread:
-        #     self._stream_thread.join(1.0)  # Wait for the streaming thread to finish
-        # if self.capture:
-        #     self.capture.release()  # Release the camera
-        #     self.capture = None
-        # cv2.destroyAllWindows()  # Close all OpenCV windows
-
-    def stop_all(self):
-        """Stop both recording and camera streaming."""
-        # self.stop_record()  # Stop recording
-        self.stop_camera()  # Stop camera streaming
 
 
 if __name__ == "__main__":

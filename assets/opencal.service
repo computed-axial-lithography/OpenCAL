@@ -1,17 +1,22 @@
 [Unit]
-Description=Run main.py on startup
-After=multi-user.target
+Description=OpenCAL Printer Controller
+After=greetd.service
+Requires=greetd.service
 
 [Service]
-ExecStart=/bin/bash -i -c '/home/opencal/opencal/.venv/bin/python /home/opencal/opencal/OpenCAL/main.py'
-WorkingDirectory=/home/opencal/opencal/OpenCAL
-StandardOutput=file:/home/opencal/opencal/OpenCAL/output.log
-StandardError=file:/home/opencal/opencal/OpenCAL/error.log
-Restart=no
+Type=simple
 User=opencal
 Group=opencal
-Environment="VIRTUAL_ENV=/home/opencal/opencal/OpenCAL/.venv"
-Environment="PATH=$VIRTUAL_ENV/bin:$PATH"
+WorkingDirectory=/home/opencal/OpenCAL
+ExecStartPre=/bin/bash -c 'until [ -S /tmp/.X11-unix/X0 ]; do sleep 1; done'
+ExecStart=/home/opencal/.venv/bin/python -m opencal
+Environment=DISPLAY=:0
+Environment=WAYLAND_DISPLAY=wayland-1
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+StandardOutput=journal
+StandardError=journal
+Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

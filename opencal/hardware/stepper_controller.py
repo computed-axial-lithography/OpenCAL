@@ -8,6 +8,7 @@ from opencal.utils.config import StepperConfig
 _HEARTBEAT_INTERVAL = 0.2  # seconds — Tic default command timeout is 1000ms
 
 
+@final
 class StepperMotor:
     def __init__(self, config: StepperConfig):
         """Initialize USB communication with the Tic 259 stepper motor controller."""

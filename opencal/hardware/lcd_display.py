@@ -79,17 +79,22 @@ class LCDDisplay:
                                  If None, update all rows.
         """
         with self.lcd_lock:
-            if row is None:
-                self.lcd.home()  # Move cursor to home position
-                for i in range(self.rows):
-                    self.lcd.cursor_pos = (i, 0)  # Set cursor position for each row
-                    s = self.framebuffer[i].ljust(self.cols)[: self.cols]
-                    self.lcd.write_string(s)  # Write the message
-            else:
-                # Set cursor position for the specified row
-                self.lcd.cursor_pos = (row, 0)
-                s = self.framebuffer[row].ljust(self.cols)[: self.cols]
-                self.lcd.write_string(s)
+            try: 
+                if row is None:
+                    self.lcd.home()  # Move cursor to home position
+                    for i in range(self.rows):
+                        self.lcd.cursor_pos = (i, 0)  # Set cursor position for each row
+                        s = self.framebuffer[i].ljust(self.cols)[: self.cols]
+                        self.lcd.write_string(s)  # Write the message
+                else:
+                    # Set cursor position for the specified row
+                    self.lcd.cursor_pos = (row, 0)
+                    s = self.framebuffer[row].ljust(self.cols)[: self.cols]
+                    self.lcd.write_string(s)
+            except IOError:
+                print("ERROR: Failed to write to LCD. Retrying.")
+                time.sleep(0.1) # Wait and hope LCD reconnects.
+                self._update_lcd(row)
 
     def _scrolling_loop(self):
         """Continuously scroll long text while keeping other rows fixed."""

@@ -1,0 +1,12 @@
+[Unit]
+Description=Automount USB drives
+After=dbus.socket
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/udiskie --no-tray
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
