@@ -363,7 +363,7 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
                 "-- Vial Width --",
                 f"Width: {_vial_px[0]} px",
                 "Knob: adjust width",
-                "Click to confirm",
+                "Click to return",
             ],
         ),
     ]
