@@ -40,7 +40,7 @@ rc_config: default
 invert_motor_direction: false
 max_speed: 5000000
 starting_speed: 0
-max_accel: 40000
+max_accel: 120000
 max_decel: 0
 step_mode: 16
 current_limit: 1440
