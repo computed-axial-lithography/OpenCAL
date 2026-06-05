@@ -31,10 +31,7 @@ class AlignmentMode(BasePygameMode):
     def on_activate(self) -> None:
         self._y_offset = 0
         raw = pygame.image.load(str(self._image_path)).convert()
-        # Image is portrait (1080×1920); rotate 90° CCW so it fills the
-        # landscape pygame surface — compositor Transform 270 (90° CW) undoes this.
-        rotated = pygame.transform.rotate(raw, 90)
-        self._surface = pygame.transform.scale(rotated, (self.app.width, self.app.height))
+        self._surface = pygame.transform.scale(raw, (self.app.width, self.app.height))
 
     @override
     def on_deactivate(self) -> None:
