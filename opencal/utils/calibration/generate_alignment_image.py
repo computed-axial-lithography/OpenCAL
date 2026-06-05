@@ -180,6 +180,24 @@ def main() -> None:
     _fill_slot_h(draw, x_inner_mm=-14, x_outer_mm=-32, y_mm=0, r_mm=1.0)          # left
     print("  Filled 4 alignment slots")
 
+    # Corner numbers so orientation can be read from the projection
+    font_size = 80
+    try:
+        from PIL import ImageFont
+        font = ImageFont.truetype("arial.ttf", font_size)
+    except Exception:
+        font = ImageFont.load_default(size=font_size)
+
+    margin = 20
+    corners = {
+        "1": (margin, margin),                      # top-left
+        "2": (W - margin - font_size, margin),      # top-right
+        "3": (margin, H - margin - font_size),      # bottom-left
+        "4": (W - margin - font_size, H - margin - font_size),  # bottom-right
+    }
+    for label, (x, y) in corners.items():
+        draw.text((x, y), label, fill="white", font=font)
+
     img.save(OUT_PATH)
     print(f"Saved: {OUT_PATH}")
     print(f"Canvas: {W_OUT}×{H_OUT} px  |  Scale: {PX_PER_MM:.2f} px/mm  ({PIXEL_SIZE_MM*1000:.1f} µm/pixel)")
