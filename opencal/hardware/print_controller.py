@@ -19,6 +19,7 @@ class PrintController:
         self.running = False
         self.ui_config = config.ui
         self.recording_path: Path | None = None
+        self.vial_width_px: int = 200
 
     def start_print_job(self, video_file: Path):
         """Start the print job in a new thread."""

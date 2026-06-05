@@ -343,7 +343,8 @@ class PyGameMenu(MenuBase):
         self.mode_name = mode_name
         self.mode_kwargs = mode_kwargs or {}
         self.on_exit_callback = on_exit_callback
-        self._lcd_lines = lcd_lines  # optional custom LCD text (4 lines of ≤20 chars)
+        # Optional custom LCD text: static list[str] or callable returning list[str]
+        self._lcd_lines = lcd_lines
 
     def on_enter(self, gui: "LCDGui") -> None:
         super().on_enter(gui)
@@ -360,7 +361,8 @@ class PyGameMenu(MenuBase):
 
     def render(self) -> list[str]:
         if self._lcd_lines is not None:
-            lines = list(self._lcd_lines[:4])
+            raw = self._lcd_lines() if callable(self._lcd_lines) else self._lcd_lines
+            lines = list(raw[:4])
             while len(lines) < 4:
                 lines.append(" " * 20)
             return [l[:20].ljust(20) for l in lines]

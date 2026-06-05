@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, final, override
+from typing import TYPE_CHECKING, Callable, final, override
 
 import pygame
 
@@ -23,15 +23,22 @@ class VialWidthMode(BasePygameMode):
     SCROLL_RATIO = 2
     INITIAL_WIDTH = 200
 
-    def __init__(self, app: "PygameApp") -> None:
+    def __init__(
+        self,
+        app: "PygameApp",
+        on_width_change: Callable[[int], None] | None = None,
+    ) -> None:
         super().__init__(app)
         self.rect_width: int = self.INITIAL_WIDTH
         self._font: pygame.font.Font | None = None
+        self._on_width_change = on_width_change
 
     @override
     def on_activate(self) -> None:
         self.rect_width = self.INITIAL_WIDTH
         self._font = pygame.font.Font(None, 60)
+        if self._on_width_change:
+            self._on_width_change(self.rect_width)
 
     @override
     def on_deactivate(self) -> None:
@@ -40,6 +47,8 @@ class VialWidthMode(BasePygameMode):
     @override
     def on_encoder_delta(self, delta: int) -> None:
         self.rect_width = max(0, self.rect_width + delta * self.SCROLL_RATIO)
+        if self._on_width_change:
+            self._on_width_change(self.rect_width)
 
     @override
     def on_button(self) -> None:
