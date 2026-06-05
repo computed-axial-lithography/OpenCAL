@@ -351,15 +351,17 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
             ],
         ),
         ActionItem("USB video prompt", _toggle_usb_video_prompt),
+        _vial_px = [200]  # mutable container shared between mode callback and LCD render
+
         PyGameMenu(
             title="Find Vial Width",
             input_q=input_q,
             mode_name="vial_width",
-            mode_kwargs={"on_width_change": lambda w: setattr(pc, "vial_width_px", w)},
+            mode_kwargs={"on_width_change": lambda w: _vial_px.__setitem__(0, w)},
             on_exit_callback=_apply_vial_result,
             lcd_lines=lambda: [
                 "-- Vial Width --",
-                f"Width: {pc.vial_width_px} px",
+                f"Width: {_vial_px[0]} px",
                 "Knob: adjust width",
                 "Click to confirm",
             ],
