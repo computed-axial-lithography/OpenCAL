@@ -43,7 +43,7 @@ starting_speed: 0
 max_accel: 120000
 max_decel: 0
 step_mode: 16
-current_limit: 1440
+current_limit: 1800
 current_limit_during_error: -1
 auto_homing: false
 auto_homing_forward: false
