@@ -293,7 +293,7 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
     def _apply_vial_result(result: dict) -> None:
         width = result.get("vial_width")
         if width is not None:
-            pc.hardware.projector.show_vial_width(int(width))
+            pc.hardware.projector.vial_width = int(width)
 
     def _capture_image() -> None:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -318,30 +318,26 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
     )
 
     settings_items: list[MenuBase] = [
-        ActionItem("save as default", lambda: gui.save_defaults()),
-        VariableMenu(
-            title="Resize Print",
-            get=lambda: pc.hardware.projector.size,
-            set=lambda v: pc.hardware.projector.resize(int(v)),
-            min_val=1,
-            max_val=100,
-            step=1,
-        ),
-        VariableMenu(
-            title="Set Stepper RPM",
-            get=lambda: pc.hardware.stepper.speed_rpm,
-            set=lambda v: pc.hardware.stepper.set_rpm(v, ramp_time=1),
-            min_val=1,
-            max_val=60,
-            step=1,
-        ),
-        DynamicNavigationMenu("Calibration", refresh=_make_calib_items),
-        MultiSelectMenu(
-            title="Display Orient.",
-            choices=[o.value for o in ProjectorOrientation],
-            get=pc.hardware.projector.get_projector_orientation,
-            set=lambda s: pc.hardware.projector.set_projector_orientation(ProjectorOrientation(s)),
-        ),
+        # ActionItem("save as default", lambda: gui.save_defaults()),  # disabled
+        # VariableMenu(                                                 # disabled
+        #     title="Resize Print",
+        #     get=lambda: pc.hardware.projector.size,
+        #     set=lambda v: pc.hardware.projector.resize(int(v)),
+        #     min_val=1, max_val=100, step=1,
+        # ),
+        # VariableMenu(                                                 # disabled
+        #     title="Set Stepper RPM",
+        #     get=lambda: pc.hardware.stepper.speed_rpm,
+        #     set=lambda v: pc.hardware.stepper.set_rpm(v, ramp_time=1),
+        #     min_val=1, max_val=60, step=1,
+        # ),
+        DynamicNavigationMenu("Calibration Images", refresh=_make_calib_items),
+        # MultiSelectMenu(                                              # disabled
+        #     title="Display Orient.",
+        #     choices=[o.value for o in ProjectorOrientation],
+        #     get=pc.hardware.projector.get_projector_orientation,
+        #     set=lambda s: pc.hardware.projector.set_projector_orientation(ProjectorOrientation(s)),
+        # ),
         PyGameMenu(
             title="Show Alignment",
             input_q=input_q,
