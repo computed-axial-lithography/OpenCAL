@@ -172,8 +172,8 @@ class AboutMenu(MenuBase):
         "Ian Bos",
     ]
 
-    _HALF_YELLOW = (120, 120, 0, 0)
-    _HALF_BLUE   = (0, 0, 120, 0)
+    _HALF_YELLOW = (110, 110, 0, 0)
+    _HALF_BLUE   = (0, 0, 110, 0)
 
     def __init__(self, pc: PrintController) -> None:
         self._pc = pc
