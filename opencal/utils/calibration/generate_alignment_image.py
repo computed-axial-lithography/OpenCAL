@@ -180,7 +180,6 @@ def main() -> None:
     _fill_slot_h(draw, x_inner_mm=-14, x_outer_mm=-32, y_mm=0, r_mm=1.0)          # left
     print("  Filled 4 alignment slots")
 
-    img = img.rotate(-90, expand=True)
     img.save(OUT_PATH)
     print(f"Saved: {OUT_PATH}")
     print(f"Canvas: {W_OUT}×{H_OUT} px  |  Scale: {PX_PER_MM:.2f} px/mm  ({PIXEL_SIZE_MM*1000:.1f} µm/pixel)")
