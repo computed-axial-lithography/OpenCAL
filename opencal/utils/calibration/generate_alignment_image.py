@@ -31,11 +31,11 @@ from PIL import Image, ImageDraw
 
 # ── Configuration ────────────────────────────────────────────────────────────
 
-PIXEL_SIZE_MM = 0.04503       # 45 µm per pixel — measured: 86.47mm / 1920px
-# Physical+software rotations cancel; framebuffer is standard landscape orientation.
+PIXEL_SIZE_MM = 0.0801        # 80.1 µm per pixel — measured: 86.47mm / 1080px
 PX_PER_MM     = 1.0 / PIXEL_SIZE_MM
 
-W, H          = 1920, 1080
+# Projector is mounted 90° on its side — generate on portrait canvas, rotate for output.
+W, H          = 1080, 1920
 W_OUT, H_OUT  = 1920, 1080
 
 LINE_WIDTH    = 2             # px — outline stroke
@@ -180,6 +180,7 @@ def main() -> None:
     _fill_slot_h(draw, x_inner_mm=-14, x_outer_mm=-32, y_mm=0, r_mm=1.0)          # left
     print("  Filled 4 alignment slots")
 
+    img = img.rotate(-90, expand=True)
     img.save(OUT_PATH)
     print(f"Saved: {OUT_PATH}")
     print(f"Canvas: {W_OUT}×{H_OUT} px  |  Scale: {PX_PER_MM:.2f} px/mm  ({PIXEL_SIZE_MM*1000:.1f} µm/pixel)")
