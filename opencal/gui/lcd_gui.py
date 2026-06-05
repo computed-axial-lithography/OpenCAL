@@ -336,12 +336,14 @@ class PyGameMenu(MenuBase):
         mode_name: str,
         mode_kwargs: dict[str, Any] | None = None,
         on_exit_callback: Callable[[dict], None] | None = None,
+        lcd_lines: list[str] | None = None,
     ):
         self.title = title
         self._input_q = input_q
         self.mode_name = mode_name
         self.mode_kwargs = mode_kwargs or {}
         self.on_exit_callback = on_exit_callback
+        self._lcd_lines = lcd_lines  # optional custom LCD text (4 lines of ≤20 chars)
 
     def on_enter(self, gui: "LCDGui") -> None:
         super().on_enter(gui)
@@ -357,12 +359,17 @@ class PyGameMenu(MenuBase):
         self._input_q.put(ButtonEvent())
 
     def render(self) -> list[str]:
+        if self._lcd_lines is not None:
+            lines = list(self._lcd_lines[:4])
+            while len(lines) < 4:
+                lines.append(" " * 20)
+            return [l[:20].ljust(20) for l in lines]
         header = f"-- {self.title} --"[:20].center(20)
         return [
             header,
             "Pygame active".center(20),
             " " * 20,
-            "Click to confirm".center(20),
+            "Click to return".center(20),
         ]
 
 

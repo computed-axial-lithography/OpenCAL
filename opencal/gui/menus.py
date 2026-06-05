@@ -347,6 +347,12 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
             input_q=input_q,
             mode_name="alignment",
             mode_kwargs={"image_path": _ALIGNMENT_IMAGE},
+            lcd_lines=[
+                "-- Alignment --",
+                "Knob: shift up/down",
+                " ",
+                "Click to return",
+            ],
         ),
         ActionItem("USB video prompt", _toggle_usb_video_prompt),
         PyGameMenu(
