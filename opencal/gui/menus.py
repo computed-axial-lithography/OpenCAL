@@ -317,6 +317,8 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
         Path(__file__).parent.parent / "utils" / "calibration" / "alignment_tool.png"
     )
 
+    _vial_px = [200]  # mutable container shared between vial mode callback and LCD render
+
     settings_items: list[MenuBase] = [
         # ActionItem("save as default", lambda: gui.save_defaults()),  # disabled
         # VariableMenu(                                                 # disabled
@@ -351,8 +353,6 @@ def build_menu_tree(pc: PrintController, gui: "LCDGui") -> NavigationMenu:
             ],
         ),
         ActionItem("USB video prompt", _toggle_usb_video_prompt),
-        _vial_px = [200]  # mutable container shared between mode callback and LCD render
-
         PyGameMenu(
             title="Find Vial Width",
             input_q=input_q,
