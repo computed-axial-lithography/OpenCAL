@@ -6,6 +6,7 @@ Add new menus here by composing NavigationMenu / ActionItem / VariableMenu /
 MultiSelectMenu / PyGameMenu / DynamicNavigationMenu instances.
 """
 
+import re
 import shutil
 import threading
 from datetime import datetime
@@ -32,6 +33,12 @@ if TYPE_CHECKING:
 _DARK_IMAGE = Path(__file__).parent.parent / "utils" / "calibration" / "dark.png"
 
 
+def _parse_rpm(filename: str) -> float | None:
+    """Extract RPM from filenames like 'part_15rpm.mp4' or 'part_10.5rpm.mp4'."""
+    match = re.search(r"_(\d+(?:\.\d+)?)rpm", filename, re.IGNORECASE)
+    return float(match.group(1)) if match else None
+
+
 # ---------------------------------------------------------------------------
 # Custom item types
 # ---------------------------------------------------------------------------
@@ -48,6 +55,12 @@ class PrintLaunchItem(MenuBase):
 
     def on_activate(self, gui: "LCDGui") -> None:
         self._gui_ref = gui
+
+        # Pre-set RPM from filename if it encodes one (e.g. part_15rpm.mp4)
+        parsed = _parse_rpm(self._filename)
+        if parsed is not None:
+            self._pc.hardware.stepper.set_rpm(parsed)
+
         self._pc.hardware.projector.display_image(_DARK_IMAGE)
         gui.push(
             VariableMenu(
