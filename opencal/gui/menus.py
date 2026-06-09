@@ -183,6 +183,8 @@ class AboutMenu(MenuBase):
         "Carl Kruse",
         "Huy Tran",
         "Ian Bos",
+        "Hayden Taylor",
+        "Taylor Waddell",
     ]
 
     _HALF_YELLOW = (110, 110, 0, 0)
