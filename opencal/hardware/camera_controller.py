@@ -59,17 +59,23 @@ class CameraController:
 
         self.picam.start()
 
-    def capture_image(self, filename: str):
+    def capture_image(self, save_path: Path | None = None) -> bool:
         if not self.picam:
-            print("WARNING: No camera connected, cannot start camera.")
-            return
+            print("WARNING: No camera connected, cannot capture image.")
+            return False
 
-        if not self.picam.started:
-            # TODO: remove this
-            self.start_camera(preview=True)
+        try:
+            if not self.picam.started:
+                self.start_camera(preview=True)
 
-        save_path = Path.cwd() / "output/images" / filename
-        self.picam.switch_mode_and_capture_file(self.still_config, save_path)
+            if save_path is None:
+                save_path = self.save_path / "capture.jpeg"
+            save_path.parent.mkdir(parents=True, exist_ok=True)
+            self.picam.switch_mode_and_capture_file(self.still_config, save_path)
+            return True
+        except Exception as e:
+            print(f"ERROR: Image capture failed: {e}")
+            return False
 
     def set_focus(self, diopters: float):
         """Turns off autofocus and sets a manual focal distance in diopters (m^-1)"""

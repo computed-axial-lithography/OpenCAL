@@ -336,12 +336,15 @@ class PyGameMenu(MenuBase):
         mode_name: str,
         mode_kwargs: dict[str, Any] | None = None,
         on_exit_callback: Callable[[dict], None] | None = None,
+        lcd_lines: list[str] | None = None,
     ):
         self.title = title
         self._input_q = input_q
         self.mode_name = mode_name
         self.mode_kwargs = mode_kwargs or {}
         self.on_exit_callback = on_exit_callback
+        # Optional custom LCD text: static list[str] or callable returning list[str]
+        self._lcd_lines = lcd_lines
 
     def on_enter(self, gui: "LCDGui") -> None:
         super().on_enter(gui)
@@ -357,12 +360,18 @@ class PyGameMenu(MenuBase):
         self._input_q.put(ButtonEvent())
 
     def render(self) -> list[str]:
+        if self._lcd_lines is not None:
+            raw = self._lcd_lines() if callable(self._lcd_lines) else self._lcd_lines
+            lines = list(raw[:4])
+            while len(lines) < 4:
+                lines.append(" " * 20)
+            return [l[:20].ljust(20) for l in lines]
         header = f"-- {self.title} --"[:20].center(20)
         return [
             header,
             "Pygame active".center(20),
             " " * 20,
-            "Click to confirm".center(20),
+            "Click to return".center(20),
         ]
 
 
@@ -376,10 +385,16 @@ class PrintStatusMenu(MenuBase):
 
     title = "Printing..."
 
-    def __init__(self, pc: PrintController, video_filename_short: str):
+    def __init__(
+        self,
+        pc: PrintController,
+        video_filename_short: str,
+        on_stop: "Callable[[], None] | None" = None,
+    ):
         self._pc = pc
         self._filename = video_filename_short[:20]
         self._start_time: float = 0.0
+        self._on_stop = on_stop
 
     def on_enter(self, gui: "LCDGui") -> None:
         super().on_enter(gui)
@@ -389,9 +404,12 @@ class PrintStatusMenu(MenuBase):
         pass  # no-op while printing
 
     def on_click(self) -> None:
-        self._pc.stop()
-        if self._gui:
-            self._gui.pop()
+        if self._on_stop:
+            self._on_stop()
+        else:
+            threading.Thread(target=self._pc.stop, daemon=True).start()
+            if self._gui:
+                self._gui.pop()
 
     def render(self) -> list[str]:
         elapsed = time.time() - self._start_time
@@ -458,6 +476,7 @@ class LCDGui:
         self.mode = Mode.MENU
         self.stack: list[MenuBase] = []
         self._last_rendered: list[str] = []
+        self._splash_active = False
         self.fps = fps
 
     # ── Stack management ──────────────────────────────────────────────────────
@@ -498,6 +517,7 @@ class LCDGui:
         if self.stack:
             self.stack[-1].on_click()
 
+
     # ── Utility methods (called from menu callbacks) ──────────────────────────
 
     def save_defaults(self) -> None:
@@ -523,9 +543,11 @@ class LCDGui:
 
     def splash(self, message: str, duration: float = 1.0) -> None:
         """Briefly show a centered message on the LCD, then force a redraw."""
+        self._splash_active = True
         self.pc.hardware.lcd.clear()
         self.pc.hardware.lcd.write_message(message.center(20), 1, 0)
         time.sleep(duration)
+        self._splash_active = False
         self._last_rendered = []  # force full redraw on next loop tick
 
     def restart_pi(self) -> None:
@@ -568,6 +590,7 @@ class LCDGui:
         encoder = self.pc.hardware.rotary.encoder
         encoder.when_rotated_clockwise = lambda: self.handle_rotary_rotation(1)
         encoder.when_rotated_counter_clockwise = lambda: self.handle_rotary_rotation(-1)
+
         self.pc.hardware.rotary.button.when_pressed = self.handle_button_press
 
         while self.running:
@@ -586,7 +609,7 @@ class LCDGui:
                         break
 
             # Re-render only when the display content changes.
-            if self.stack:
+            if self.stack and not self._splash_active:
                 lines = self.stack[-1].render()
                 if lines != self._last_rendered:
                     for i, line in enumerate(lines[:4]):

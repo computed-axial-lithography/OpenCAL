@@ -35,6 +35,8 @@ class HardwareController:
         except Exception as e:
             self.errors.append(f"StepperMotor failed: {e}")
             self.healthy = False
+            from .stepper.mock import MockStepperMotor
+            self.stepper = MockStepperMotor(config.stepper)
 
         try:
             self.led_manager = LEDManager(config.led_array)

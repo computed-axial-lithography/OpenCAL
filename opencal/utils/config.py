@@ -22,10 +22,17 @@ class Config:
         self.lcd_display = LcdDisplayConfig(config["lcd_display"])
         self.rotary_encoder = RotaryConfig(config["rotary_encoder"])
         self.projector = ProjectorConfig(config["projector"])
+        self.ui = UIConfig(config["ui"])
 
 
 class PygameConfig:
     def __init__(self, config: dict[str, Any]):
+        self.active: bool = config["active"]
+
+
+class StepperConfigBase:
+    def __init__(self, config: dict[str, Any]):
+        self.driver_mode: str = config.get("driver_mode", "step_dir")
         self.encoder_a_pin: int = config["A_pin"]
         self.encoder_b_pin: int = config["B_pin"]
         self.default_rpm: float = config["default_rpm"]
@@ -34,8 +41,17 @@ class PygameConfig:
         self.encoder_cpr: int = config["encoder_cpr"]
 
 
+# Alias so existing imports of StepperConfig still work
+StepperConfig = StepperConfigBase
+
+
+class TicUSBStepperConfig(StepperConfigBase):
+    pass  # USB device is found automatically — no extra config needed
+
+
 class StepDirStepperConfig(StepperConfigBase):
     def __init__(self, config: dict[str, Any]):
+        self.enable_pin: int = config["enable_pin"]
         super().__init__(config)
         config = config["step_dir"]
         self.step_pin: int = config["step_pin"]
@@ -56,7 +72,9 @@ class UARTStepperConfig(StepperConfigBase):
 
 def _make_stepper_config(raw: dict[str, Any]) -> StepperConfigBase:
     mode: str = raw.get("driver_mode", "step_dir")
-    if mode == "step_dir":
+    if mode == "tic_usb":
+        return TicUSBStepperConfig(raw)
+    elif mode == "step_dir":
         return StepDirStepperConfig(raw)
     elif mode == "uart":
         return UARTStepperConfig(raw)
@@ -75,7 +93,7 @@ class CameraConfig:
 class LedArrayConfig:
     def __init__(self, config: dict[str, Any]):
         self.num_led: int = config["num_led"]
-        self.default_color: tuple[int, int, int] = tuple(config["default_color"])
+        self.default_color: tuple[int, int, int, int] = tuple(config["default_color"])
 
 
 class LcdDisplayConfig:
@@ -98,3 +116,8 @@ class ProjectorConfig:
         self.default_print_size: int = config["default_print_size"]
         self.calibration_img_path: str = config["calibration_img_path"]
         self.calibration_dir_path: str = config["calibration_dir_path"]
+
+
+class UIConfig:
+    def __init__(self, config: dict[str, Any]):
+        self.prompt_usb_video_save: bool = config["prompt_usb_video_save"]

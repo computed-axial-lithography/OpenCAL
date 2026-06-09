@@ -2,9 +2,41 @@ import os
 from pathlib import Path
 
 
+def unique_path(path: Path) -> Path:
+    """Return a unique path, appending (1), (2), etc. if the file already exists."""
+    if not path.exists():
+        return path
+    counter = 1
+    while True:
+        candidate = path.parent / f"{path.stem} ({counter}){path.suffix}"
+        if not candidate.exists():
+            return candidate
+        counter += 1
+
+
 class MP4Driver:
     def __init__(self, mount_point: Path = Path("/media/opencal/")):
         self.mount_point = mount_point
+
+    def _mounted_drive(self) -> Path | None:
+        """Return the subdirectory that has an active filesystem mount, or None."""
+        if not self.mount_point.exists():
+            return None
+        for entry in self.mount_point.iterdir():
+            if entry.is_dir() and os.path.ismount(entry):
+                return entry
+        return None
+
+    def is_mounted(self) -> bool:
+        """Return True if a USB drive is currently mounted."""
+        return self._mounted_drive() is not None
+
+    def usb_save_path(self, filename: str) -> Path:
+        """Return a path on the USB drive for saving a file."""
+        drive = self._mounted_drive()
+        if drive is None:
+            raise FileNotFoundError("No USB drive mounted")
+        return drive / filename
 
     def list_mp4_files(self) -> list[Path]:
         """
@@ -26,12 +58,9 @@ class MP4Driver:
         return mp4_paths
 
     def get_file_names(self) -> list[str]:
-        """
-        Return only the file names (without paths).
-        """
-        # Get the list of full MP4 file paths and extract just the file names
+        """Return file names, excluding any recording files."""
         mp4_paths = self.list_mp4_files()
-        return [path.name for path in mp4_paths]
+        return [path.name for path in mp4_paths if "recording" not in path.name]
 
     def print_mp4_files(self):
         """

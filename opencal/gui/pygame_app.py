@@ -9,6 +9,7 @@ from opencal.gui.events import ActivateEvent, ButtonEvent, DeactivateEvent, Enco
 from opencal.gui.modes.base import BasePygameMode
 from opencal.gui.modes.vial_width import VialWidthMode
 from opencal.gui.modes.calibration import CalibrationMode
+from opencal.gui.modes.alignment import AlignmentMode
 from opencal.utils.config import PygameConfig
 
 
@@ -36,6 +37,7 @@ class PygameApp:
         self._mode_registry: dict[str, type[BasePygameMode]] = {
             "vial_width": VialWidthMode,
             "calibration": CalibrationMode,
+            "alignment": AlignmentMode,
         }
 
     def run(self):
@@ -45,7 +47,11 @@ class PygameApp:
 
         while not self.stop_event.is_set():
             _ = pygame.init()
-            screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+            try:
+                screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+            except Exception as e:
+                print(f"WARNING: PyGame display init failed ({e}), running LCD-only.")
+                return
             self.width, self.height = screen.get_size()
             clock = pygame.time.Clock()
             self._running = True

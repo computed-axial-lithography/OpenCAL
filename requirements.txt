@@ -9,4 +9,5 @@ pygame
 lgpio
 picamera2
 ticlib
+pyusb
 

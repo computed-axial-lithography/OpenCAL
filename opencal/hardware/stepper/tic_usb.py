@@ -1,30 +1,62 @@
+import subprocess
 import time
 import threading
+from pathlib import Path
+from typing import final, override
+
 from gpiozero import RotaryEncoder
 from ticlib import TicUSB
 
-from opencal.utils.config import StepperConfig
+from opencal.hardware.stepper.interface import StepperMotorInterface
+from opencal.utils.config import TicUSBStepperConfig
 
 _HEARTBEAT_INTERVAL = 0.2  # seconds — Tic default command timeout is 1000ms
+_SETTINGS_PATH = Path(__file__).parent.parent.parent / "utils" / "tic_settings.yaml"
 
 
-class StepperMotor:
-    def __init__(self, config: StepperConfig):
-        """Initialize USB communication with the Tic 259 stepper motor controller."""
+def _apply_tic_settings() -> None:
+    """Write saved settings to the Tic and reinitialize it.
+
+    ticcmd validates the product field in the YAML, so this also acts as a
+    sanity check that the correct Tic model is connected.
+    If ticcmd is not installed, logs a warning and skips (motor still works
+    with whatever settings are already on the device).
+    """
+    try:
+        result = subprocess.run(
+            ["ticcmd", "--set-settings", str(_SETTINGS_PATH)],
+            capture_output=True, text=True,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"Failed to apply Tic settings: {result.stderr.strip()}")
+        subprocess.run(["ticcmd", "--reinitialize"], capture_output=True)
+    except FileNotFoundError:
+        print("WARNING: ticcmd not found — Tic settings not applied. Install Pololu Tic software to enable this.")
+
+
+@final
+class TicUSBStepperMotor(StepperMotorInterface):
+    def __init__(self, config: TicUSBStepperConfig):
+        _apply_tic_settings()
         self.tic = TicUSB()
         self.encoder = RotaryEncoder(config.encoder_a_pin, config.encoder_b_pin, max_steps=0)
 
         self.default_rpm = config.default_rpm
-        self.speed_rpm = self.default_rpm
         self.default_direction = config.default_direction
         self._current_direction = self.default_direction
         self.steps_per_rev = config.steps_per_revolution
         self.encoder_cpr = config.encoder_cpr
 
+        self._speed_rpm: float = self.default_rpm
         self._heartbeat_thread: threading.Thread | None = None
         self._finish_event = threading.Event()
 
         self.tic.deenergize()
+
+    @property
+    @override
+    def speed_rpm(self) -> float:
+        return self._speed_rpm
 
     def _rpm_to_tic_velocity(self, rpm: float, direction: str) -> int:
         """Convert RPM and direction to Tic velocity units (microsteps per 10,000 seconds)."""
@@ -32,25 +64,30 @@ class StepperMotor:
         velocity = int(steps_per_sec * 10000)
         return -velocity if direction == "CCW" else velocity
 
+    @override
     def is_running(self) -> bool:
         return self._heartbeat_thread is not None and self._heartbeat_thread.is_alive()
 
-    def set_rpm(self, rpm: float | None = None, ramp_time: float = 0):
-        """Set the stepper motor speed in RPM. The Tic handles acceleration internally."""
+    @override
+    def set_rpm(self, rpm: float | None = None, ramp_time: float = 0) -> None:
+        """Set speed in RPM. The Tic handles acceleration internally."""
         rpm = rpm or self.default_rpm
         if rpm <= 0:
             raise ValueError("RPM must be positive. Use stop() to halt the stepper.")
-        print(f"INFO: Changing rpm from {self.speed_rpm} to {rpm}")
-        self.speed_rpm = rpm
+        print(f"INFO: Changing rpm from {self._speed_rpm} to {rpm}")
+        self._speed_rpm = rpm
         if self.is_running():
             velocity = self._rpm_to_tic_velocity(rpm, self._current_direction)
             self.tic.set_target_velocity(velocity)
             self.tic.reset_command_timeout()
 
-    def rotate_steps(self, steps: int, direction: str | None = None):
-        """Rotate the stepper motor a specific number of steps."""
+    @override
+    def rotate_steps(self, steps: int, direction: str | None = None) -> None:
         direction = direction or self.default_direction
         print(f"INFO: Rotating {steps} steps {direction}")
+
+        self.tic.energize()
+        self.tic.exit_safe_start()
 
         signed_steps = -steps if direction == "CCW" else steps
         target = self.tic.get_current_position() + signed_steps
@@ -60,15 +97,16 @@ class StepperMotor:
             self.tic.reset_command_timeout()
             time.sleep(0.05)
 
+    @override
     def angle_in_steps(self) -> int:
         return self.encoder.steps % self.encoder_cpr
 
+    @override
     def angle_in_degrees(self) -> float:
-        """Returns the motor angle in degrees from its angle at startup."""
         return self.angle_in_steps() / self.encoder_cpr * 360
 
-    def start_rotation(self, direction: str | None = None, ramp_time: float = 0):
-        """Start rotating the stepper motor continuously at the set speed."""
+    @override
+    def start_rotation(self, direction: str | None = None, ramp_time: float = 0) -> None:
         direction = direction or self.default_direction
         self._current_direction = direction
         print(f"INFO: Starting continuous rotation {direction}")
@@ -80,7 +118,7 @@ class StepperMotor:
         self.tic.energize()
         self.tic.exit_safe_start()
 
-        velocity = self._rpm_to_tic_velocity(self.speed_rpm, direction)
+        velocity = self._rpm_to_tic_velocity(self._speed_rpm, direction)
         self.tic.set_target_velocity(velocity)
         self.tic.reset_command_timeout()
 
@@ -88,27 +126,16 @@ class StepperMotor:
         self._heartbeat_thread = threading.Thread(target=self._heartbeat_loop, daemon=True)
         self._heartbeat_thread.start()
 
-    def _heartbeat_loop(self):
+    def _heartbeat_loop(self) -> None:
         """Periodically reset the Tic command timeout to keep the motor running."""
         while not self._finish_event.is_set():
             self.tic.reset_command_timeout()
             self._finish_event.wait(timeout=_HEARTBEAT_INTERVAL)
 
-    def stop(self):
-        """Stop the motor."""
+    @override
+    def stop(self) -> None:
         print("INFO: Stopping the motor.")
         self._finish_event.set()
         if self._heartbeat_thread is not None:
             self._heartbeat_thread.join()
         self.tic.deenergize()
-
-
-if __name__ == "__main__":
-    from opencal.utils.config import Config
-
-    cfg = Config()
-    motor = StepperMotor(cfg.stepper)
-    motor.set_rpm(20)
-    motor.start_rotation()
-    time.sleep(30.0)
-    motor.stop()

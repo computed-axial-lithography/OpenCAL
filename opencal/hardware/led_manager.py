@@ -5,41 +5,39 @@ from pi5neo.pi5neo import Pi5Neo, EPixelType
 
 from opencal.utils.config import LedArrayConfig
 
+# SK6812 RGBW byte order: (G, R, B, W)
+# All channels capped at 240 to prevent W-LED crosstalk bleed at full drive.
+RED    = (0,   240, 0,   0)
+GREEN  = (240, 0,   0,   0)
+BLUE   = (0,   0,   240, 0)
+YELLOW = (240, 240, 0,   0)
+WHITE  = (0,   0,   0,   240)
+OFF    = (0,   0,   0,   0)
+
 
 @final
 class LEDManager:
     def __init__(self, config: LedArrayConfig):
-        """
-        Initialize the LED array using configuration from a JSON file.
-        :param config_file: Path to the configuration JSON file
-        """
-        # Load configuration from the specified JSON file
+        self.num_led: int = config.num_led
+        self.default_color: tuple[int, int, int, int] = config.default_color
 
-        self.num_led: int = config.num_led  # Number of LEDs in the array
-
-        # Retrieve the pin values and indices for the LED ring from the configuration
-        self.default_color = config.default_color
-
-        # Initialize communication with the Pi5Neo library
         self.neo: Pi5Neo = Pi5Neo("/dev/spidev0.0", self.num_led, 800, pixel_type=EPixelType.RGBW)
+        self.clear_leds()
 
     def set_led(
-        self, color: tuple[int, int, int], led_index: list[int] | None = None, update: bool = True
+        self,
+        color: tuple[int, int, int, int],
+        led_index: list[int] | None = None,
+        update: bool = True,
     ):
-        """
-        Set the specified LEDs to a given RGB color.
-
-        :param color: (G, R, B)
-        :param led_index: List of indices to update (or all LEDs if not specified)
-        """
+        """Set LEDs to a color. color = (G, R, B, W) per SK6812 RGBW byte order."""
         if led_index is None:
             self.neo.fill_strip(*color)
-
         else:
             for idx in led_index:
-                _ = self.neo.set_led_color(idx, *color)  # Set the color for specified indices
+                _ = self.neo.set_led_color(idx, *color)
         if update:
-            self.neo.update_strip()  # Update the LED strip to apply changes
+            self.neo.update_strip()
 
     def clear_leds(self):
         """Turn off all LEDs."""
@@ -64,12 +62,12 @@ class LEDManager:
                     group_2.append(idx)
 
         for _ in range(CYCLES):
-            self.set_led((255, 255, 0), group_1, update=False)
-            self.set_led((0, 0, 255), group_2)
+            self.set_led(YELLOW, group_1, update=False)
+            self.set_led(BLUE, group_2)
             time.sleep(DELAY)
 
-            self.set_led((0, 0, 255), group_1, update=False)
-            self.set_led((255, 255, 0), group_2)
+            self.set_led(BLUE, group_1, update=False)
+            self.set_led(YELLOW, group_2)
             time.sleep(DELAY)
 
         self.clear_leds()
@@ -84,10 +82,8 @@ if __name__ == "__main__":
     try:
         led_array.clear_leds()
         time.sleep(1)
-        led_array.set_led((255, 0, 0))  # Set all LEDs to red
-        time.sleep(10)  # Keep the LEDs on for 10 seconds
-
-        led_array.clear_leds()  # Clear the LEDs after the test
-
+        led_array.set_led(RED)
+        time.sleep(10)
+        led_array.clear_leds()
     except Exception as e:
         print(f"An error occurred during the test: {e}")
