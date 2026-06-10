@@ -93,6 +93,8 @@ The system will boot directly into OpenCAL. Default login credentials:
 - **Username:** `opencal`
 - **Password:** Set on first login (you will be prompted to change it)
 
+> **Note:** The pre-built image already has the systemd service enabled and all hardware configured — you do not need to run any additional setup commands. The only things intentionally cleared from the image for security are WiFi credentials and SSH host keys (regenerated automatically on first boot).
+
 **WiFi setup:** Place a `wifi.txt` file in the boot partition with the contents:
 ```
 SSID=YourNetworkName
