@@ -22,6 +22,7 @@ OpenCAL is open-source software for building and operating a **Computed Axial Li
 7. [Usage](#usage)
 8. [Video File Naming Convention](#video-file-naming-convention)
 9. [Contributing](#contributing)
+10. [License](#license)
 
 ---
 
@@ -236,12 +237,20 @@ All interaction is through the rotary encoder on the LCD display:
 
 ### Print from USB
 
-Lists all `.mp4` files found on the inserted USB drive (files with "recording" in the name are hidden). Selecting a file:
+Lists all `.mp4` files found on the inserted USB drive. Selecting a file:
 
 1. If the filename encodes an RPM (e.g. `part_9rpm.mp4`), the motor speed is pre-set automatically.
 2. A **RPM adjustment screen** appears — rotate to change, click to confirm and start the print.
-3. A **Print Status screen** shows while the print is running. Click to stop.
-4. If **USB video prompt** is enabled (see Settings), you will be asked whether to save the camera recording to USB after stopping.
+3. The projector displays a black image while in this menu — this is intentional to avoid accidentally curing resin while browsing.
+4. A **Print Status screen** shows while the print is running. Click to stop.
+5. If **USB video prompt** is enabled (see Settings), you will be asked whether to save the camera recording to USB after stopping.
+
+> **Note:** Files with "recording" in the filename are hidden from this list (they are camera output files). Avoid using "recording" in your print filenames.
+
+> **Recording format:** The camera saves recordings as `.h264` (raw H.264 bitstream), not `.mp4`. To convert for playback on a computer:
+> ```bash
+> ffmpeg -i recording.h264 -c copy recording.mp4
+> ```
 
 ---
 
@@ -312,3 +321,13 @@ Contributions are very welcome! Whether it's opening issues, reporting bugs, or 
 - If you are unsure about a change or want to discuss a feature before building it, reach out on the [Discord server](https://discord.com/invite/patduYdnSN).
 
 **Automated image builds** are triggered by pushing a version tag of the form `v...` (e.g. `v1.0.0`). This kicks off the GitHub Actions workflow that produces a bootable Raspberry Pi 5 SD card image.
+
+---
+
+## License
+
+Copyright © 2026 The Regents of the University of California. All Rights Reserved.
+
+This software is licensed under the UC Regents license — free for educational, research, and non-profit use. Commercial use requires a separate agreement with the UC Office of Technology Licensing.
+
+See [LICENSE](LICENSE) for the full terms.
