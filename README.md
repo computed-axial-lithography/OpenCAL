@@ -216,24 +216,73 @@ systemctl --user enable opencal.path
 
 ## Usage
 
-### Printing
+All interaction is through the rotary encoder on the LCD display:
+- **Rotate** — scroll through menu items or adjust a value
+- **Click (press)** — select an item, confirm a value, or exit a mode
 
-1. Name your `.mp4` video file using the convention below and place it on a USB drive
-2. Insert the USB drive into the Raspberry Pi
-3. Navigate to **"Print from USB"** on the LCD menu
-4. Select your file — the RPM is set automatically from the filename
-5. Confirm or adjust the RPM, then confirm to start the print
-6. When the print completes, click the encoder to stop — you will be prompted to save the recording to USB
+---
 
-### Calibration
+### Main Menu
 
-Navigate to **Settings → Show Alignment** to display the cross-strut alignment tool image on the projector. Rotate the encoder to shift the image transversely for alignment.
+```
+> Print from USB
+  Manual Control
+  Settings
+  Power Options
+  About
+```
 
-Navigate to **Settings → Find Vial Width** to interactively size the projection to match your resin vial diameter.
+---
 
-### Capture Image
+### Print from USB
 
-In **Manual Control → Capture image**, an image is captured and saved to USB (if connected) with a timestamp filename.
+Lists all `.mp4` files found on the inserted USB drive (files with "recording" in the name are hidden). Selecting a file:
+
+1. If the filename encodes an RPM (e.g. `part_9rpm.mp4`), the motor speed is pre-set automatically.
+2. A **RPM adjustment screen** appears — rotate to change, click to confirm and start the print.
+3. A **Print Status screen** shows while the print is running. Click to stop.
+4. If **USB video prompt** is enabled (see Settings), you will be asked whether to save the camera recording to USB after stopping.
+
+---
+
+### Manual Control
+
+Direct hardware control without running a full print job.
+
+| Item | Action |
+|---|---|
+| **Turn on LEDs** | Turns the LED array on to the default red colour |
+| **Turn off LEDs** | Turns the LED array off |
+| **Start stepper** | Starts the stepper motor rotating (uses last-set RPM) |
+| **Stop stepper** | Stops the stepper motor |
+| **Capture image** | Takes a still image with the camera. Saved to USB with a timestamp filename if a USB drive is mounted, otherwise saved locally. Displays "Image Captured" or "Image error" on the LCD. |
+
+---
+
+### Settings
+
+| Item | Action |
+|---|---|
+| **Calibration Images** | Browse and display calibration images from the `opencal/utils/calibration/` directory on the projector. |
+| **Show Alignment** | Displays the cross-strut alignment tool image on the projector. Rotate the encoder to shift the image up/down for transverse alignment. Click to return. |
+| **USB video prompt** | Toggles whether you are asked to save the camera recording to USB after each print. Displays current state ("USB prompt: On/Off"). |
+| **Find Vial Width** | Opens an interactive projector display showing a white vertical bar. Rotate the encoder to adjust the bar width to match your resin vial diameter. The pixel width is shown as an overlay. Click to confirm and save the value. |
+
+---
+
+### Power Options
+
+| Item | Action |
+|---|---|
+| **Kill GUI** | Stops the OpenCAL application without rebooting |
+| **Restart** | Reboots the Raspberry Pi |
+| **Power Off** | Shuts down the Raspberry Pi |
+
+---
+
+### About
+
+Displays an animated scrolling credits screen with the project contributors. The LED array runs a blue/gold checkerboard animation while credits are shown. Click to exit at any time.
 
 ---
 
