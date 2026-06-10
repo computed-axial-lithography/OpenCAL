@@ -52,6 +52,7 @@ class PygameApp:
             except Exception as e:
                 print(f"WARNING: PyGame display init failed ({e}), running LCD-only.")
                 return
+            pygame.mouse.set_visible(False)
             self.width, self.height = screen.get_size()
             clock = pygame.time.Clock()
             self._running = True
