@@ -46,7 +46,8 @@ class VialWidthMode(BasePygameMode):
 
     @override
     def on_encoder_delta(self, delta: int) -> None:
-        self.rect_width = max(0, self.rect_width + delta * self.SCROLL_RATIO)
+        phys_w = min(self.app.width, self.app.height)
+        self.rect_width = max(0, min(phys_w, self.rect_width + delta * self.SCROLL_RATIO))
         if self._on_width_change:
             self._on_width_change(self.rect_width)
 
@@ -59,9 +60,10 @@ class VialWidthMode(BasePygameMode):
         surf.fill((0, 0, 0))
         w, h = surf.get_size()
 
-        # Vertical bar: full height, adjustable width, centred
+        # Physical width is the shorter dimension — correct for a rotated projector
+        phys_w = min(w, h)
         left = w // 2 - self.rect_width // 2
-        pygame.draw.rect(surf, "white", (left, 0, self.rect_width, h))
+        pygame.draw.rect(surf, "white", (left, 0, self.rect_width, phys_w))
 
         # Pixel count overlay (yellow so it's visible against the white bar)
         if self._font:
