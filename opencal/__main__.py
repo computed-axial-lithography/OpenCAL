@@ -1,4 +1,5 @@
 import queue
+import signal
 import threading
 import os
 
@@ -24,16 +25,28 @@ def main():
     root = build_menu_tree(pc, gui)
     gui.set_root(root)
 
-    gui_thread = threading.Thread(target=gui.run, daemon=True)
+    def _shutdown(*_):
+        gui.kill_gui()
+
+    signal.signal(signal.SIGTERM, _shutdown)
+
+    # Non-daemon so the goodbye sequence can complete before the process exits
+    gui_thread = threading.Thread(target=gui.run, daemon=False)
     gui_thread.start()
 
     pygame_app = PygameApp(
         config=conf.pygame, input_q=input_q, pygame_q=pygame_q, stop_event=stop_event, fps=30,
         video_playing=video_playing,
     )
-    pygame_app.run()
-    # Join on GUI thread, so that if PyGame is disabled GUI continues to run
-    gui_thread.join()
+    try:
+        pygame_app.run()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        gui.kill_gui()
+
+    # Wait for the goodbye sequence to finish (LCD clear + "Goodbye!" message)
+    gui_thread.join(timeout=5)
 
 
 if __name__ == "__main__":
